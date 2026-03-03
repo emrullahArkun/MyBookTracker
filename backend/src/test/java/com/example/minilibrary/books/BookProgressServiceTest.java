@@ -1,6 +1,5 @@
 package com.example.minilibrary.books;
 
-import com.example.minilibrary.books.Book;
 import com.example.minilibrary.books.BookRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -1,42 +1,41 @@
 package com.example.minilibrary.books;
 
-import com.example.minilibrary.books.Book;
+import com.example.minilibrary.auth.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookRepository extends JpaRepository<Book, Long> {
-        boolean existsByIsbn(String isbn);
 
-        boolean existsByIsbnAndUser(String isbn, com.example.minilibrary.auth.User user);
+        boolean existsByIsbnAndUser(String isbn, User user);
 
-        java.util.List<Book> findByUser(com.example.minilibrary.auth.User user);
+        List<Book> findByUser(User user);
 
-        @org.springframework.data.jpa.repository.EntityGraph(attributePaths = "readingSessions")
-        org.springframework.data.domain.Page<Book> findByUserOrderByCompletedAsc(
-                        com.example.minilibrary.auth.User user,
-                        org.springframework.data.domain.Pageable pageable);
+        @EntityGraph(attributePaths = "readingSessions")
+        Page<Book> findByUserOrderByCompletedAsc(User user, Pageable pageable);
 
-        void deleteByIdAndUser(Long id, com.example.minilibrary.auth.User user);
+        void deleteByIdAndUser(Long id, User user);
 
-        void deleteByUser(com.example.minilibrary.auth.User user);
+        void deleteByUser(User user);
 
-        java.util.Optional<Book> findByIdAndUser(Long id, com.example.minilibrary.auth.User user);
+        Optional<Book> findByIdAndUser(Long id, User user);
 
-        java.util.Optional<Book> findByIdAndUserId(Long id, Long userId);
+        Optional<Book> findByIdAndUserId(Long id, Long userId);
 
-        // Discovery: Top authors by book count
-        @org.springframework.data.jpa.repository.Query("SELECT b.author FROM Book b WHERE b.user = :user AND b.author IS NOT NULL GROUP BY b.author ORDER BY COUNT(b) DESC")
-        java.util.List<String> findTopAuthorsByUser(
-                        @org.springframework.data.repository.query.Param("user") com.example.minilibrary.auth.User user);
+        @Query("SELECT b.author FROM Book b WHERE b.user = :user AND b.author IS NOT NULL GROUP BY b.author ORDER BY COUNT(b) DESC")
+        List<String> findTopAuthorsByUser(@Param("user") User user);
 
-        // Discovery: All categories for a user (will parse in service)
-        @org.springframework.data.jpa.repository.Query("SELECT b.categories FROM Book b WHERE b.user = :user AND b.categories IS NOT NULL")
-        java.util.List<String> findAllCategoriesByUser(
-                        @org.springframework.data.repository.query.Param("user") com.example.minilibrary.auth.User user);
+        @Query("SELECT b.categories FROM Book b WHERE b.user = :user AND b.categories IS NOT NULL")
+        List<String> findAllCategoriesByUser(@Param("user") User user);
 
-        // Discovery: Get all ISBNs owned by user (for exclusion)
-        @org.springframework.data.jpa.repository.Query("SELECT b.isbn FROM Book b WHERE b.user = :user")
-        java.util.List<String> findAllIsbnsByUser(
-                        @org.springframework.data.repository.query.Param("user") com.example.minilibrary.auth.User user);
+        @Query("SELECT b.isbn FROM Book b WHERE b.user = :user")
+        List<String> findAllIsbnsByUser(@Param("user") User user);
 }

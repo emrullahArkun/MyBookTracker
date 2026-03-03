@@ -1,32 +1,19 @@
 package com.example.minilibrary.sessions;
 
+import com.example.minilibrary.auth.User;
 import com.example.minilibrary.books.Book;
 import com.example.minilibrary.books.BookProgressService;
-import com.example.minilibrary.sessions.ReadingSession;
-import com.example.minilibrary.books.BookProgressService;
-import com.example.minilibrary.sessions.SessionStatus;
-import com.example.minilibrary.books.BookProgressService;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.BookProgressService;
 import com.example.minilibrary.books.BookRepository;
-import com.example.minilibrary.books.BookProgressService;
-import com.example.minilibrary.sessions.ReadingSessionRepository;
-import com.example.minilibrary.books.BookProgressService;
+import com.example.minilibrary.shared.exception.IllegalSessionStateException;
 import com.example.minilibrary.shared.exception.ResourceNotFoundException;
-import com.example.minilibrary.books.BookProgressService;
 import lombok.RequiredArgsConstructor;
-import com.example.minilibrary.books.BookProgressService;
 import org.springframework.stereotype.Service;
-import com.example.minilibrary.books.BookProgressService;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.minilibrary.books.BookProgressService;
 
+import java.time.Duration;
 import java.time.Instant;
-import com.example.minilibrary.books.BookProgressService;
 import java.util.List;
-import com.example.minilibrary.books.BookProgressService;
 import java.util.Optional;
-import com.example.minilibrary.books.BookProgressService;
 
 @Service
 @RequiredArgsConstructor
@@ -38,20 +25,17 @@ public class ReadingSessionService {
 
     @Transactional
     public ReadingSession startSession(User user, Long bookId) {
-        // Enforce Invariant: Max 1 Active/Paused session
         Optional<ReadingSession> existingOpt = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE, SessionStatus.PAUSED));
 
         if (existingOpt.isPresent()) {
             ReadingSession existing = existingOpt.get();
-            // If already reading this book, return it (resume if paused)
             if (existing.getBook().getId().equals(bookId)) {
                 if (existing.getStatus() == SessionStatus.PAUSED) {
                     return resumeSession(user);
                 }
                 return existing;
             }
-            // If reading another book, auto-stop the previous one
             stopSession(user, Instant.now(), null);
         }
 
@@ -69,22 +53,15 @@ public class ReadingSessionService {
 
     @Transactional
     public ReadingSession stopSession(User user, Instant endTime, Integer endPage) {
-        // Find THE active or paused session
         ReadingSession session = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE, SessionStatus.PAUSED))
                 .orElseThrow(() -> new ResourceNotFoundException("No active reading session found"));
 
         Instant safeEndTime = endTime != null ? endTime : Instant.now();
 
-        if (session.getStatus() == SessionStatus.PAUSED && session.getPausedAt() != null) {
-            long gap = java.time.Duration.between(session.getPausedAt(), safeEndTime).toMillis();
-            if (gap > 0) {
-                long currentPaused = session.getPausedMillis() != null ? session.getPausedMillis() : 0;
-                session.setPausedMillis(currentPaused + gap);
-            }
-        }
+        accumulatePausedTime(session, safeEndTime);
 
-        session.setPausedAt(null); // Clear paused state
+        session.setPausedAt(null);
         session.setEndTime(safeEndTime);
         session.setEndPage(endPage);
         session.setStatus(SessionStatus.COMPLETED);
@@ -92,24 +69,19 @@ public class ReadingSessionService {
         if (endPage != null) {
             Book book = session.getBook();
 
-            // Calculate pages read
             int startPage = book.getCurrentPage() != null ? book.getCurrentPage() : 0;
             int pagesRead = endPage - startPage;
-            // Ensure non-negative (handling corrections/edge cases)
             if (pagesRead < 0)
                 pagesRead = 0;
 
             session.setPagesRead(pagesRead);
-            session.setStatus(SessionStatus.COMPLETED); // Ensuring this is set
 
-            // Delegate book progress update to BookProgressService
             bookProgressService.updateProgress(book, endPage);
         }
 
         return sessionRepository.save(session);
     }
 
-    // Now returns Optional directly from DB query
     public Optional<ReadingSession> getActiveSession(User user) {
         return sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE, SessionStatus.PAUSED));
@@ -119,8 +91,7 @@ public class ReadingSessionService {
     public ReadingSession pauseSession(User user) {
         ReadingSession session = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE))
-                .orElseThrow(() -> new com.example.minilibrary.shared.exception.IllegalSessionStateException(
-                        "No active session found to pause"));
+                .orElseThrow(() -> new IllegalSessionStateException("No active session found to pause"));
 
         session.setStatus(SessionStatus.PAUSED);
         session.setPausedAt(Instant.now());
@@ -131,17 +102,10 @@ public class ReadingSessionService {
     public ReadingSession resumeSession(User user) {
         ReadingSession session = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.PAUSED))
-                .orElseThrow(() -> new com.example.minilibrary.shared.exception.IllegalSessionStateException(
-                        "No paused session found to resume"));
+                .orElseThrow(() -> new IllegalSessionStateException("No paused session found to resume"));
 
         Instant now = Instant.now();
-        if (session.getPausedAt() != null) {
-            long diff = java.time.Duration.between(session.getPausedAt(), now).toMillis();
-            if (diff > 0) {
-                long currentPaused = session.getPausedMillis() != null ? session.getPausedMillis() : 0;
-                session.setPausedMillis(currentPaused + diff);
-            }
-        }
+        accumulatePausedTime(session, now);
         session.setStatus(SessionStatus.ACTIVE);
         session.setPausedAt(null);
         return sessionRepository.save(session);
@@ -154,15 +118,13 @@ public class ReadingSessionService {
         }
         ReadingSession session = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE))
-                .orElseThrow(() -> new com.example.minilibrary.shared.exception.IllegalSessionStateException(
-                        "No active session found"));
+                .orElseThrow(() -> new IllegalSessionStateException("No active session found"));
 
-        long currentPaused = session.getPausedMillis() != null ? session.getPausedMillis() : 0L;
-        session.setPausedMillis(currentPaused + millis);
+        session.setPausedMillis(session.getPausedMillisOrZero() + millis);
         return sessionRepository.save(session);
     }
 
-    public java.util.List<ReadingSession> getSessionsByBook(User user, Long bookId) {
+    public List<ReadingSession> getSessionsByBook(User user, Long bookId) {
         Book book = bookRepository.findByIdAndUserId(bookId, user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
         return sessionRepository.findByUserAndBook(user, book);
@@ -171,5 +133,14 @@ public class ReadingSessionService {
     @Transactional
     public void deleteSessionsByBook(User user, Book book) {
         sessionRepository.deleteByUserAndBook(user, book);
+    }
+
+    private void accumulatePausedTime(ReadingSession session, Instant endTime) {
+        if (session.getStatus() == SessionStatus.PAUSED && session.getPausedAt() != null) {
+            long gap = Duration.between(session.getPausedAt(), endTime).toMillis();
+            if (gap > 0) {
+                session.setPausedMillis(session.getPausedMillisOrZero() + gap);
+            }
+        }
     }
 }

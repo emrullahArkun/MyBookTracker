@@ -1,18 +1,17 @@
 package com.example.minilibrary.books.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 
 public record BookDto(
                 Long id,
-                @NotBlank String isbn,
-                @NotBlank String title,
+                String isbn,
+                String title,
                 String authorName,
                 String publishDate,
                 String coverUrl,
                 Integer pageCount,
                 Integer currentPage,
-                java.time.LocalDate startDate,
+                LocalDate startDate,
                 Boolean completed,
                 String readingGoalType,
                 Integer readingGoalPages,

@@ -1,9 +1,10 @@
 package com.example.minilibrary.shared.security;
 
-import com.example.minilibrary.auth.User;
 import com.example.minilibrary.auth.AuthService;
+import com.example.minilibrary.auth.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -29,13 +30,9 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
             NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
-            // Throw specific security exception to ensure 401/403 response
-            throw new org.springframework.security.authentication.AuthenticationCredentialsNotFoundException(
-                    "User not authenticated");
+            throw new AuthenticationCredentialsNotFoundException("User not authenticated");
         }
 
-        // With JWT, principal might be Jwt object or subject string depending on setup.
-        // Assuming getName() returns email/subject.
         String email = auth.getName();
         return authService.getUserByEmail(email);
     }

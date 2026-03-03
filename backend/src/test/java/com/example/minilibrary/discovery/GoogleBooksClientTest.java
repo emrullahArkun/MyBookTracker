@@ -90,7 +90,7 @@ class GoogleBooksClientTest {
     @Test
     void fetchBooks_ShouldReturnEmpty_WhenApiThrows() {
         when(restTemplate.getForObject(anyString(), eq(Map.class)))
-                .thenThrow(new RuntimeException("API error"));
+                .thenThrow(new org.springframework.web.client.RestClientException("API error"));
 
         var result = googleBooksClient.getBooksByAuthor("Author", 5);
         assertTrue(result.isEmpty());

@@ -1,11 +1,10 @@
 package com.example.minilibrary.discovery;
 
+import com.example.minilibrary.auth.User;
 import jakarta.persistence.*;
-import com.example.minilibrary.auth.User;
 import lombok.*;
-import com.example.minilibrary.auth.User;
+
 import java.time.LocalDateTime;
-import com.example.minilibrary.auth.User;
 
 @Entity
 @Table(name = "search_history", indexes = {

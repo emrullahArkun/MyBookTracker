@@ -1,17 +1,23 @@
 package com.example.minilibrary.books;
 
-import com.example.minilibrary.shared.security.CurrentUser;
 import com.example.minilibrary.auth.User;
-
 import com.example.minilibrary.books.dto.BookDto;
-import com.example.minilibrary.books.Book;
-import com.example.minilibrary.books.BookService;
-import com.example.minilibrary.shared.exception.ResourceNotFoundException;
-import com.example.minilibrary.books.BookMapper;
 import com.example.minilibrary.books.dto.CreateBookRequest;
+import com.example.minilibrary.books.dto.SetGoalRequest;
+import com.example.minilibrary.books.dto.UpdateProgressRequest;
+import com.example.minilibrary.books.dto.UpdateStatusRequest;
+import com.example.minilibrary.shared.exception.ResourceNotFoundException;
+import com.example.minilibrary.shared.security.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/books")
@@ -22,17 +28,17 @@ public class BookController {
     private final BookMapper bookMapper;
 
     @GetMapping
-    public org.springframework.data.domain.Page<BookDto> getAllBooks(
+    public Page<BookDto> getAllBooks(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @CurrentUser User user) {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size);
         return bookService.findAllByUser(user, pageable)
                 .map(bookMapper::toDto);
     }
 
     @GetMapping("/owned")
-    public java.util.List<String> getAllOwnedIsbns(@CurrentUser User user) {
+    public List<String> getAllOwnedIsbns(@CurrentUser User user) {
         return bookService.getAllOwnedIsbns(user);
     }
 
@@ -45,16 +51,16 @@ public class BookController {
 
     @PostMapping
     public ResponseEntity<BookDto> createBook(
-            @RequestBody @jakarta.validation.Valid CreateBookRequest request,
+            @RequestBody @Valid CreateBookRequest request,
             @CurrentUser User user) {
         Book savedBook = bookService.createBook(request, user);
-        return ResponseEntity.ok(bookMapper.toDto(savedBook));
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookMapper.toDto(savedBook));
     }
 
     @PatchMapping("/{id}/progress")
     public ResponseEntity<BookDto> updateBookProgress(
             @PathVariable Long id,
-            @RequestBody @jakarta.validation.Valid com.example.minilibrary.books.dto.UpdateProgressRequest request,
+            @RequestBody @Valid UpdateProgressRequest request,
             @CurrentUser User user) {
         Book updatedBook = bookService.updateBookProgress(id, request.currentPage(), user);
         return ResponseEntity.ok(bookMapper.toDto(updatedBook));
@@ -63,7 +69,7 @@ public class BookController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<BookDto> updateBookStatus(
             @PathVariable Long id,
-            @RequestBody @jakarta.validation.Valid com.example.minilibrary.books.dto.UpdateStatusRequest request,
+            @RequestBody @Valid UpdateStatusRequest request,
             @CurrentUser User user) {
         Book updatedBook = bookService.updateBookStatus(id, request.completed(), user);
         return ResponseEntity.ok(bookMapper.toDto(updatedBook));
@@ -72,7 +78,7 @@ public class BookController {
     @PatchMapping("/{id}/goal")
     public ResponseEntity<BookDto> updateBookGoal(
             @PathVariable Long id,
-            @RequestBody @jakarta.validation.Valid com.example.minilibrary.books.dto.SetGoalRequest request,
+            @RequestBody @Valid SetGoalRequest request,
             @CurrentUser User user) {
         Book updatedBook = bookService.updateReadingGoal(id, request.type(), request.pages(), user);
         return ResponseEntity.ok(bookMapper.toDto(updatedBook));

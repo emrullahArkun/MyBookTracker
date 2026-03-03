@@ -26,4 +26,10 @@ public class ArchitectureTest {
         static final ArchRule controllers_should_be_annotated_with_RestController = classes().that()
                         .haveSimpleNameEndingWith("Controller")
                         .should().beAnnotatedWith(org.springframework.web.bind.annotation.RestController.class);
+
+        @ArchTest
+        static final ArchRule shared_should_not_depend_on_books = noClasses().that()
+                        .resideInAPackage("..shared..")
+                        .should().dependOnClassesThat()
+                        .resideInAnyPackage("..books..", "..sessions..", "..discovery..");
 }

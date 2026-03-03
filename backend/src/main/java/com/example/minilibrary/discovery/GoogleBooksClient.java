@@ -5,8 +5,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +52,7 @@ public class GoogleBooksClient {
             return items.stream()
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
-        } catch (Exception e) {
+        } catch (RestClientException e) {
             log.error("Failed to fetch books from Google API: {}", e.getMessage());
             return Collections.emptyList();
         }
@@ -85,10 +88,6 @@ public class GoogleBooksClient {
     }
 
     private String encodeParam(String param) {
-        try {
-            return java.net.URLEncoder.encode(param, "UTF-8");
-        } catch (Exception e) {
-            return param;
-        }
+        return URLEncoder.encode(param, StandardCharsets.UTF_8);
     }
 }

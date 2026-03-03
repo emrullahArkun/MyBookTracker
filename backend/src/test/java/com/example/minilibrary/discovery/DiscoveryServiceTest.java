@@ -2,14 +2,17 @@ package com.example.minilibrary.discovery;
 
 import com.example.minilibrary.auth.User;
 import com.example.minilibrary.books.BookRepository;
-import com.example.minilibrary.discovery.SearchHistoryRepository;
+import com.example.minilibrary.discovery.dto.RecommendedBookDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -113,58 +116,69 @@ class DiscoveryServiceTest {
         assertEquals(2, result.size());
     }
 
-    // --- recommendations (fetchAndFilterBooks) ---
+    // --- recommendations ---
 
     @Test
     void getRecommendationsByAuthor_ShouldReturnBooks() {
-        when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of("owned123"));
+        Set<String> ownedIsbns = new HashSet<>(List.of("owned123"));
 
-        com.example.minilibrary.discovery.dto.RecommendedBookDto book = new com.example.minilibrary.discovery.dto.RecommendedBookDto(
+        RecommendedBookDto book = new RecommendedBookDto(
                 "Book Title", List.of("Author"), null, null, 200, "isbn456", null);
 
         when(googleBooksClient.getBooksByAuthor("Author", 5)).thenReturn(List.of(book));
 
-        var result = discoveryService.getRecommendationsByAuthor("Author", user, 5);
+        var result = discoveryService.getRecommendationsByAuthor("Author", ownedIsbns, 5);
         assertEquals(1, result.size());
         assertEquals("Book Title", result.get(0).title());
     }
 
     @Test
     void getRecommendationsByAuthor_ShouldExcludeOwnedBooks() {
-        when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of("isbn123"));
+        Set<String> ownedIsbns = new HashSet<>(List.of("isbn123"));
 
-        com.example.minilibrary.discovery.dto.RecommendedBookDto book = new com.example.minilibrary.discovery.dto.RecommendedBookDto(
+        RecommendedBookDto book = new RecommendedBookDto(
                 "Owned Book", List.of("Author"), null, null, 200, "isbn123", null);
 
         when(googleBooksClient.getBooksByAuthor("Author", 5)).thenReturn(List.of(book));
 
-        var result = discoveryService.getRecommendationsByAuthor("Author", user, 5);
+        var result = discoveryService.getRecommendationsByAuthor("Author", ownedIsbns, 5);
         assertEquals(0, result.size());
     }
 
     @Test
     void getRecommendationsByCategory_ShouldReturnBooks() {
-        when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of());
+        Set<String> ownedIsbns = new HashSet<>();
 
-        com.example.minilibrary.discovery.dto.RecommendedBookDto book = new com.example.minilibrary.discovery.dto.RecommendedBookDto(
+        RecommendedBookDto book = new RecommendedBookDto(
                 "Cat Book", null, null, null, null, null, null);
 
         when(googleBooksClient.getBooksByCategory("Fiction", 5)).thenReturn(List.of(book));
 
-        var result = discoveryService.getRecommendationsByCategory("Fiction", user, 5);
+        var result = discoveryService.getRecommendationsByCategory("Fiction", ownedIsbns, 5);
         assertEquals(1, result.size());
     }
 
     @Test
     void getRecommendationsByQuery_ShouldReturnBooks() {
-        when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of());
+        Set<String> ownedIsbns = new HashSet<>();
 
-        com.example.minilibrary.discovery.dto.RecommendedBookDto book = new com.example.minilibrary.discovery.dto.RecommendedBookDto(
+        RecommendedBookDto book = new RecommendedBookDto(
                 "Search Book", null, null, null, null, null, null);
 
         when(googleBooksClient.getBooksByQuery("Java", 5)).thenReturn(List.of(book));
 
-        var result = discoveryService.getRecommendationsByQuery("Java", user, 5);
+        var result = discoveryService.getRecommendationsByQuery("Java", ownedIsbns, 5);
         assertEquals(1, result.size());
+    }
+
+    // --- getOwnedIsbns ---
+
+    @Test
+    void getOwnedIsbns_ShouldReturnSet() {
+        when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of("isbn1", "isbn2"));
+
+        Set<String> result = discoveryService.getOwnedIsbns(user);
+        assertEquals(2, result.size());
+        assertTrue(result.contains("isbn1"));
     }
 }

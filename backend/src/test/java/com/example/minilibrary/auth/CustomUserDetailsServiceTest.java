@@ -1,8 +1,5 @@
 package com.example.minilibrary.auth;
 
-import com.example.minilibrary.auth.Role;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.auth.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

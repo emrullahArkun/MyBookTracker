@@ -1,15 +1,19 @@
 package com.example.minilibrary.sessions;
 
-import com.example.minilibrary.shared.security.CurrentUser;
-
-import com.example.minilibrary.sessions.dto.ReadingSessionDto;
-import com.example.minilibrary.sessions.ReadingSession;
 import com.example.minilibrary.auth.User;
-import com.example.minilibrary.sessions.ReadingSessionService;
-
+import com.example.minilibrary.sessions.dto.ExcludeTimeRequest;
+import com.example.minilibrary.sessions.dto.ReadingSessionDto;
+import com.example.minilibrary.sessions.dto.StartSessionRequest;
+import com.example.minilibrary.sessions.dto.StopSessionRequest;
+import com.example.minilibrary.shared.security.CurrentUser;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/sessions")
@@ -20,7 +24,7 @@ public class ReadingSessionController {
 
     @PostMapping("/start")
     public ResponseEntity<ReadingSessionDto> startSession(
-            @RequestBody @jakarta.validation.Valid com.example.minilibrary.sessions.dto.StartSessionRequest request,
+            @RequestBody @Valid StartSessionRequest request,
             @CurrentUser User user) {
         ReadingSession session = sessionService.startSession(user, request.bookId());
         return ResponseEntity.ok(mapToDto(session));
@@ -28,9 +32,9 @@ public class ReadingSessionController {
 
     @PostMapping("/stop")
     public ResponseEntity<ReadingSessionDto> stopSession(
-            @RequestBody(required = false) @jakarta.validation.Valid com.example.minilibrary.sessions.dto.StopSessionRequest request,
+            @RequestBody(required = false) @Valid StopSessionRequest request,
             @CurrentUser User user) {
-        java.time.Instant endTime = null;
+        Instant endTime = null;
         Integer endPage = null;
 
         if (request != null) {
@@ -51,7 +55,7 @@ public class ReadingSessionController {
 
     @PostMapping("/active/exclude-time")
     public ResponseEntity<ReadingSessionDto> excludeTime(
-            @RequestBody @jakarta.validation.Valid com.example.minilibrary.sessions.dto.ExcludeTimeRequest request,
+            @RequestBody @Valid ExcludeTimeRequest request,
             @CurrentUser User user) {
         ReadingSession session = sessionService.excludeTime(user, request.millis());
         return ResponseEntity.ok(mapToDto(session));
@@ -70,12 +74,12 @@ public class ReadingSessionController {
     }
 
     @GetMapping("/book/{bookId}")
-    public ResponseEntity<java.util.List<ReadingSessionDto>> getSessionsByBook(@PathVariable Long bookId,
+    public ResponseEntity<List<ReadingSessionDto>> getSessionsByBook(@PathVariable Long bookId,
             @CurrentUser User user) {
-        java.util.List<ReadingSessionDto> sessions = sessionService.getSessionsByBook(user, bookId)
+        List<ReadingSessionDto> sessions = sessionService.getSessionsByBook(user, bookId)
                 .stream()
                 .map(this::mapToDto)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
         return ResponseEntity.ok(sessions);
     }
 

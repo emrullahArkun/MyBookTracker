@@ -1,7 +1,5 @@
 package com.example.minilibrary.books;
 
-import com.example.minilibrary.books.Book;
-import com.example.minilibrary.books.BookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +21,6 @@ public class BookProgressService {
 
         book.setCurrentPage(currentPage);
 
-        // Auto-complete/un-complete logic
         if (book.getPageCount() != null) {
             if (currentPage >= book.getPageCount()) {
                 book.setCompleted(true);

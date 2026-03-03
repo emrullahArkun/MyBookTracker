@@ -1,14 +1,9 @@
 package com.example.minilibrary.sessions;
 
-import com.example.minilibrary.sessions.ReadingSession;
-import com.example.minilibrary.sessions.SessionStatus;
 import com.example.minilibrary.auth.User;
 import com.example.minilibrary.books.Book;
 import com.example.minilibrary.books.BookRepository;
-import com.example.minilibrary.sessions.ReadingSessionRepository;
 import com.example.minilibrary.auth.UserRepository;
-
-import com.example.minilibrary.sessions.ReadingSessionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,19 +2,9 @@ package com.example.minilibrary.books;
 
 import com.example.minilibrary.books.dto.BookDto;
 import com.example.minilibrary.books.dto.CreateBookRequest;
-import com.example.minilibrary.books.Book;
-import com.example.minilibrary.books.ReadingGoalType;
-import com.example.minilibrary.sessions.ReadingSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
-
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 

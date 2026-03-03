@@ -1,6 +1,5 @@
 package com.example.minilibrary.discovery;
 
-import com.example.minilibrary.discovery.SearchHistory;
 import com.example.minilibrary.auth.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

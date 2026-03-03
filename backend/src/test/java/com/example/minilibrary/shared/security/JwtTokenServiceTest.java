@@ -7,28 +7,18 @@ import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.text.ParseException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class JwtTokenServiceTest {
 
+    private static final String SECRET = "my-super-secret-key-that-is-long-enough-for-hs256!";
     private JwtTokenService jwtTokenService;
 
     @BeforeEach
-    void setUp() throws Exception {
-        jwtTokenService = new JwtTokenService();
-
-        // Inject @Value fields via reflection since we're not using Spring context
-        Field secretField = JwtTokenService.class.getDeclaredField("secret");
-        secretField.setAccessible(true);
-        // HMAC-SHA256 requires at least 256 bits (32 bytes)
-        secretField.set(jwtTokenService, "my-super-secret-key-that-is-long-enough-for-hs256!");
-
-        Field ttlField = JwtTokenService.class.getDeclaredField("ttlSeconds");
-        ttlField.setAccessible(true);
-        ttlField.set(jwtTokenService, 3600L);
+    void setUp() {
+        jwtTokenService = new JwtTokenService(SECRET, 3600L);
     }
 
     @Test
@@ -40,7 +30,6 @@ class JwtTokenServiceTest {
         assertNotNull(token);
         assertFalse(token.isEmpty());
 
-        // Parse and verify claims
         SignedJWT signedJWT = SignedJWT.parse(token);
         JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
 
@@ -63,14 +52,7 @@ class JwtTokenServiceTest {
     }
 
     @Test
-    void createToken_ShouldThrowRuntimeException_WhenSecretInvalid() throws Exception {
-        // Set a secret that's too short for HMAC-SHA256
-        Field secretField = JwtTokenService.class.getDeclaredField("secret");
-        secretField.setAccessible(true);
-        secretField.set(jwtTokenService, "short");
-
-        User user = new User("test@example.com", "password", Role.USER);
-
-        assertThrows(RuntimeException.class, () -> jwtTokenService.createToken(user));
+    void constructor_ShouldThrow_WhenSecretTooShort() {
+        assertThrows(IllegalStateException.class, () -> new JwtTokenService("short", 3600L));
     }
 }

@@ -1,7 +1,5 @@
-package com.example.minilibrary.shared.config;
+package com.example.minilibrary.auth;
 
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.auth.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -32,28 +30,22 @@ class DataInitializerTest {
 
     @Test
     void initData_ShouldCreateAdminUser_WhenNotExists() throws Exception {
-        // Arrange
         when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
 
-        // Act
         CommandLineRunner runner = dataInitializer.initData();
         runner.run();
 
-        // Assert
         verify(userRepository).save(any(User.class));
     }
 
     @Test
     void initData_ShouldNotCreateAdminUser_WhenAlreadyExists() throws Exception {
-        // Arrange
         when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(new User()));
 
-        // Act
         CommandLineRunner runner = dataInitializer.initData();
         runner.run();
 
-        // Assert
         verify(userRepository, never()).save(any(User.class));
     }
 }

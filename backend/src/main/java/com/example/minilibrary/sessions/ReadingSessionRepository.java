@@ -1,17 +1,19 @@
 package com.example.minilibrary.sessions;
 
-import com.example.minilibrary.sessions.ReadingSession;
-import com.example.minilibrary.sessions.SessionStatus;
 import com.example.minilibrary.auth.User;
+import com.example.minilibrary.books.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 public interface ReadingSessionRepository extends JpaRepository<ReadingSession, Long> {
-    java.util.List<ReadingSession> findByUserAndStatus(User user, SessionStatus status);
 
-    java.util.Optional<ReadingSession> findFirstByUserAndStatusInOrderByStartTimeDesc(User user,
-            java.util.Collection<SessionStatus> statuses);
+    Optional<ReadingSession> findFirstByUserAndStatusInOrderByStartTimeDesc(User user,
+            Collection<SessionStatus> statuses);
 
-    java.util.List<ReadingSession> findByUserAndBook(User user, com.example.minilibrary.books.Book book);
+    List<ReadingSession> findByUserAndBook(User user, Book book);
 
-    void deleteByUserAndBook(User user, com.example.minilibrary.books.Book book);
+    void deleteByUserAndBook(User user, Book book);
 }

@@ -7,7 +7,6 @@ import com.example.minilibrary.shared.exception.IllegalSessionStateException;
 import com.example.minilibrary.shared.exception.ResourceNotFoundException;
 
 import com.example.minilibrary.books.BookRepository;
-import com.example.minilibrary.sessions.ReadingSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

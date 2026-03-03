@@ -1,6 +1,5 @@
 package com.example.minilibrary.auth;
 
-import com.example.minilibrary.auth.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

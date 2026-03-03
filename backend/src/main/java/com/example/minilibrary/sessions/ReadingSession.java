@@ -1,23 +1,12 @@
 package com.example.minilibrary.sessions;
 
+import com.example.minilibrary.auth.User;
+import com.example.minilibrary.books.Book;
 import jakarta.persistence.*;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.Book;
 import lombok.Getter;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.Book;
 import lombok.Setter;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.Book;
-import lombok.NoArgsConstructor;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.Book;
-import lombok.AllArgsConstructor;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.Book;
+
 import java.time.Instant;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.Book;
 
 @Getter
 @Setter
@@ -58,6 +47,10 @@ public class ReadingSession {
 
     @Column(name = "paused_at")
     private Instant pausedAt;
+
+    public long getPausedMillisOrZero() {
+        return pausedMillis != null ? pausedMillis : 0L;
+    }
 
     @Override
     public boolean equals(Object o) {

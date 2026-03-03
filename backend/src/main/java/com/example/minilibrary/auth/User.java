@@ -1,13 +1,17 @@
 package com.example.minilibrary.auth;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users")
-@lombok.Getter
-@lombok.Setter
-@lombok.NoArgsConstructor
-@lombok.AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class User {
 
     @Id

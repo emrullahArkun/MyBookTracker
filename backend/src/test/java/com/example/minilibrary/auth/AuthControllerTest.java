@@ -2,10 +2,7 @@ package com.example.minilibrary.auth;
 
 import com.example.minilibrary.auth.dto.LoginRequest;
 import com.example.minilibrary.auth.dto.RegisterRequest;
-import com.example.minilibrary.auth.Role;
-import com.example.minilibrary.auth.User;
 import com.example.minilibrary.shared.security.JwtTokenService;
-import com.example.minilibrary.auth.AuthService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,7 +47,7 @@ class AuthControllerTest {
 
     @Test
     void register_ShouldReturnOk() throws Exception {
-        RegisterRequest request = new RegisterRequest("test@example.com", "password");
+        RegisterRequest request = new RegisterRequest("test@example.com", "password123");
 
         User user = new User();
         user.setId(1L);
@@ -69,7 +66,7 @@ class AuthControllerTest {
 
     @Test
     void login_ShouldReturnToken() throws Exception {
-        LoginRequest request = new LoginRequest("test@example.com", "password");
+        LoginRequest request = new LoginRequest("test@example.com", "password123");
         User user = new User();
         user.setEmail("test@example.com");
         user.setRole(Role.USER);

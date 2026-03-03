@@ -2,10 +2,8 @@ package com.example.minilibrary.sessions;
 
 import com.example.minilibrary.books.Book;
 import com.example.minilibrary.auth.Role;
-import com.example.minilibrary.sessions.SessionStatus;
 import com.example.minilibrary.auth.User;
 import com.example.minilibrary.books.BookRepository;
-import com.example.minilibrary.sessions.ReadingSessionRepository;
 import com.example.minilibrary.auth.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -121,7 +119,8 @@ class ReadingSessionControllerIntegrationTest {
                 mockMvc.perform(post("/api/sessions/start")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
-                                                new com.example.minilibrary.sessions.dto.StartSessionRequest(testBook.getId()))))
+                                                new com.example.minilibrary.sessions.dto.StartSessionRequest(
+                                                                testBook.getId()))))
                                 .andExpect(status().isOk());
 
                 // Stop session
@@ -134,7 +133,8 @@ class ReadingSessionControllerIntegrationTest {
                                 .andExpect(jsonPath("$.endTime", notNullValue()));
 
                 // Check DB
-                assertEquals(0, sessionRepository.findByUserAndStatus(testUser, SessionStatus.ACTIVE).stream().count());
+                assertEquals(0, sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(testUser,
+                                java.util.List.of(SessionStatus.ACTIVE)).stream().count());
         }
 
         @Test

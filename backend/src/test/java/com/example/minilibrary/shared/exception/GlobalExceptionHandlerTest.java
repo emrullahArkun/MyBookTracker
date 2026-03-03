@@ -1,7 +1,6 @@
 package com.example.minilibrary.shared.exception;
 
 import com.example.minilibrary.shared.dto.ErrorResponse;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +10,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.Set;
@@ -61,17 +61,6 @@ class GlobalExceptionHandlerTest {
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertEquals(409, response.getBody().status());
-    }
-
-    @Test
-    void handleIllegalArgumentException_ShouldReturn400() {
-        IllegalArgumentException ex = new IllegalArgumentException("Invalid input");
-
-        ResponseEntity<ErrorResponse> response = handler.handleIllegalArgumentException(ex, webRequest);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(400, response.getBody().status());
-        assertEquals("Invalid input", response.getBody().message());
     }
 
     @Test
@@ -135,20 +124,10 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleGlobalException_ShouldRethrow_WhenNoResourceFoundException() {
-        // The handler checks
-        // ex.getClass().getName().contains("NoResourceFoundException")
-        NoResourceFoundException ex = new NoResourceFoundException("not found");
+    void handleGlobalException_ShouldRethrow_WhenNoResourceFoundException() throws Exception {
+        NoResourceFoundException ex = mock(NoResourceFoundException.class);
 
         assertThrows(NoResourceFoundException.class,
                 () -> handler.handleGlobalException(ex, webRequest));
-    }
-
-    // Inner class whose name contains "NoResourceFoundException" to trigger the
-    // rethrow
-    private static class NoResourceFoundException extends Exception {
-        NoResourceFoundException(String msg) {
-            super(msg);
-        }
     }
 }

@@ -1,14 +1,10 @@
 package com.example.minilibrary.books;
 
 import com.example.minilibrary.books.dto.BookDto;
-import com.example.minilibrary.auth.User;
 import com.example.minilibrary.books.dto.CreateBookRequest;
-import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.Book;
-import com.example.minilibrary.auth.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
 public abstract class BookMapper {
@@ -18,7 +14,6 @@ public abstract class BookMapper {
 
     @Mapping(target = "authorName", source = "author")
     @Mapping(target = "readingGoalProgress", expression = "java(calculator.calculateProgress(book))")
-    @Mapping(target = "categories", source = "categories")
     public abstract BookDto toDto(Book book);
 
     @Mapping(target = "id", ignore = true)
@@ -30,7 +25,6 @@ public abstract class BookMapper {
     @Mapping(target = "readingGoalType", ignore = true)
     @Mapping(target = "readingGoalPages", ignore = true)
     @Mapping(target = "readingSessions", ignore = true)
-    @Mapping(target = "categories", source = "categories")
     public abstract Book toEntity(CreateBookRequest request);
 
 }

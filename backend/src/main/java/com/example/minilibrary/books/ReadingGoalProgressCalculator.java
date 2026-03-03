@@ -1,7 +1,6 @@
 package com.example.minilibrary.books;
 
 import org.springframework.stereotype.Service;
-import com.example.minilibrary.sessions.ReadingSession;
 
 import java.time.Instant;
 import java.time.LocalDate;

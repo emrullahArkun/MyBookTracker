@@ -5,11 +5,7 @@ import com.example.minilibrary.books.dto.CreateBookRequest;
 import com.example.minilibrary.books.dto.UpdateProgressRequest;
 import com.example.minilibrary.books.dto.UpdateStatusRequest;
 import com.example.minilibrary.books.dto.SetGoalRequest;
-import com.example.minilibrary.books.BookMapper;
-import com.example.minilibrary.books.Book;
-import com.example.minilibrary.books.ReadingGoalType;
 import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.BookService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -144,7 +140,7 @@ class BookControllerTest {
                 mockMvc.perform(post("/api/books")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isCreated());
         }
 
         @Test

@@ -4,11 +4,7 @@ import com.example.minilibrary.sessions.ReadingSessionService;
 import com.example.minilibrary.books.dto.CreateBookRequest;
 import com.example.minilibrary.shared.exception.DuplicateResourceException;
 import com.example.minilibrary.shared.exception.ResourceNotFoundException;
-import com.example.minilibrary.books.BookMapper;
-import com.example.minilibrary.books.Book;
-import com.example.minilibrary.books.ReadingGoalType;
 import com.example.minilibrary.auth.User;
-import com.example.minilibrary.books.BookRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,9 +65,7 @@ class BookServiceTest {
 
     @Test
     void getAllOwnedIsbns_ShouldReturnIsbns() {
-        Book book = new Book();
-        book.setIsbn("isbn123");
-        when(bookRepository.findByUser(user)).thenReturn(List.of(book));
+        when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of("isbn123"));
 
         List<String> isbns = bookService.getAllOwnedIsbns(user);
         assertEquals(1, isbns.size());
@@ -89,7 +83,6 @@ class BookServiceTest {
 
         Book result = bookService.createBook(request, user);
         assertEquals(user, result.getUser());
-        assertNotNull(result.getStartDate());
     }
 
     @Test
@@ -98,46 +91,6 @@ class BookServiceTest {
         when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class, () -> bookService.createBook(request, user));
-    }
-
-    @Test
-    void createBook_ShouldFallbackAuthor_WhenMapperReturnsNull() {
-        CreateBookRequest request = new CreateBookRequest("isbn", "title", "John", "2023", "url", 100, "cat");
-        Book book = new Book();
-        book.setAuthor(null); // Mapper didn't set author
-        when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
-        when(bookMapper.toEntity(request)).thenReturn(book);
-        when(bookRepository.save(any(Book.class))).thenAnswer(i -> i.getArgument(0));
-
-        Book result = bookService.createBook(request, user);
-        assertEquals("John", result.getAuthor());
-    }
-
-    @Test
-    void createBook_ShouldNotSetAuthor_WhenBothNull() {
-        CreateBookRequest request = new CreateBookRequest("isbn", "title", null, "2023", "url", 100, "cat");
-        Book book = new Book();
-        book.setAuthor(null);
-        when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
-        when(bookMapper.toEntity(request)).thenReturn(book);
-        when(bookRepository.save(any(Book.class))).thenAnswer(i -> i.getArgument(0));
-
-        Book result = bookService.createBook(request, user);
-        assertNull(result.getAuthor());
-    }
-
-    @Test
-    void createBook_ShouldNotOverrideStartDate_WhenAlreadySet() {
-        CreateBookRequest request = new CreateBookRequest("isbn", "title", "author", "2023", "url", 100, "cat");
-        Book book = new Book();
-        book.setAuthor("author");
-        book.setStartDate(java.time.LocalDate.of(2024, 1, 1));
-        when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
-        when(bookMapper.toEntity(request)).thenReturn(book);
-        when(bookRepository.save(any(Book.class))).thenAnswer(i -> i.getArgument(0));
-
-        Book result = bookService.createBook(request, user);
-        assertEquals(java.time.LocalDate.of(2024, 1, 1), result.getStartDate());
     }
 
     @Test

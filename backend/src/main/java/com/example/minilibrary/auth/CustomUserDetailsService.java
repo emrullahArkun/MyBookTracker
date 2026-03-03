@@ -1,6 +1,5 @@
 package com.example.minilibrary.auth;
 
-import com.example.minilibrary.auth.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

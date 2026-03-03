@@ -2,8 +2,6 @@ package com.example.minilibrary.shared.security;
 
 import org.junit.jupiter.api.Test;
 
-import java.lang.annotation.Annotation;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class CurrentUserTest {
@@ -33,15 +31,15 @@ class CurrentUserTest {
     }
 
     @Test
-    void currentUser_ShouldHaveAuthenticationPrincipal() {
-        Annotation[] annotations = CurrentUser.class.getAnnotations();
+    void currentUser_ShouldNotHaveAuthenticationPrincipal() {
+        java.lang.annotation.Annotation[] annotations = CurrentUser.class.getAnnotations();
         boolean hasAuthPrincipal = false;
-        for (Annotation a : annotations) {
+        for (java.lang.annotation.Annotation a : annotations) {
             if (a.annotationType().getSimpleName().equals("AuthenticationPrincipal")) {
                 hasAuthPrincipal = true;
                 break;
             }
         }
-        assertTrue(hasAuthPrincipal);
+        assertFalse(hasAuthPrincipal);
     }
 }

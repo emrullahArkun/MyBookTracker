@@ -70,7 +70,7 @@ public class BookControllerIntegrationTest {
                 mockMvc.perform(post("/api/books")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk())
+                                .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.id").exists())
                                 .andExpect(jsonPath("$.title", is("Harry Potter")))
                                 .andExpect(jsonPath("$.authorName", is(author)));
@@ -85,7 +85,7 @@ public class BookControllerIntegrationTest {
                 mockMvc.perform(post("/api/books")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk())
+                                .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.id").exists())
                                 .andExpect(jsonPath("$.title", is("New Book")));
         }

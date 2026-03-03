@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -35,12 +36,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalSessionStateException(IllegalSessionStateException ex,
             WebRequest request) {
         return buildErrorResponse(ex, HttpStatus.CONFLICT, request);
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex,
-            WebRequest request) {
-        return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
@@ -79,7 +74,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, WebRequest request) throws Exception {
-        if (ex.getClass().getName().contains("NoResourceFoundException")) {
+        if (ex instanceof NoResourceFoundException) {
             throw ex;
         }
 

@@ -1,32 +1,20 @@
 package com.example.minilibrary.books;
 
+import com.example.minilibrary.auth.User;
 import com.example.minilibrary.books.dto.CreateBookRequest;
 import com.example.minilibrary.sessions.ReadingSessionService;
 import com.example.minilibrary.shared.exception.DuplicateResourceException;
-import com.example.minilibrary.sessions.ReadingSessionService;
 import com.example.minilibrary.shared.exception.ResourceNotFoundException;
-import com.example.minilibrary.sessions.ReadingSessionService;
-import com.example.minilibrary.books.BookMapper;
-import com.example.minilibrary.sessions.ReadingSessionService;
-import com.example.minilibrary.books.Book;
-import com.example.minilibrary.sessions.ReadingSessionService;
-import com.example.minilibrary.books.BookRepository;
-import com.example.minilibrary.sessions.ReadingSessionService;
 import jakarta.validation.constraints.NotNull;
-import com.example.minilibrary.sessions.ReadingSessionService;
 import lombok.RequiredArgsConstructor;
-import com.example.minilibrary.sessions.ReadingSessionService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import com.example.minilibrary.sessions.ReadingSessionService;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.minilibrary.sessions.ReadingSessionService;
 import org.springframework.validation.annotation.Validated;
-import com.example.minilibrary.sessions.ReadingSessionService;
 
 import java.util.List;
-import com.example.minilibrary.sessions.ReadingSessionService;
 import java.util.Optional;
-import com.example.minilibrary.sessions.ReadingSessionService;
 
 @Service
 @RequiredArgsConstructor
@@ -38,45 +26,31 @@ public class BookService {
     private final ReadingSessionService readingSessionService;
     private final BookProgressService bookProgressService;
 
-    public org.springframework.data.domain.Page<Book> findAllByUser(com.example.minilibrary.auth.User user,
-            org.springframework.data.domain.Pageable pageable) {
+    public Page<Book> findAllByUser(User user, Pageable pageable) {
         return bookRepository.findByUserOrderByCompletedAsc(user, pageable);
     }
 
-    public Optional<Book> findByIdAndUser(@NotNull Long id, com.example.minilibrary.auth.User user) {
+    public Optional<Book> findByIdAndUser(@NotNull Long id, User user) {
         return bookRepository.findByIdAndUser(id, user);
     }
 
-    public boolean existsByIsbnAndUser(String isbn, com.example.minilibrary.auth.User user) {
+    public boolean existsByIsbnAndUser(String isbn, User user) {
         return bookRepository.existsByIsbnAndUser(isbn, user);
     }
 
-    public List<String> getAllOwnedIsbns(com.example.minilibrary.auth.User user) {
-        return bookRepository.findByUser(user).stream()
-                .map(Book::getIsbn)
-                .collect(java.util.stream.Collectors.toList());
+    public List<String> getAllOwnedIsbns(User user) {
+        return bookRepository.findAllIsbnsByUser(user);
     }
 
     @Transactional
-    public Book createBook(CreateBookRequest request, com.example.minilibrary.auth.User user) {
+    public Book createBook(CreateBookRequest request, User user) {
         if (existsByIsbnAndUser(request.isbn(), user)) {
             throw new DuplicateResourceException(
                     "Book with ISBN " + request.isbn() + " already exists in your collection.");
         }
 
         Book book = bookMapper.toEntity(request);
-        // Author is already mapped from authorName to author string by Mapper
         book.setUser(user);
-
-        // Fallback if mapper didn't handle it (redundant if mapper is correct, but
-        // safe)
-        if (book.getAuthor() == null && request.authorName() != null) {
-            book.setAuthor(request.authorName());
-        }
-
-        if (book.getStartDate() == null) {
-            book.setStartDate(java.time.LocalDate.now());
-        }
 
         return bookRepository.save(book);
     }
@@ -87,25 +61,23 @@ public class BookService {
     }
 
     @Transactional
-    public void deleteByIdAndUser(@NotNull Long id, com.example.minilibrary.auth.User user) {
+    public void deleteByIdAndUser(@NotNull Long id, User user) {
         Book book = bookRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
-        // Explicitly delete sessions to avoid FK violation
         readingSessionService.deleteSessionsByBook(user, book);
 
         bookRepository.delete(book);
     }
 
     @Transactional
-    public void deleteAllByUser(com.example.minilibrary.auth.User user) {
+    public void deleteAllByUser(User user) {
         List<Book> books = bookRepository.findByUser(user);
         bookRepository.deleteAll(books);
     }
 
     @Transactional
-    public Book updateBookProgress(@NotNull Long id, @NotNull Integer currentPage,
-            com.example.minilibrary.auth.User user) {
+    public Book updateBookProgress(@NotNull Long id, @NotNull Integer currentPage, User user) {
         Book book = findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
@@ -113,8 +85,7 @@ public class BookService {
     }
 
     @Transactional
-    public Book updateBookStatus(@NotNull Long id, @NotNull Boolean completed,
-            com.example.minilibrary.auth.User user) {
+    public Book updateBookStatus(@NotNull Long id, @NotNull Boolean completed, User user) {
         Book book = findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
@@ -123,8 +94,7 @@ public class BookService {
     }
 
     @Transactional
-    public Book updateReadingGoal(@NotNull Long id, com.example.minilibrary.books.ReadingGoalType type, Integer pages,
-            com.example.minilibrary.auth.User user) {
+    public Book updateReadingGoal(@NotNull Long id, ReadingGoalType type, Integer pages, User user) {
         Book book = findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 

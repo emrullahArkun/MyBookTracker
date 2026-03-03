@@ -1,8 +1,7 @@
 package com.example.minilibrary.discovery;
 
-import com.example.minilibrary.discovery.dto.RecommendedBookDto;
 import com.example.minilibrary.auth.User;
-import com.example.minilibrary.discovery.DiscoveryService;
+import com.example.minilibrary.discovery.dto.RecommendedBookDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,11 +17,11 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -72,6 +71,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getAuthorRecommendations_ShouldReturnData() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getTopAuthors(any(), anyInt())).thenReturn(List.of("Author1"));
                 RecommendedBookDto book = new RecommendedBookDto(
                                 "title", List.of("Author1"), List.of("Cat1"), "2023", 100, "isbn123", "url");
@@ -86,6 +86,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getAuthorRecommendations_ShouldReturnEmptyBooks_WhenNoAuthors() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getTopAuthors(any(), anyInt())).thenReturn(Collections.emptyList());
 
                 mockMvc.perform(get("/api/discovery/authors"))
@@ -96,6 +97,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getCategoryRecommendations_ShouldReturnData() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getTopCategories(any(), anyInt())).thenReturn(List.of("Cat1"));
                 RecommendedBookDto book = new RecommendedBookDto(
                                 "title", List.of("Author1"), List.of("Cat1"), "2023", 100, "isbn123", "url");
@@ -109,6 +111,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getCategoryRecommendations_ShouldReturnEmptyBooks_WhenNoCategories() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getTopCategories(any(), anyInt())).thenReturn(Collections.emptyList());
 
                 mockMvc.perform(get("/api/discovery/categories"))
@@ -119,6 +122,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getRecentSearchRecommendations_ShouldReturnData() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getRecentSearches(any(), anyInt())).thenReturn(List.of("Query1"));
                 RecommendedBookDto book = new RecommendedBookDto(
                                 "title", List.of("Author1"), List.of("Cat1"), "2023", 100, "isbn123", "url");
@@ -132,6 +136,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getRecentSearchRecommendations_ShouldReturnEmptyBooks_WhenNoSearches() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getRecentSearches(any(), anyInt())).thenReturn(Collections.emptyList());
 
                 mockMvc.perform(get("/api/discovery/recent-searches"))
@@ -142,6 +147,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getDiscoveryData_ShouldReturnAllSections() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getTopAuthors(any(), anyInt())).thenReturn(Collections.emptyList());
                 when(discoveryService.getTopCategories(any(), anyInt())).thenReturn(Collections.emptyList());
                 when(discoveryService.getRecentSearches(any(), anyInt())).thenReturn(Collections.emptyList());
@@ -155,6 +161,7 @@ class DiscoveryControllerTest {
 
         @Test
         void getDiscoveryData_ShouldReturnAllSections_WithNonEmptyData() throws Exception {
+                when(discoveryService.getOwnedIsbns(any())).thenReturn(new HashSet<>());
                 when(discoveryService.getTopAuthors(any(), anyInt())).thenReturn(List.of("Author1"));
                 when(discoveryService.getTopCategories(any(), anyInt())).thenReturn(List.of("Cat1"));
                 when(discoveryService.getRecentSearches(any(), anyInt())).thenReturn(List.of("Query1"));
