@@ -61,11 +61,26 @@ export const useAddBookToLibrary = () => {
                 }
             }
 
-            return await booksApi.create(newBook);
+            return { result: await booksApi.create(newBook), isbnInfo };
         },
-        onSuccess: () => {
+        onSuccess: ({ isbnInfo }) => {
             queryClient.invalidateQueries({ queryKey: ['myBooks'] });
             queryClient.invalidateQueries({ queryKey: ['ownedIsbns', user?.email] });
+
+            // Optimistically remove the added book from discovery cache
+            const addedIsbn = isbnInfo?.identifier?.replace(/-/g, '');
+            if (addedIsbn) {
+                queryClient.setQueryData(['discovery', user?.email], (old) => {
+                    if (!old) return old;
+                    const filterBooks = (books) =>
+                        (books || []).filter(b => b.isbn?.replace(/-/g, '') !== addedIsbn);
+                    return {
+                        byAuthor: { ...old.byAuthor, books: filterBooks(old.byAuthor?.books) },
+                        byCategory: { ...old.byCategory, books: filterBooks(old.byCategory?.books) },
+                        bySearch: { ...old.bySearch, books: filterBooks(old.bySearch?.books) },
+                    };
+                });
+            }
             toast.close('add-book-toast');
             toast({
                 id: 'add-book-toast',

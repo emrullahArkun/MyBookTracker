@@ -9,7 +9,6 @@ const TypewriterTitle = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
-        // Reset state when text changes
         setDisplayedText('');
         setCurrentIndex(0);
 
@@ -22,7 +21,7 @@ const TypewriterTitle = () => {
             if (i >= fullText.length) {
                 clearInterval(intervalId);
             }
-        }, 50); // Typing speed
+        }, 50);
 
         return () => clearInterval(intervalId);
     }, [fullText]);
@@ -30,14 +29,15 @@ const TypewriterTitle = () => {
     return (
         <h1 style={{
             display: "flex",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             alignItems: "center",
-            minHeight: "1.5em",
-            fontSize: "3.5rem",
+            minHeight: "1.4em",
+            fontSize: "2.25rem",
+            fontWeight: 600,
+            letterSpacing: "-0.02em",
             width: "100%",
-            textAlign: "left",
-            paddingLeft: "40px",
-            boxSizing: "border-box",
+            textAlign: "center",
+            marginBottom: "20px",
             color: "var(--neutral-50)"
         }}>
             {displayedText}

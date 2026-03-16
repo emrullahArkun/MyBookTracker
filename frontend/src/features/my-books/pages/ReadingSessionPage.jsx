@@ -3,16 +3,13 @@ import { useTranslation } from 'react-i18next';
 import {
     Box,
     Container,
-    Button,
     Grid,
     GridItem,
     VStack,
-    Icon,
     Spinner,
     Flex,
     useDisclosure
 } from '@chakra-ui/react';
-import { FaArrowLeft } from 'react-icons/fa';
 import { useReadingSessionPageLogic } from '../hooks/useReadingSessionPageLogic';
 import { usePinstripeBackground } from '../../../shared/hooks/usePinstripeBackground';
 import { useThemeTokens } from '../../../shared/hooks/useThemeTokens';
@@ -76,22 +73,10 @@ const ReadingSessionPage = () => {
     if (!book) return <Box textAlign="center" py={20} color={textColor}>{t('bookStats.notFound')}</Box>;
 
     return (
-        <Box bg={bgColor} minH="100vh" py={8} px={{ base: 4, md: 8 }}>
-            <Container maxW="container.xl">
-                <Button
-                    leftIcon={<Icon as={FaArrowLeft} />}
-                    mb={8}
-                    variant="ghost"
-                    color={subTextColor}
-                    _hover={{ color: brandColor, bg: 'whiteAlpha.100' }}
-                    onClick={onBack}
-                    pl={0}
-                >
-                    {t('myBooks.title')}
-                </Button>
-
-                <Grid templateColumns={{ base: "1fr", lg: "300px 1fr" }} gap={8} alignItems="start">
-                    <GridItem>
+        <Box bg={bgColor} h="calc(100vh - 60px)" px={{ base: 4, md: 8 }} pt={5} pb={5} overflow="hidden" display="flex" flexDirection="column">
+            <Container maxW="container.xl" flex="1" minH="0" display="flex" flexDirection="column">
+                <Grid templateColumns={{ base: "1fr", lg: "280px 1fr" }} gap={6} alignItems="start" flex="1" minH="0">
+                    <GridItem h="full" overflow="auto" css={{ '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
                         <SessionBookSidebar
                             book={book}
                             cardBg={cardBg}
@@ -100,8 +85,8 @@ const ReadingSessionPage = () => {
                         />
                     </GridItem>
 
-                    <GridItem w="full">
-                        <VStack spacing={6} align="stretch">
+                    <GridItem w="full" h="full" overflow="auto" css={{ '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
+                        <VStack spacing={5} align="stretch">
                             <SessionTimerCard
                                 cardBg={cardBg}
                                 brandColor={brandColor}

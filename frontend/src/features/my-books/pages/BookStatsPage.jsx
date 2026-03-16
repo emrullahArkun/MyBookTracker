@@ -73,12 +73,12 @@ const BookStatsPage = () => {
     if (!book) return <Box textAlign="center" py={20} color={textColor}>{t('bookStats.notFound')}</Box>;
 
     return (
-        <Box bg={bgColor} minH="100vh" py={8} px={{ base: 4, md: 8 }} w="100%">
-            <Box w="100%">
+        <Box bg={bgColor} h="calc(100vh - 60px)" px={{ base: 4, md: 8 }} pt={5} pb={5} w="100%" overflow="hidden" display="flex" flexDirection="column">
+            <Box w="100%" flex="1" minH="0">
 
-                <Grid templateColumns={{ base: "1fr", lg: "300px 1fr" }} gap={8} alignItems="start" w="100%">
+                <Grid templateColumns={{ base: "1fr", lg: "280px 1fr" }} gap={6} alignItems="start" w="100%" h="full">
                     {/* Left Sidebar: Detailed Book Info */}
-                    <GridItem position={{ lg: "sticky" }} top="20px">
+                    <GridItem h="full" overflow="auto" css={{ '&::-webkit-scrollbar': { display: 'none' }, scrollbarWidth: 'none' }}>
                         <BookStatsSidebar
                             book={book}
                             stats={stats}
@@ -91,10 +91,10 @@ const BookStatsPage = () => {
                     </GridItem>
 
                     {/* Right Content: Dashboard */}
-                    <GridItem w="full">
-                        <VStack spacing={8} align="stretch" w="full">
+                    <GridItem w="full" h="full" display="flex" flexDirection="column" overflow="hidden">
+                        <VStack spacing={5} align="stretch" w="full" h="full" overflow="hidden">
                             {/* KPI Cards */}
-                            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+                            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={5} flexShrink={0}>
                                 <StatsCard
                                     icon={FaClock}
                                     label={t('bookStats.totalTime.label')}

@@ -65,7 +65,7 @@ const BookCover = forwardRef(({
         }
         setImgSrc(newSafeUrl);
         setImageLoaded(false);
-    }, [book, googleSaysNoImage, googleUrl, fallbackUrl]);
+    }, [googleSaysNoImage, googleUrl, fallbackUrl]);
 
     const handleImageError = () => {
         if (imgSrc === fallbackUrl) {

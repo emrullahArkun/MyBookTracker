@@ -1,10 +1,7 @@
 import { useState, useRef } from 'react';
 import { FaPen, FaBook, FaSearch, FaPlus, FaSpinner, FaBookOpen } from 'react-icons/fa';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAnimation } from '../../../context/AnimationContext';
-import { useAuth } from '../../../context/AuthContext';
-import { booksApi } from '../../books/api';
 import { useAddBookToLibrary } from '../../books/hooks/useAddBookToLibrary';
 import BookCover from '../../../ui/BookCover';
 import styles from './DiscoverySection.module.css';
@@ -34,7 +31,7 @@ const DiscoverySection = ({
                 <div className={styles.sectionHeader}>
                     <Icon className={styles.headerIcon} />
                     <h3 className={styles.sectionTitle}>{title}</h3>
-                    {subtitle && <span className={styles.sectionSubtitle}>• {subtitle}</span>}
+                    {subtitle && <span className={styles.sectionSubtitle}>{subtitle}</span>}
                 </div>
                 <div className={styles.emptyState}>
                     <FaBookOpen className={styles.emptyIcon} />
@@ -49,7 +46,7 @@ const DiscoverySection = ({
             <div className={styles.sectionHeader}>
                 <Icon className={styles.headerIcon} />
                 <h3 className={styles.sectionTitle}>{title}</h3>
-                {subtitle && <span className={styles.sectionSubtitle}>• {subtitle}</span>}
+                {subtitle && <span className={styles.sectionSubtitle}>{subtitle}</span>}
             </div>
             <div className={styles.booksGrid}>
                 {books.map((book, index) => (
@@ -67,30 +64,13 @@ const DiscoveryBookCard = ({ book }) => {
     const [isAdding, setIsAdding] = useState(false);
     const imageRef = useRef(null);
     const { t } = useTranslation();
-    const { token, user } = useAuth();
     const { flyBook } = useAnimation();
-
-    // Fetch owned ISBNs to check duplicates
-    const { data: ownedIsbns } = useQuery({
-        queryKey: ['ownedIsbns', user?.email],
-        queryFn: async () => {
-            if (!token) return [];
-            const response = await booksApi.getOwnedIsbns();
-            return response || [];
-        },
-        enabled: !!token,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    const ownedIsbnsSet = new Set((ownedIsbns || []).map(isbn => isbn.replace(/-/g, '')));
-    const cleanIsbn = book.isbn?.replace(/-/g, '');
-    const isOwned = cleanIsbn && ownedIsbnsSet.has(cleanIsbn);
 
     const addBookMutation = useAddBookToLibrary();
 
     const handleAddClick = async (e) => {
         e.stopPropagation();
-        if (isAdding || isOwned) return;
+        if (isAdding) return;
 
         // Start animation
         if (imageRef.current) {
@@ -117,7 +97,7 @@ const DiscoveryBookCard = ({ book }) => {
 
     return (
         <div
-            className={`${styles.bookCard} ${isOwned ? styles.owned : ''}`}
+            className={styles.bookCard}
             onClick={handleAddClick}
             role="button"
             tabIndex={0}
@@ -142,20 +122,13 @@ const DiscoveryBookCard = ({ book }) => {
                     h="100%"
                     borderRadius="8px"
                 />
-                {!isOwned && (
-                    <div className={styles.hoverOverlay}>
-                        {isAdding ? (
-                            <FaSpinner className={`${styles.plusIcon} ${styles.spinning}`} />
-                        ) : (
-                            <FaPlus className={styles.plusIcon} />
-                        )}
-                    </div>
-                )}
-                {isOwned && (
-                    <div className={styles.ownedBadge}>
-                        ✓
-                    </div>
-                )}
+                <div className={styles.hoverOverlay}>
+                    {isAdding ? (
+                        <FaSpinner className={`${styles.plusIcon} ${styles.spinning}`} />
+                    ) : (
+                        <FaPlus className={styles.plusIcon} />
+                    )}
+                </div>
             </div>
             <p className={styles.bookTitle} title={book.title}>
                 {book.title}

@@ -107,6 +107,13 @@ export const useBookSearch = () => {
 
     const addBookMutation = useAddBookToLibrary();
 
+    // Clear results when input is emptied
+    useEffect(() => {
+        if (!query.trim()) {
+            setSearchTerm('');
+        }
+    }, [query]);
+
     const searchBooks = (e) => {
         if (e) e.preventDefault();
         setSearchTerm(query.trim());

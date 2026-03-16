@@ -7,7 +7,6 @@ import {
     Text,
     Badge,
     Progress,
-    Button,
     Checkbox,
     VStack,
     Center,
@@ -27,30 +26,34 @@ const MyBookCard = ({
     const navigate = useNavigate();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // const cardBg = useColorModeValue('white', 'gray.700');
-    const hoverTransform = 'translateY(-5px)';
-
-
-
     const handleUpdate = (id, page) => {
         onUpdateProgress(id, page);
         setIsModalOpen(false);
     };
 
-
+    const info = book.volumeInfo || book;
+    const authors = info.authors || info.authorName;
+    const authorText = Array.isArray(authors) ? authors[0] : authors;
+    const progressPercent = book.pageCount > 0 ? ((book.currentPage || 0) / book.pageCount) * 100 : 0;
 
     return (
         <Box
             position="relative"
             transition="transform 0.2s"
-            _hover={{ transform: hoverTransform }}
-            maxW="240px"
+            _hover={{ transform: 'translateY(-4px)' }}
             w="100%"
-            m="0 auto"
-            className="book-card-detail"
             role="group"
         >
-            <Box position="absolute" top="5px" right="5px" zIndex="20">
+            {/* Checkbox - visible on hover or when selected */}
+            <Box
+                position="absolute"
+                top="6px"
+                right="6px"
+                zIndex="20"
+                opacity={isSelected ? 1 : 0}
+                _groupHover={{ opacity: 1 }}
+                transition="opacity 0.15s"
+            >
                 <Checkbox
                     isChecked={isSelected}
                     onChange={() => onToggleSelect(book.id)}
@@ -58,25 +61,24 @@ const MyBookCard = ({
                     colorScheme="blue"
                     bg="white"
                     rounded="md"
-                    aria-label={t('myBooks.markAsRead') || 'Mark as Read'}
+                    aria-label="Select book"
                 />
             </Box>
 
+            {/* Cover */}
             <Box
-                h="320px"
-                mb="10px"
+                h="280px"
                 position="relative"
                 overflow="hidden"
-                borderRadius="md"
-                boxShadow="md"
+                borderRadius="10px"
+                boxShadow="0 2px 8px rgba(0,0,0,0.3)"
             >
-                {/* Cover Image */}
                 <BookCover
                     book={book}
                     w="100%"
                     h="100%"
                     objectFit="cover"
-                    borderRadius="md"
+                    borderRadius="10px"
                     fallbackIconSize={24}
                 />
 
@@ -89,22 +91,34 @@ const MyBookCard = ({
                         w="100%"
                         h="100%"
                         bg="rgba(0, 0, 0, 0.4)"
-                        borderRadius="md"
+                        borderRadius="10px"
                         alignItems="flex-end"
-                        pb="20px"
+                        pb="16px"
                     >
                         <Badge
                             bg="white"
                             color="black"
-                            fontSize="0.9rem"
+                            fontSize="0.8rem"
                             px="3"
                             py="1"
                             borderRadius="md"
-                            boxShadow="base"
                         >
                             {t('bookCard.finished')}
                         </Badge>
                     </Center>
+                )}
+
+                {/* Progress bar integrated into cover bottom */}
+                {book.pageCount > 0 && !book.completed && (
+                    <Box position="absolute" bottom="0" left="0" right="0">
+                        <Progress
+                            value={progressPercent}
+                            size="xs"
+                            colorScheme="green"
+                            bg="blackAlpha.500"
+                            borderRadius="0"
+                        />
+                    </Box>
                 )}
 
                 {/* Hover Overlay */}
@@ -114,118 +128,100 @@ const MyBookCard = ({
                     bg="blackAlpha.600"
                     opacity="0"
                     _groupHover={{ opacity: 1 }}
-                    transition="all 0.3s ease"
+                    transition="all 0.25s ease"
                     direction="column"
                     justify="space-between"
                     align="center"
                     zIndex="10"
+                    borderRadius="10px"
                 >
-                    {/* Centered Play Button (Start Session) */}
+                    {/* Play button */}
                     <Center
                         flex="1"
                         w="100%"
                         cursor="pointer"
-                        role="group"
                         onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/books/${book.id}/session`);
                         }}
+                        _hover={{}}
                     >
-                        <VStack
-                            spacing={2}
-                            as="div"
-                            _groupHover={{ transform: "scale(1.1)" }}
-                            transition="all 0.2s"
-                        >
+                        <VStack spacing={1}>
                             <Box
                                 color="white"
-                                p={4}
+                                p={3}
                                 borderRadius="full"
-                                bg="whiteAlpha.300"
-                                _groupHover={{ bg: "whiteAlpha.500" }} // This will now trigger on Center hover as well, which is good.
+                                bg="whiteAlpha.200"
                                 transition="all 0.2s"
+                                _hover={{ bg: "whiteAlpha.400", transform: "scale(1.1)" }}
                             >
-                                <FaPlay size="24px" />
+                                <FaPlay size="20px" />
                             </Box>
-                            <Text
-                                color="white"
-                                fontSize="sm"
-                                fontWeight="medium"
-                                opacity="0"
-                                transform="translateY(-10px)"
-                                _groupHover={{ opacity: 1, transform: "translateY(0)" }}
-                                transition="all 0.3s ease"
-                            >
-                                {t('readingSession.start', 'Lesen starten')}
+                            <Text color="whiteAlpha.800" fontSize="xs" fontWeight="500">
+                                {t('readingSession.start')}
                             </Text>
                         </VStack>
                     </Center>
 
-                    {/* Bottom Stats Button */}
-                    <Button
+                    {/* Stats button */}
+                    <Box
+                        as="button"
                         w="100%"
-                        borderRadius="0"
-                        variant="solid"
-                        bg="var(--navbar-bg)"
-                        color="white"
-                        _hover={{ bg: "var(--navbar-bg)", filter: "brightness(1.1)" }}
-                        leftIcon={<FaChartBar />} // Using FaChartBar, need to import if not present, checking imports...
+                        py={2}
+                        bg="whiteAlpha.100"
+                        color="whiteAlpha.800"
+                        fontSize="xs"
+                        fontWeight="500"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        gap={2}
+                        cursor="pointer"
+                        transition="all 0.15s"
+                        _hover={{ bg: "whiteAlpha.200", color: "white" }}
                         onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/books/${book.id}/stats`);
                         }}
-                        size="md"
-                        mb={0}
+                        borderBottomRadius="10px"
                     >
-                        {t('bookCard.stats', 'Statistik')}
-                    </Button>
+                        <FaChartBar size="12px" />
+                        {t('navbar.stats')}
+                    </Box>
                 </Flex>
             </Box>
 
-            <VStack align="stretch" spacing={2}>
-                {book.pageCount > 0 ? (
-                    <>
-                        <Box position="relative" w="100%">
-                            <Progress
-                                value={((book.currentPage || 0) / book.pageCount) * 100}
-                                height="20px"
-                                colorScheme="green"
-                                borderRadius="full"
-                            />
-                            <Text
-                                position="absolute"
-                                top="50%"
-                                left="50%"
-                                transform="translate(-50%, -50%)"
-                                fontSize="xs"
-                                fontWeight="bold"
-                                color="black"
-                                w="100%"
-                                textAlign="center"
-                                zIndex={1}
-                            >
-                                {t('bookCard.readProgress', { current: book.currentPage || 0, total: book.pageCount })}
-                            </Text>
-                        </Box>
-                        {/* External Start Reading button removed */}
-                    </>
-                ) : (
-                    <Text fontSize="sm" color="gray.500" textAlign="center">{t('bookCard.pagesUnknown')}</Text>
+            {/* Book info below cover */}
+            <VStack align="start" spacing={0} mt={2} px={1}>
+                <Text
+                    fontSize="sm"
+                    fontWeight="600"
+                    color="white"
+                    noOfLines={1}
+                    lineHeight="1.3"
+                >
+                    {book.title}
+                </Text>
+                {authorText && (
+                    <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                        {authorText}
+                    </Text>
+                )}
+                {book.pageCount > 0 && (
+                    <Text fontSize="xs" color="gray.400" mt={0.5}>
+                        {book.currentPage || 0} / {book.pageCount} {t('bookStats.pages')}
+                    </Text>
                 )}
             </VStack>
 
-            {
-                isModalOpen && (
-                    <UpdateProgressModal
-                        book={book}
-                        onClose={() => setIsModalOpen(false)}
-                        onUpdate={handleUpdate}
-                    />
-                )
-            }
-
-
-        </Box >
+            {isModalOpen && (
+                <UpdateProgressModal
+                    book={book}
+                    onClose={() => setIsModalOpen(false)}
+                    onUpdate={handleUpdate}
+                />
+            )}
+        </Box>
     );
 };
 

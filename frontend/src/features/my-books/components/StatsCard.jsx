@@ -17,37 +17,37 @@ const StatsCard = ({ icon, label, value, subLabel, color, delay, bg, textColor }
         <MotionCard
             bg={bg}
             borderRadius="2xl"
-            boxShadow="lg"
+            boxShadow="none"
+            border="1px solid"
+            borderColor="whiteAlpha.100"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay }}
             overflow="hidden"
-            backdropFilter="blur(10px)"
-            _hover={{ transform: 'translateY(-4px)', boxShadow: 'xl', bg: 'whiteAlpha.300' }}
         >
-            <CardBody p={6}>
-                <Flex align="center" mb={4}>
+            <CardBody p={5}>
+                <Flex align="center" mb={3}>
                     <Flex
                         justify="center"
                         align="center"
-                        w={10}
-                        h={10}
-                        borderRadius="xl"
-                        bg={`${color.split('.')[0]}.900`}
+                        w={8}
+                        h={8}
+                        borderRadius="lg"
+                        bg="whiteAlpha.100"
                         color={color}
-                        mr={4}
+                        mr={3}
                     >
-                        <Icon as={icon} boxSize={5} />
+                        <Icon as={icon} boxSize={4} />
                     </Flex>
-                    <Text fontSize="sm" fontWeight="bold" color="gray.400" textTransform="uppercase" letterSpacing="wide">
+                    <Text fontSize="xs" fontWeight="600" color="gray.400" textTransform="uppercase" letterSpacing="wide">
                         {label}
                     </Text>
                 </Flex>
                 <Stat>
-                    <StatNumber fontSize="4xl" fontWeight="800" color={textColor}>
+                    <StatNumber fontSize="3xl" fontWeight="700" color={textColor} lineHeight="1.1">
                         {value}
                     </StatNumber>
-                    <StatHelpText m={0} fontSize="sm" color="gray.400" fontWeight="medium">
+                    <StatHelpText m={0} mt={1} fontSize="xs" color="gray.500" fontWeight="medium">
                         {subLabel}
                     </StatHelpText>
                 </Stat>

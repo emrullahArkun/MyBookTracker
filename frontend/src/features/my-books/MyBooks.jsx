@@ -87,18 +87,18 @@ function MyBooks() {
             const padding = width >= 768 ? 64 : 32;
             const scrollbarBuffer = 20;
             const availableWidth = width - padding - scrollbarBuffer;
-            const cardWidth = 240;
-            const gap = 32;
+            const cardWidth = 200;
+            const gap = 24;
             const itemWidth = cardWidth + gap;
 
             let columns = Math.floor((availableWidth + gap) / itemWidth);
             if (width < 480) {
-                columns = 1;
+                columns = 2;
             } else if (columns < 1) {
                 columns = 1;
             }
 
-            const newPageSize = columns * 2;
+            const newPageSize = columns * 3;
             setDynamicPageSize(prev => prev !== newPageSize ? newPageSize : prev);
         };
 
@@ -122,46 +122,48 @@ function MyBooks() {
 
     return (
         <Box w="100%" px={{ base: 4, md: 8 }} py={6} ref={containerRef} minH="calc(100vh - 80px)">
-            <Flex justify="flex-end" align="center" mb={6} wrap="wrap" gap={4}>
-
-                <HStack spacing={4}>
-                    {selectedBooks.size > 0 && (
-                        <Button
-                            leftIcon={<FaTrash />}
-                            onClick={onDeleteSelectedOpen}
-                            bg="whiteAlpha.200"
-                            color="white"
-                            _hover={{ bg: 'whiteAlpha.300' }}
-                            _active={{ bg: 'whiteAlpha.400' }}
-                            backdropFilter="blur(5px)"
-                        >
-                            {t('myBooks.deleteSelectedCount', { count: selectedBooks.size })}
-                        </Button>
-                    )}
+            {/* Actions */}
+            <Flex justify="flex-end" align="center" mb={6} wrap="wrap" gap={3}>
+                {selectedBooks.size > 0 && (
                     <Button
-                        leftIcon={<FaTrashAlt />}
-                        onClick={onDeleteAllOpen}
-                        bg="whiteAlpha.200"
-                        color="white"
-                        _hover={{ bg: 'whiteAlpha.300' }}
-                        _active={{ bg: 'whiteAlpha.400' }}
-                        backdropFilter="blur(5px)"
+                        size="sm"
+                        leftIcon={<FaTrash />}
+                        onClick={onDeleteSelectedOpen}
+                        bg="whiteAlpha.100"
+                        color="red.300"
+                        border="1px solid"
+                        borderColor="red.800"
+                        _hover={{ bg: 'red.900', borderColor: 'red.700' }}
+                        _active={{ bg: 'red.800' }}
                     >
-                        {t('myBooks.deleteAll')}
+                        {t('myBooks.deleteSelectedCount', { count: selectedBooks.size })}
                     </Button>
-                </HStack>
+                )}
+                <Button
+                    size="sm"
+                    leftIcon={<FaTrashAlt />}
+                    onClick={onDeleteAllOpen}
+                    bg="whiteAlpha.100"
+                    color="gray.300"
+                    border="1px solid"
+                    borderColor="whiteAlpha.200"
+                    _hover={{ color: 'red.300', bg: 'whiteAlpha.200', borderColor: 'red.800' }}
+                    _active={{ bg: 'whiteAlpha.300' }}
+                >
+                    {t('myBooks.deleteAll')}
+                </Button>
             </Flex>
 
             {books.length === 0 ? (
-                <Center flexDirection="column" py={10} color="gray.300">
-                    <Text fontSize="lg">{t('myBooks.empty.line1')}</Text>
-                    <Text>{t('myBooks.empty.line2')}</Text>
+                <Center flexDirection="column" py={16} color="gray.400">
+                    <Text fontSize="lg" mb={1}>{t('myBooks.empty.line1')}</Text>
+                    <Text fontSize="sm" color="gray.500">{t('myBooks.empty.line2')}</Text>
                 </Center>
             ) : (
                 <>
-                    <Flex wrap="wrap" gap={8} justify="flex-start" minH="800px" alignContent="flex-start">
+                    <Flex wrap="wrap" gap={6} justify="flex-start" alignContent="flex-start">
                         {books.map(book => (
-                            <Box key={book.id} w={{ base: "100%", sm: "240px" }} flexShrink={0}>
+                            <Box key={book.id} w={{ base: "calc(50% - 12px)", sm: "200px" }} flexShrink={0}>
                                 <MyBookCard
                                     book={book}
                                     isSelected={selectedBooks.has(book.id)}
@@ -173,35 +175,29 @@ function MyBooks() {
                     </Flex>
 
                     {totalPages > 1 && (
-                        <Flex justify="center" align="center" mt={8} gap={4}>
+                        <Flex justify="center" align="center" mt={10} gap={4}>
                             <IconButton
                                 icon={<FaChevronLeft />}
                                 onClick={() => setPage(p => Math.max(0, p - 1))}
                                 isDisabled={page === 0}
-                                colorScheme="whiteAlpha"
                                 color="white"
                                 variant="ghost"
-                                fontSize="2xl"
+                                fontSize="lg"
                                 aria-label="Previous Page"
-                                _hover={{
-                                    bg: 'whiteAlpha.200',
-                                    transform: 'scale(1.1)'
-                                }}
+                                _hover={{ bg: 'whiteAlpha.100' }}
                             />
-
+                            <Text color="gray.500" fontSize="sm">
+                                {page + 1} / {totalPages}
+                            </Text>
                             <IconButton
                                 icon={<FaChevronRight />}
                                 onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
                                 isDisabled={page >= totalPages - 1}
-                                colorScheme="whiteAlpha"
                                 color="white"
                                 variant="ghost"
-                                fontSize="2xl"
+                                fontSize="lg"
                                 aria-label="Next Page"
-                                _hover={{
-                                    bg: 'whiteAlpha.200',
-                                    transform: 'scale(1.1)'
-                                }}
+                                _hover={{ bg: 'whiteAlpha.100' }}
                             />
                         </Flex>
                     )}

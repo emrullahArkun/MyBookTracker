@@ -18,31 +18,35 @@ const SessionNotesCard = ({ note, setNote, cardBg }) => {
         <MotionCard
             bg={cardBg}
             borderRadius="2xl"
-            boxShadow="lg"
+            border="1px solid"
+            borderColor="whiteAlpha.100"
+            boxShadow="none"
             p={6}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            backdropFilter="blur(10px)"
         >
-            <Flex align="center" mb={4} color="yellow.200">
-                <Icon as={FaStickyNote} mr={2} />
-                <Text fontWeight="bold" textTransform="uppercase" fontSize="sm" letterSpacing="wider">{t('readingSession.notes.title')}</Text>
+            <Flex align="center" mb={4} color="gray.400">
+                <Icon as={FaStickyNote} mr={2} boxSize={3.5} />
+                <Text fontWeight="600" textTransform="uppercase" fontSize="xs" letterSpacing="wider">
+                    {t('readingSession.notes.title')}
+                </Text>
             </Flex>
             <Textarea
                 placeholder={t('readingSession.notes.placeholder')}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                bg="whiteAlpha.100"
-                border="none"
+                bg="whiteAlpha.50"
+                border="1px solid"
+                borderColor="whiteAlpha.100"
                 color="white"
-                _placeholder={{ color: "gray.500" }}
-                _focus={{ bg: "whiteAlpha.200", boxShadow: "none" }}
+                _placeholder={{ color: "gray.400" }}
+                _focus={{ borderColor: "whiteAlpha.300", boxShadow: "none" }}
                 resize="none"
-                rows={5}
+                rows={4}
             />
             <Flex justify="flex-end" mt={2}>
-                <Text fontSize="xs" color="gray.500">{t('readingSession.notes.helper')}</Text>
+                <Text fontSize="xs" color="gray.600">{t('readingSession.notes.helper')}</Text>
             </Flex>
         </MotionCard>
     );

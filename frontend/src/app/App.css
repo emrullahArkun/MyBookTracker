@@ -8,8 +8,8 @@
   width: 100%;
   margin: 0 auto;
   padding: 0;
-  padding-top: 80px;
-  /* Offset for fixed navbar */
+  padding-top: 60px;
+  /* Offset for fixed navbar (60px height) */
   text-align: center;
 }
 

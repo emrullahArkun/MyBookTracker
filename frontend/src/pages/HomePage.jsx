@@ -8,7 +8,6 @@ const HomePage = () => {
 
     return (
         <div className={styles.homeContent}>
-            <TypewriterTitle />
             <BookSearch />
         </div>
     );

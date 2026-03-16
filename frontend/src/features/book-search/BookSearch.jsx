@@ -1,9 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import styles from './BookSearch.module.css';
+import homeStyles from '../../pages/HomePage.module.css';
 import { useBookSearch } from './hooks/useBookSearch.jsx';
 import SearchForm from './components/SearchForm';
 import SearchResultCard from './components/SearchResultCard';
 import SearchResultSkeleton from './components/SearchResultSkeleton';
+import TypewriterTitle from '../../shared/components/TypewriterTitle';
 import { useTranslation } from 'react-i18next';
 
 function BookSearch({ onBookAdded }) {
@@ -20,6 +22,25 @@ function BookSearch({ onBookAdded }) {
         ownedIsbns
     } = useBookSearch();
 
+    const gridRef = useRef(null);
+    const [columns, setColumns] = useState(null);
+
+    useEffect(() => {
+        const grid = gridRef.current;
+        if (!grid) return;
+
+        const measure = () => {
+            const style = window.getComputedStyle(grid);
+            const cols = style.getPropertyValue('grid-template-columns').split(' ').length;
+            setColumns(cols);
+        };
+
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(grid);
+        return () => observer.disconnect();
+    }, []);
+
     const handleAddBook = useCallback(async (book) => {
         try {
             const success = await addBookToLibrary(book);
@@ -31,14 +52,24 @@ function BookSearch({ onBookAdded }) {
         }
     }, [addBookToLibrary, onBookAdded]);
 
+    const hasResults = results.length > 0 || loading;
+
+    // Trim results to fill complete rows only
+    const visibleResults = columns && results.length > 0
+        ? results.slice(0, Math.floor(results.length / columns) * columns)
+        : results;
+
     return (
         <div className={styles.searchContainer}>
-            <SearchForm query={query} setQuery={setQuery} onSearch={searchBooks} />
+            <div className={`${homeStyles.heroSection} ${hasResults ? homeStyles.compact : homeStyles.centered}`}>
+                <TypewriterTitle />
+                <SearchForm query={query} setQuery={setQuery} onSearch={searchBooks} />
+            </div>
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <div className={styles.resultsGrid}>
-                {results.map((book) => (
+            <div className={styles.resultsGrid} ref={gridRef}>
+                {visibleResults.map((book) => (
                     <SearchResultCard
                         key={book.id}
                         book={book}
@@ -47,16 +78,16 @@ function BookSearch({ onBookAdded }) {
                     />
                 ))}
 
-                {loading && Array.from({ length: 10 }).map((_, index) => (
+                {loading && Array.from({ length: columns || 5 }).map((_, index) => (
                     <SearchResultSkeleton key={`skeleton-${index}`} />
                 ))}
             </div>
 
-            {results.length > 0 && hasMore && !loading && (
+            {visibleResults.length > 0 && hasMore && !loading && (
                 <button onClick={loadMore} className={styles.loadMoreBtn}>{t('search.loadMore')}</button>
             )}
 
-            {!hasMore && results.length > 0 && <div className={styles.endMessage}>{t('search.endResults')}</div>}
+            {!hasMore && visibleResults.length > 0 && <div className={styles.endMessage}>{t('search.endResults')}</div>}
         </div>
     );
 }

@@ -16,9 +16,6 @@ const SearchForm = ({ query, setQuery, onSearch }) => {
                 placeholder={t('search.placeholder', 'Suche nach Titel, Autor, ISBN...')}
                 className={styles.searchInput}
             />
-            <button type="submit" className={styles.searchButton}>
-                {t('search.button', 'Suchen')}
-            </button>
         </form>
     );
 };

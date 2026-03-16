@@ -60,7 +60,7 @@ const GoalsPage = () => {
     const completedCount = books.filter(b => (b.readingGoalProgress || 0) >= b.readingGoalPages).length;
 
     return (
-        <Box px={{ base: 4, md: 10 }} py={8} maxW="1100px" mx="auto">
+        <Box px={{ base: 4, md: 10 }} py={8} maxW="1100px" mx="auto" minH="calc(100vh - 80px)">
             {/* Header */}
             <HStack spacing={4} mb={2}>
                 <Icon as={FaBullseye} color="teal.300" boxSize={8} />
