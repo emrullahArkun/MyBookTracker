@@ -1,6 +1,6 @@
-# MyBooks
+# ReadFlow
 
-MyBooks ist ein Web-Tracker für dein Leseerlebnis – von der Buchsuche bis zur detaillierten Statistik.
+ReadFlow ist ein Web-Tracker für dein Leseerlebnis – von der Buchsuche bis zur detaillierten Statistik.
 
 ## Features
 

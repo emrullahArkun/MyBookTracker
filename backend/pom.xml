@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>library-books</artifactId>
+	<artifactId>readflow</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>library-books</name>
-	<description>Mini Library System Backend Practice</description>
+	<name>readflow</name>
+	<description>ReadFlow - Reading Tracker Backend</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>

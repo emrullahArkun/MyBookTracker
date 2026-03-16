@@ -1,6 +1,6 @@
 {
     "navbar": {
-        "brand": "Library Books",
+        "brand": "ReadFlow",
         "discovery": "Discover",
         "search": "Search",
         "myBooks": "My Books",
@@ -118,7 +118,7 @@
         "enterPassword": "Enter your password",
         "errorTitle": "Error",
         "brand": {
-            "appName": "Library Books",
+            "appName": "ReadFlow",
             "tagline": "Your personal cozy reading space.",
             "features": {
                 "track": "Track your library",
