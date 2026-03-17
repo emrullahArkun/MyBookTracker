@@ -44,7 +44,7 @@ const ReadingSessionPage = () => {
     } = useReadingSessionPageLogic(id);
 
     const navigate = useNavigate();
-    const { isOpen: isExitConfirmOpen, onOpen: onExitConfirmOpen, onClose: onExitConfirmClose } = useDisclosure();
+    const { isOpen: isExitConfirmOpen, onClose: onExitConfirmClose } = useDisclosure();
 
     const confirmExit = () => {
         onExitConfirmClose();

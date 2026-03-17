@@ -142,4 +142,15 @@ class ReadingSessionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(10));
     }
+
+    @Test
+    void getStreak_ShouldReturnStreakData() throws Exception {
+        when(sessionService.calculateCurrentStreak(any())).thenReturn(5);
+        when(sessionService.calculateLongestStreak(any())).thenReturn(12);
+
+        mockMvc.perform(get("/api/sessions/streak"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentStreak").value(5))
+                .andExpect(jsonPath("$.longestStreak").value(12));
+    }
 }
