@@ -7,7 +7,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { ReadingSessionProvider } from '../../context/ReadingSessionContext';
 import MyBooks from './MyBooks';
 import { server } from '../../mocks/server';
-import { http, HttpResponse, delay } from 'msw';
+import { http, HttpResponse } from 'msw';
 // Mock translations
 import '../../i18n';
 
