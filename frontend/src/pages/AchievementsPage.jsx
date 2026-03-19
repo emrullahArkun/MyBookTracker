@@ -62,7 +62,7 @@ const AchievementCard = ({ achievement, cardBg, textColor }) => {
                             </Badge>
                         )}
                     </Flex>
-                    <Text fontSize="xs" color="gray.300" noOfLines={1}>
+                    <Text fontSize="xs" color="gray.300" noOfLines={1} textAlign="left">
                         {t(`stats.achievements.${achievement.id}.desc`)}
                     </Text>
                     {achievement.unlockedDetail && (
