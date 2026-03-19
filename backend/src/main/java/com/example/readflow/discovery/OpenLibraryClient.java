@@ -4,6 +4,7 @@ import com.example.readflow.discovery.dto.RecommendedBookDto;
 import com.example.readflow.discovery.dto.SearchResultDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -38,6 +39,7 @@ public class OpenLibraryClient {
         this.headers.set("User-Agent", userAgent);
     }
 
+    @Cacheable(value = "openLibraryBooks", key = "'author:' + #author + ':' + #maxResults")
     public List<RecommendedBookDto> getBooksByAuthor(String author, int maxResults) {
         String url = SEARCH_URL + "?author=" + encodeParam(author)
                 + "&language=" + DEFAULT_LANGUAGE
@@ -45,6 +47,7 @@ public class OpenLibraryClient {
         return fetchBooks(url);
     }
 
+    @Cacheable(value = "openLibraryBooks", key = "'category:' + #category + ':' + #maxResults")
     public List<RecommendedBookDto> getBooksByCategory(String category, int maxResults) {
         String url = SEARCH_URL + "?subject=" + encodeParam(category)
                 + "&language=" + DEFAULT_LANGUAGE
@@ -52,6 +55,7 @@ public class OpenLibraryClient {
         return fetchBooks(url);
     }
 
+    @Cacheable(value = "openLibraryBooks", key = "'query:' + #query + ':' + #maxResults")
     public List<RecommendedBookDto> getBooksByQuery(String query, int maxResults) {
         String url = SEARCH_URL + "?q=" + encodeParam(query)
                 + "&language=" + DEFAULT_LANGUAGE
@@ -59,6 +63,7 @@ public class OpenLibraryClient {
         return fetchBooks(url);
     }
 
+    @Cacheable(value = "openLibrarySearch", key = "#query + ':' + #offset + ':' + #limit")
     public SearchResultDto searchBooks(String query, int offset, int limit) {
         String url = SEARCH_URL + "?q=" + encodeParam(query)
                 + "&language=" + DEFAULT_LANGUAGE
