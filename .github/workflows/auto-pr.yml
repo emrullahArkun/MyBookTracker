@@ -15,7 +15,7 @@ jobs:
 
       - name: Create PR for latest commit
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           COMMIT_MSG=$(git log -1 --pretty=%s)
           SHORT_SHA=$(git rev-parse --short HEAD)
