@@ -128,7 +128,7 @@ export const useMyBooks = (pageSize = 12) => {
         const failed = results.some(r => r.status === 'rejected');
 
         if (failed) {
-            console.error('Some deletions failed', results);
+            // Some deletions failed — rollback optimistic update
             if (previousData) {
                 queryClient.setQueryData(queryKey, previousData);
             }

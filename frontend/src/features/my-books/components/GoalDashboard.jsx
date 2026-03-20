@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Box,
@@ -15,51 +14,32 @@ import {
     Badge
 } from '@chakra-ui/react';
 import { FaCheckCircle } from 'react-icons/fa';
-import { booksApi } from '../../books/api';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../../context/AuthContext';
+import { booksApi } from '../../books/api';
 
 const GoalDashboard = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [books, setBooks] = useState([]);
+    const { token } = useAuth();
 
-    useEffect(() => {
-        const fetchGoals = async () => {
-            try {
-                // Fetch enough books to find goals. 
-                // Ideal world: dedicated endpoint. Real world MVP: fetch 50.
-                // Response is the JSON body directly (apiClient decodes it), so use response.content
-                const response = await booksApi.getAll(0, 50);
-                const allBooks = response.content || [];
+    const { data: booksData = [] } = useQuery({
+        queryKey: ['goals', 'dashboard'],
+        queryFn: () => booksApi.getWithGoals(),
+        enabled: !!token,
+    });
 
-                // Filter books with goals
-                const booksWithGoals = allBooks.filter(b => b.readingGoalType && b.readingGoalPages > 0);
+    const books = [...booksData].sort((a, b) => {
+        const progA = (a.readingGoalProgress || 0) / a.readingGoalPages;
+        const progB = (b.readingGoalProgress || 0) / b.readingGoalPages;
+        const finishedA = progA >= 1;
+        const finishedB = progB >= 1;
 
-                // Sort: 
-                // 1. Unfinished goals first
-                // 2. Weekly before Monthly
-                // 3. High % completion first (to encourage finishing)
-                const sorted = booksWithGoals.sort((a, b) => {
-                    const progA = (a.readingGoalProgress || 0) / a.readingGoalPages;
-                    const progB = (b.readingGoalProgress || 0) / b.readingGoalPages;
-                    const finishedA = progA >= 1;
-                    const finishedB = progB >= 1;
-
-                    if (finishedA !== finishedB) return finishedA ? 1 : -1; // Unfinished first
-                    if (a.readingGoalType !== b.readingGoalType) return a.readingGoalType === 'WEEKLY' ? -1 : 1;
-                    return progB - progA; // Higher progress first
-                });
-
-                setBooks(sorted);
-            } catch (error) {
-                console.error("Failed to fetch goals", error);
-            }
-        };
-
-        fetchGoals();
-    }, []);
-
-    // if (loading) return null; // Removed to prevent layout shift
+        if (finishedA !== finishedB) return finishedA ? 1 : -1;
+        if (a.readingGoalType !== b.readingGoalType) return a.readingGoalType === 'WEEKLY' ? -1 : 1;
+        return progB - progA;
+    });
 
     const activeGoalsCount = books.filter(b => (b.readingGoalProgress || 0) < b.readingGoalPages).length;
 

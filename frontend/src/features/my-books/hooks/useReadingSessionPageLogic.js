@@ -46,7 +46,7 @@ export const useReadingSessionPageLogic = (bookId) => {
                     if (data.currentPage) setEndPage(data.currentPage);
                 }
             } catch (error) {
-                console.error("Failed to fetch book", error);
+                // Fetch failed — fetchingBook will still become false
             } finally {
                 setFetchingBook(false);
             }

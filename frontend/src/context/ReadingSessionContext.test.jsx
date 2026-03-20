@@ -246,7 +246,7 @@ describe('ReadingSessionContext', () => {
         expect(sessionsApi.pause).not.toHaveBeenCalled();
     });
 
-    it('pauseSession should handle API error', async () => {
+    it('pauseSession should handle API error gracefully', async () => {
         sessionsApi.pause.mockRejectedValue(new Error('fail'));
 
         let captured;
@@ -262,7 +262,8 @@ describe('ReadingSessionContext', () => {
             await captured.pauseSession();
         });
 
-        expect(console.error).toHaveBeenCalled();
+        // Should not throw — error handled silently
+        expect(captured.activeSession).toBeNull();
     });
 
     // --- resumeSession ---
@@ -306,7 +307,7 @@ describe('ReadingSessionContext', () => {
         expect(sessionsApi.resume).not.toHaveBeenCalled();
     });
 
-    it('resumeSession should handle API error', async () => {
+    it('resumeSession should handle API error gracefully', async () => {
         sessionsApi.resume.mockRejectedValue(new Error('fail'));
 
         let captured;
@@ -322,7 +323,8 @@ describe('ReadingSessionContext', () => {
             await captured.resumeSession();
         });
 
-        expect(console.error).toHaveBeenCalled();
+        // Should not throw — error handled silently
+        expect(captured.activeSession).toBeNull();
     });
 
     // --- formatTime ---
@@ -436,7 +438,6 @@ describe('ReadingSessionContext', () => {
         });
 
         expect(captured.activeSession).toBeNull();
-        expect(console.error).toHaveBeenCalled();
     });
 
     // --- BroadcastChannel REFRESH_SESSION ---

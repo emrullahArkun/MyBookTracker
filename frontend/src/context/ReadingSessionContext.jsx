@@ -1,65 +1,34 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import { sessionsApi } from '../features/reading-sessions/api/sessionsApi';
 import { useControllerLock } from '../shared/hooks/useControllerLock';
+import { useSessionTimer } from '../shared/hooks/useSessionTimer';
+import { useSessionBroadcast } from '../shared/hooks/useSessionBroadcast';
 
 const ReadingSessionContext = createContext(null);
-
-const formatTime = (seconds) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    return `${m}m ${s}s`;
-};
 
 export const ReadingSessionProvider = ({ children }) => {
     const { token } = useAuth();
     const [activeSession, setActiveSession] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-    // Pause state derived from activeSession
     const isPaused = activeSession?.status === 'PAUSED';
-
-    // Refs for timer logic to avoid dependency/closure issues
-    const timerIntervalRef = useRef(null);
-    const broadcastChannelRef = useRef(null);
 
     const refreshSession = useCallback(async () => {
         if (!token) return;
         try {
             const session = await sessionsApi.getActive();
-            setActiveSession(session); // apiClient returns null for 204
-        } catch (err) {
-            console.error("Failed to refresh session", err);
+            setActiveSession(session);
+        } catch {
+            // Session refresh failed silently — will retry on next trigger
         }
     }, [token]);
 
-    // Initialize BroadcastChannel
-    useEffect(() => {
-        broadcastChannelRef.current = new BroadcastChannel('reading_session_sync');
-        broadcastChannelRef.current.onmessage = (event) => {
-            if (event.data === 'REFRESH_SESSION') {
-                refreshSession();
-            }
-        };
+    // Cross-tab broadcast
+    const { broadcastUpdate } = useSessionBroadcast(token, refreshSession);
 
-        // Fallback for storage event (if BroadcastChannel fails or for some browsers)
-        const handleStorage = (e) => {
-            // Ignore lock updates to prevent API flooding (heartbeat writes every 2s)
-            if (e.key === 'reading_session_controller_lock') return;
-            refreshSession();
-        };
-        window.addEventListener('storage', handleStorage);
-        window.addEventListener('focus', refreshSession);
-
-        return () => {
-            if (broadcastChannelRef.current) broadcastChannelRef.current.close();
-            window.removeEventListener('storage', handleStorage);
-            window.removeEventListener('focus', refreshSession);
-        };
-    }, [token, refreshSession]);
+    // Timer
+    const { elapsedSeconds, formattedTime } = useSessionTimer(activeSession);
 
     // Fetch active session on mount/token change
     useEffect(() => {
@@ -71,50 +40,6 @@ export const ReadingSessionProvider = ({ children }) => {
         refreshSession().finally(() => setLoading(false));
     }, [token, refreshSession]);
 
-    const broadcastUpdate = () => {
-        if (broadcastChannelRef.current) {
-            broadcastChannelRef.current.postMessage('REFRESH_SESSION');
-        }
-    };
-
-    // Timer Logic
-    useEffect(() => {
-        if (!activeSession) {
-            setElapsedSeconds(0);
-            return;
-        }
-
-        const tick = () => {
-            const startRaw = activeSession.startTime;
-            const start = new Date(startRaw).getTime();
-            const now = new Date().getTime();
-
-            if (isNaN(start)) {
-                setElapsedSeconds(0);
-                return;
-            }
-
-            const pausedMillis = activeSession.pausedMillis || 0;
-
-            if (activeSession.status === 'PAUSED' && activeSession.pausedAt) {
-                const pAt = new Date(activeSession.pausedAt).getTime();
-                const diff = Math.floor((pAt - start - pausedMillis) / 1000);
-                setElapsedSeconds(Math.max(0, diff));
-            } else {
-                const diff = Math.floor((now - start - pausedMillis) / 1000);
-                setElapsedSeconds(Math.max(0, diff));
-            }
-        };
-
-        tick();
-
-        if (activeSession.status === 'ACTIVE') {
-            timerIntervalRef.current = setInterval(tick, 1000);
-        }
-
-        return () => clearInterval(timerIntervalRef.current);
-    }, [activeSession]);
-
     // Controller Lock
     const { isController, takeControl } = useControllerLock(activeSession);
 
@@ -125,11 +50,10 @@ export const ReadingSessionProvider = ({ children }) => {
             takeControl();
             broadcastUpdate();
             return true;
-        } catch (err) {
-            console.error(err);
+        } catch {
             return false;
         }
-    }, [takeControl]);
+    }, [takeControl, broadcastUpdate]);
 
     const stopSession = useCallback(async (endTime, endPage) => {
         try {
@@ -137,11 +61,10 @@ export const ReadingSessionProvider = ({ children }) => {
             setActiveSession(null);
             broadcastUpdate();
             return true;
-        } catch (err) {
-            console.error(err);
+        } catch {
             return false;
         }
-    }, []);
+    }, [broadcastUpdate]);
 
     const pauseSession = useCallback(async () => {
         if (!isController) return;
@@ -149,10 +72,10 @@ export const ReadingSessionProvider = ({ children }) => {
             const session = await sessionsApi.pause();
             setActiveSession(session);
             broadcastUpdate();
-        } catch (err) {
-            console.error("Failed to pause session", err);
+        } catch {
+            // Pause failed — session state unchanged
         }
-    }, [isController]);
+    }, [isController, broadcastUpdate]);
 
     const resumeSession = useCallback(async () => {
         if (!isController) return;
@@ -160,16 +83,16 @@ export const ReadingSessionProvider = ({ children }) => {
             const session = await sessionsApi.resume();
             setActiveSession(session);
             broadcastUpdate();
-        } catch (err) {
-            console.error("Failed to resume session", err);
+        } catch {
+            // Resume failed — session state unchanged
         }
-    }, [isController]);
+    }, [isController, broadcastUpdate]);
 
     const value = useMemo(() => ({
         activeSession,
         loading,
         elapsedSeconds,
-        formattedTime: formatTime(elapsedSeconds),
+        formattedTime,
         isPaused,
         startSession,
         stopSession,
@@ -177,7 +100,7 @@ export const ReadingSessionProvider = ({ children }) => {
         resumeSession,
         isController,
         takeControl
-    }), [activeSession, loading, elapsedSeconds, isPaused, startSession, stopSession, pauseSession, resumeSession, isController, takeControl]);
+    }), [activeSession, loading, elapsedSeconds, formattedTime, isPaused, startSession, stopSession, pauseSession, resumeSession, isController, takeControl]);
 
     return (
         <ReadingSessionContext.Provider value={value}>

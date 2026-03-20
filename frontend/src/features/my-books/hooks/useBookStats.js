@@ -14,7 +14,8 @@ export const useBookStats = (bookId) => {
     const {
         data: book,
         isLoading: bookLoading,
-        error: bookError
+        error: bookError,
+        refetch: refetchBook
     } = useQuery({
         queryKey: ['book', bookId],
         queryFn: () => booksApi.getById(bookId),
@@ -37,8 +38,8 @@ export const useBookStats = (bookId) => {
     const loading = bookLoading || sessionsLoading;
     const error = bookError || sessionsError;
 
-    // Refetch function for manual refresh (less needed with React Query but kept for compatibility)
     const refetch = () => {
+        refetchBook();
         refetchSessions();
     };
 

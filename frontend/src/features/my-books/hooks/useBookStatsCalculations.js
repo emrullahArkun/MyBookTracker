@@ -12,7 +12,8 @@ export const useBookStatsCalculations = (book, sessions) => {
             if (!session.endTime || !session.startTime) return acc;
             const start = new Date(session.startTime).getTime();
             const end = new Date(session.endTime).getTime();
-            return acc + (end - start) / 1000;
+            const paused = session.pausedMillis || 0;
+            return acc + (end - start - paused) / 1000;
         }, 0);
 
         const formatDuration = (seconds) => {
