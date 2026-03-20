@@ -131,4 +131,70 @@ describe('useControllerLock', () => {
         expect(result.current.isController).toBe(false);
         expect(result.current.controllerId).toBeNull();
     });
+
+    it('should re-acquire lock when storage is cleared while being controller', () => {
+        const { result } = renderHook(() => useControllerLock());
+
+        act(() => {
+            result.current.takeControl();
+        });
+
+        expect(result.current.isController).toBe(true);
+
+        // Clear localStorage to simulate lock being removed
+        delete global.localStorage.store['reading_session_controller_lock'];
+
+        act(() => {
+            vi.advanceTimersByTime(3100);
+        });
+
+        // Should re-acquire since we were controller
+        expect(result.current.isController).toBe(true);
+    });
+
+    it('should react to storage events from other tabs', () => {
+        const { result } = renderHook(() => useControllerLock());
+
+        act(() => {
+            result.current.takeControl();
+        });
+
+        expect(result.current.isController).toBe(true);
+
+        // Simulate another tab taking the lock via storage event
+        global.localStorage.store['reading_session_controller_lock'] = JSON.stringify({
+            controllerId: 'other_tab',
+            expiresAt: Date.now() + 5000
+        });
+
+        act(() => {
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'reading_session_controller_lock',
+                newValue: global.localStorage.store['reading_session_controller_lock']
+            }));
+        });
+
+        expect(result.current.isController).toBe(false);
+        expect(result.current.controllerId).toBe('other_tab');
+    });
+
+    it('should ignore storage events for unrelated keys', () => {
+        const { result } = renderHook(() => useControllerLock());
+
+        act(() => {
+            result.current.takeControl();
+        });
+
+        expect(result.current.isController).toBe(true);
+
+        act(() => {
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'some_other_key',
+                newValue: 'whatever'
+            }));
+        });
+
+        // Should still be controller
+        expect(result.current.isController).toBe(true);
+    });
 });

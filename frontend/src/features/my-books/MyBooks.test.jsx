@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthContext } from '../../context/AuthContext';
 import { ReadingSessionProvider } from '../../context/ReadingSessionContext';
@@ -10,6 +10,15 @@ import { server } from '../../mocks/server';
 import { http, HttpResponse } from 'msw';
 // Mock translations
 import '../../i18n';
+
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+    const actual = await vi.importActual('react-router-dom');
+    return {
+        ...actual,
+        useNavigate: () => mockNavigate,
+    };
+});
 
 // Utility wrapper for tests
 const createTestWrapper = () => {
@@ -96,6 +105,19 @@ describe('MyBooks Component', () => {
         render(<MyBooks />, { wrapper: createTestWrapper() });
         expect(await screen.findByText('No books in your library yet.')).toBeInTheDocument();
         expect(await screen.findByText('Go to Home to add books!')).toBeInTheDocument();
+    });
+
+    it('navigates to search when clicking the search button in empty state', async () => {
+        const user = userEvent.setup();
+        server.use(
+            http.get('/api/books', () => {
+                return HttpResponse.json({ content: [], totalElements: 0, totalPages: 0, number: 0 });
+            })
+        );
+        render(<MyBooks />, { wrapper: createTestWrapper() });
+        const searchBtn = await screen.findByText('Search');
+        await user.click(searchBtn);
+        expect(mockNavigate).toHaveBeenCalledWith('/search');
     });
 
     describe('Selection & Bulk Delete', () => {
@@ -203,6 +225,16 @@ describe('MyBooks Component', () => {
             window.dispatchEvent(new Event('resize'));
         });
 
+        it('handles very narrow window where columns would be less than 1', async () => {
+            // Set a width so narrow that Math.floor gives 0 columns
+            window.innerWidth = 50;
+            render(<MyBooks />, { wrapper: createTestWrapper() });
+
+            window.dispatchEvent(new Event('resize'));
+
+            expect(await screen.findByAltText('Test Book 1')).toBeInTheDocument();
+        });
+
         it('shows and handles pagination buttons', async () => {
             const user = userEvent.setup();
             server.use(
@@ -229,6 +261,14 @@ describe('MyBooks Component', () => {
             // But we didn't mock the second call, we just want to ensure click handler fires.
             await waitFor(() => {
                 expect(screen.getByLabelText(/Previous Page/i)).not.toBeDisabled();
+            });
+
+            // Click Previous Page to go back
+            const prevBtn = screen.getByLabelText(/Previous Page/i);
+            await user.click(prevBtn);
+
+            await waitFor(() => {
+                expect(screen.getByLabelText(/Previous Page/i)).toBeDisabled();
             });
         });
     });
