@@ -10,12 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # Uses PAT_TOKEN so the PR triggers other workflows (e.g. maven.yml)
       - name: Create or update PR from dev to main
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
+          # Skip if dev and main have no differences
+          if git diff --quiet origin/main..HEAD; then
+            echo "No differences between dev and main, skipping."
+            exit 0
+          fi
+
           EXISTING_PR=$(gh pr list --base main --head dev --state open --json number --jq '.[0].number // empty')
 
           if [ -n "$EXISTING_PR" ]; then
