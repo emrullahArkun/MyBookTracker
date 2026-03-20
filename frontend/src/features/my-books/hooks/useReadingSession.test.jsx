@@ -4,15 +4,13 @@ import { ReadingSessionProvider } from '../../../context/ReadingSessionContext';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock AuthContext
-const mockToken = 'fake-token';
 vi.mock('../../../context/AuthContext', () => ({
-    useAuth: () => ({ token: mockToken })
+    useAuth: () => ({ token: true })
 }));
 
 describe('useReadingSessionContext', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
-        localStorage.setItem('token', mockToken);
     });
 
     afterEach(() => {
@@ -98,9 +96,7 @@ describe('useReadingSessionContext', () => {
         expect(result.current.activeSession).toEqual(newSession);
         expect(global.fetch).toHaveBeenCalledWith('/api/sessions/start', expect.objectContaining({
             method: 'POST',
-            headers: expect.objectContaining({
-                'Authorization': `Bearer ${mockToken}`
-            }),
+            credentials: 'include',
             body: JSON.stringify({ bookId: 202 })
         }));
     });

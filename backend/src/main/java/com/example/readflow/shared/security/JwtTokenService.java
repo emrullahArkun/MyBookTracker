@@ -35,6 +35,7 @@ public class JwtTokenService {
             Instant now = Instant.now();
             JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                     .subject(user.getEmail())
+                    .claim("userId", user.getId())
                     .claim("role", user.getRole().name())
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(now.plusSeconds(ttlSeconds)))

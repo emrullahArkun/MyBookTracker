@@ -44,12 +44,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex, HttpStatus.UNAUTHORIZED, request);
     }
 
-    @ExceptionHandler(AccountNotVerifiedException.class)
-    public ResponseEntity<ErrorResponse> handleAccountNotVerifiedException(AccountNotVerifiedException ex,
-            WebRequest request) {
-        return buildErrorResponse(ex, HttpStatus.FORBIDDEN, request);
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex,
             WebRequest request) {

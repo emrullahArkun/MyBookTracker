@@ -2,30 +2,26 @@ package com.example.readflow.shared.security;
 
 import com.example.readflow.auth.Role;
 import com.example.readflow.auth.User;
-import com.example.readflow.auth.AuthService;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 import java.lang.reflect.Method;
+import java.time.Instant;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserArgumentResolverTest {
-
-    @Mock
-    private AuthService authService;
 
     @InjectMocks
     private UserArgumentResolver resolver;
@@ -59,16 +55,25 @@ class UserArgumentResolverTest {
 
     @Test
     void resolveArgument_ShouldReturnUser_WhenAuthenticated() throws Exception {
-        User user = new User("test@example.com", "password", Role.USER);
-        TestingAuthenticationToken auth = new TestingAuthenticationToken("test@example.com", null);
-        auth.setAuthenticated(true);
-        SecurityContextHolder.getContext().setAuthentication(auth);
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "HS256")
+                .subject("test@example.com")
+                .claim("userId", 1L)
+                .claim("role", "USER")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build();
 
-        when(authService.getUserByEmail(eq("test@example.com"))).thenReturn(user);
+        JwtAuthenticationToken auth = new JwtAuthenticationToken(jwt, Collections.emptyList());
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         Object result = resolver.resolveArgument(null, null, null, null);
 
-        assertEquals(user, result);
+        assertInstanceOf(User.class, result);
+        User user = (User) result;
+        assertEquals("test@example.com", user.getEmail());
+        assertEquals(1L, user.getId());
+        assertEquals(Role.USER, user.getRole());
     }
 
     @Test

@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './AuthContext';
 vi.mock('../features/auth/api/authApi', () => ({
     authApi: {
         getSession: vi.fn(),
+        logout: vi.fn(),
     },
 }));
 
@@ -23,7 +24,7 @@ describe('AuthContext', () => {
         vi.clearAllMocks();
     });
 
-    it('should provide default values: user=null, token=null, loading=true initially', async () => {
+    it('should provide default values: user=null, isAuthenticated=false, loading=true initially', async () => {
         authApi.getSession.mockResolvedValue(null);
         let captured;
 
@@ -35,14 +36,12 @@ describe('AuthContext', () => {
             );
         });
 
-        // After init, loading should be false
         expect(captured.loading).toBe(false);
         expect(captured.user).toBeNull();
-        expect(captured.token).toBeNull();
+        expect(captured.isAuthenticated).toBe(false);
     });
 
-    it('should restore session from localStorage when token+user exist and session is valid', async () => {
-        localStorage.setItem('token', 'valid-token');
+    it('should restore session from localStorage when user exists and cookie session is valid', async () => {
         localStorage.setItem('user', JSON.stringify({ email: 'test@test.com' }));
         authApi.getSession.mockResolvedValue({ valid: true });
 
@@ -57,13 +56,12 @@ describe('AuthContext', () => {
 
         await waitFor(() => {
             expect(captured.user).toEqual({ email: 'test@test.com' });
-            expect(captured.token).toBe('valid-token');
+            expect(captured.isAuthenticated).toBe(true);
             expect(captured.loading).toBe(false);
         });
     });
 
     it('should clear session when server validation fails', async () => {
-        localStorage.setItem('token', 'expired-token');
         localStorage.setItem('user', JSON.stringify({ email: 'old@test.com' }));
         authApi.getSession.mockRejectedValue(new Error('Unauthorized'));
 
@@ -78,13 +76,11 @@ describe('AuthContext', () => {
 
         await waitFor(() => {
             expect(captured.user).toBeNull();
-            expect(captured.token).toBeNull();
-            expect(localStorage.getItem('token')).toBeNull();
+            expect(captured.isAuthenticated).toBe(false);
         });
     });
 
     it('should clear session when getSession returns null/falsy', async () => {
-        localStorage.setItem('token', 'token');
         localStorage.setItem('user', JSON.stringify({ email: 'x@x.com' }));
         authApi.getSession.mockResolvedValue(null);
 
@@ -99,11 +95,11 @@ describe('AuthContext', () => {
 
         await waitFor(() => {
             expect(captured.user).toBeNull();
-            expect(captured.token).toBeNull();
+            expect(captured.isAuthenticated).toBe(false);
         });
     });
 
-    it('login should store user and token', async () => {
+    it('login should store user', async () => {
         authApi.getSession.mockResolvedValue(null);
         let captured;
 
@@ -116,17 +112,18 @@ describe('AuthContext', () => {
         });
 
         act(() => {
-            captured.login({ email: 'new@test.com' }, 'new-token');
+            captured.login({ email: 'new@test.com' });
         });
 
         expect(captured.user).toEqual({ email: 'new@test.com' });
-        expect(localStorage.getItem('token')).toBe('new-token');
+        expect(captured.isAuthenticated).toBe(true);
+        expect(localStorage.getItem('user')).toBeTruthy();
     });
 
-    it('logout should clear user and token', async () => {
-        localStorage.setItem('token', 'token');
+    it('logout should clear user and call logout API', async () => {
         localStorage.setItem('user', JSON.stringify({ email: 'x@x.com' }));
         authApi.getSession.mockResolvedValue({ valid: true });
+        authApi.logout.mockResolvedValue(null);
 
         let captured;
         await act(async () => {
@@ -137,17 +134,16 @@ describe('AuthContext', () => {
             );
         });
 
-        act(() => {
+        await act(async () => {
             captured.logout();
         });
 
         expect(captured.user).toBeNull();
-        expect(captured.token).toBeNull();
-        expect(localStorage.getItem('token')).toBeNull();
+        expect(captured.isAuthenticated).toBe(false);
+        expect(localStorage.getItem('user')).toBeNull();
     });
 
     it('should logout on auth:unauthorized event', async () => {
-        localStorage.setItem('token', 'token');
         localStorage.setItem('user', JSON.stringify({ email: 'x@x.com' }));
         authApi.getSession.mockResolvedValue({ valid: true });
 
@@ -167,7 +163,7 @@ describe('AuthContext', () => {
         });
 
         expect(captured.user).toBeNull();
-        expect(captured.token).toBeNull();
+        expect(captured.isAuthenticated).toBe(false);
     });
 
     it('useAuth should throw when used outside AuthProvider', () => {

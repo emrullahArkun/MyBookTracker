@@ -3,69 +3,33 @@ import apiClient from './apiClient';
 
 describe('apiClient', () => {
     let originalFetch;
-    let originalLocalStorage;
 
     beforeEach(() => {
         originalFetch = global.fetch;
         global.fetch = vi.fn();
 
-        // Mock localStorage
-        originalLocalStorage = global.localStorage;
-        const store = {};
-        global.localStorage = {
-            getItem: vi.fn((key) => store[key] || null),
-            setItem: vi.fn((key, val) => { store[key] = val; }),
-            removeItem: vi.fn((key) => { delete store[key]; }),
-        };
-
         // Mock window.dispatchEvent
         vi.spyOn(window, 'dispatchEvent').mockImplementation(() => {});
-
-        // Mock console.error
-        vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
         global.fetch = originalFetch;
-        global.localStorage = originalLocalStorage;
         vi.restoreAllMocks();
     });
 
     // ==================== request() ====================
 
     describe('request()', () => {
-        it('should add Content-Type header by default', async () => {
+        it('should add Content-Type header and credentials by default', async () => {
             global.fetch.mockResolvedValue({ ok: true });
             await apiClient.request('/api/test');
 
             expect(global.fetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
+                credentials: 'include',
                 headers: expect.objectContaining({
                     'Content-Type': 'application/json',
                 }),
             }));
-        });
-
-        it('should add Authorization header when token exists', async () => {
-            localStorage.getItem.mockReturnValue('my-token');
-            global.fetch.mockResolvedValue({ ok: true });
-
-            await apiClient.request('/api/test');
-
-            expect(global.fetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
-                headers: expect.objectContaining({
-                    'Authorization': 'Bearer my-token',
-                }),
-            }));
-        });
-
-        it('should NOT add Authorization header when no token', async () => {
-            localStorage.getItem.mockReturnValue(null);
-            global.fetch.mockResolvedValue({ ok: true });
-
-            await apiClient.request('/api/test');
-
-            const calledHeaders = global.fetch.mock.calls[0][1].headers;
-            expect(calledHeaders['Authorization']).toBeUndefined();
         });
 
         it('should merge custom headers with defaults', async () => {
@@ -82,23 +46,21 @@ describe('apiClient', () => {
             }));
         });
 
-        it('should throw and log on fetch failure', async () => {
+        it('should throw on fetch failure', async () => {
             const error = new Error('Network error');
             global.fetch.mockRejectedValue(error);
 
             await expect(apiClient.request('/api/test')).rejects.toThrow('Network error');
-            expect(console.error).toHaveBeenCalledWith('API Request Failed', error);
         });
     });
 
     // ==================== handleResponse() ====================
 
     describe('handleResponse()', () => {
-        it('should remove token and dispatch event on 401', async () => {
+        it('should dispatch event on 401', async () => {
             const response = { status: 401, ok: false };
 
             await expect(apiClient.handleResponse(response)).rejects.toThrow('Unauthorized');
-            expect(localStorage.removeItem).toHaveBeenCalledWith('token');
             expect(window.dispatchEvent).toHaveBeenCalledWith(expect.any(CustomEvent));
         });
 

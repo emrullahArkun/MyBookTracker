@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -21,8 +20,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
@@ -33,7 +31,6 @@ class AuthControllerTest {
     @Mock
     private JwtTokenService jwtTokenService;
 
-    @InjectMocks
     private AuthController authController;
 
     private MockMvc mockMvc;
@@ -41,6 +38,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
+        authController = new AuthController(authService, jwtTokenService, 3600);
         mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
         objectMapper = new ObjectMapper();
     }
@@ -65,7 +63,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_ShouldReturnToken() throws Exception {
+    void login_ShouldReturnUserAndSetCookie() throws Exception {
         LoginRequest request = new LoginRequest("test@example.com", "password123");
         User user = new User();
         user.setEmail("test@example.com");
@@ -78,8 +76,15 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("jwt-token"))
-                .andExpect(jsonPath("$.user.email").value("test@example.com"));
+                .andExpect(jsonPath("$.user.email").value("test@example.com"))
+                .andExpect(header().exists("Set-Cookie"));
+    }
+
+    @Test
+    void logout_ShouldClearCookie() throws Exception {
+        mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isNoContent())
+                .andExpect(header().exists("Set-Cookie"));
     }
 
     @Test

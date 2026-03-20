@@ -3,6 +3,9 @@ package com.example.readflow.auth;
 import com.example.readflow.auth.dto.*;
 import com.example.readflow.shared.security.JwtTokenService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +17,14 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtTokenService jwtTokenService;
+    private final long ttlSeconds;
 
-    public AuthController(AuthService authService, JwtTokenService jwtTokenService) {
+    public AuthController(AuthService authService,
+                          JwtTokenService jwtTokenService,
+                          @Value("${app.jwt.ttl-seconds}") long ttlSeconds) {
         this.authService = authService;
         this.jwtTokenService = jwtTokenService;
+        this.ttlSeconds = ttlSeconds;
     }
 
     @PostMapping("/register")
@@ -30,7 +37,19 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
         User user = authService.login(request.email(), request.password());
         String jwt = jwtTokenService.createToken(user);
-        return ResponseEntity.ok(new AuthResponse(jwt, UserDto.from(user)));
+
+        ResponseCookie cookie = buildJwtCookie(jwt, ttlSeconds);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .body(new AuthResponse(UserDto.from(user)));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        ResponseCookie cookie = buildJwtCookie("", 0);
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
     }
 
     @GetMapping("/session")
@@ -40,5 +59,15 @@ public class AuthController {
         }
         User user = authService.getUserByEmail(principal.getName());
         return ResponseEntity.ok(new SessionResponse(UserDto.from(user)));
+    }
+
+    private ResponseCookie buildJwtCookie(String value, long maxAge) {
+        return ResponseCookie.from("jwt", value)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(maxAge)
+                .sameSite("Lax")
+                .build();
     }
 }

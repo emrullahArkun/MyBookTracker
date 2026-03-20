@@ -1,47 +1,25 @@
 const apiClient = {
     async request(url, options = {}) {
-        const token = localStorage.getItem('token');
-        const defaultHeaders = {
-            'Content-Type': 'application/json',
-        };
-
-        if (token) {
-            defaultHeaders['Authorization'] = `Bearer ${token}`;
-        }
-
         const config = {
             ...options,
+            credentials: 'include',
             headers: {
-                ...defaultHeaders,
+                'Content-Type': 'application/json',
                 ...options.headers,
             },
         };
 
-        // Ensure URL is relative or absolute as needed. 
-        // Usage assumes paths like /api/resource
-        try {
-            const response = await fetch(url, config);
-            return response;
-        } catch (error) {
-            console.error("API Request Failed", error);
-            throw error;
-        }
+        const response = await fetch(url, config);
+        return response;
     },
 
     async requestJson(url, options = {}) {
-        try {
-            const response = await this.request(url, options);
-            return this.handleResponse(response);
-        } catch (error) {
-            // Rethrow allow caller to handle, or log
-            throw error;
-        }
+        const response = await this.request(url, options);
+        return this.handleResponse(response);
     },
 
     async handleResponse(response) {
         if (response.status === 401) {
-            localStorage.removeItem('token');
-            // Dispatch event for AuthContext to handle
             window.dispatchEvent(new CustomEvent('auth:unauthorized'));
             throw new Error('Unauthorized');
         }

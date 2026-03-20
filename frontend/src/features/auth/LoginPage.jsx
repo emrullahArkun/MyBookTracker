@@ -31,7 +31,7 @@ function LoginPage() {
         try {
             const data = await authApi.login(email, password);
 
-            login({ email: data.user.email, role: data.user.role }, data.token);
+            login({ email: data.user.email, role: data.user.role });
             toast({
                 title: t('auth.login.title'),
                 description: t('auth.login.success', "Successfully logged in."),

@@ -1,12 +1,12 @@
 package com.example.readflow.shared.security;
 
-import com.example.readflow.auth.AuthService;
+import com.example.readflow.auth.Role;
 import com.example.readflow.auth.User;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -14,10 +14,7 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 @Component
-@RequiredArgsConstructor
 public class UserArgumentResolver implements HandlerMethodArgumentResolver {
-
-    private final AuthService authService;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -33,7 +30,11 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
             throw new AuthenticationCredentialsNotFoundException("User not authenticated");
         }
 
-        String email = auth.getName();
-        return authService.getUserByEmail(email);
+        Jwt jwt = (Jwt) auth.getPrincipal();
+        User user = new User();
+        user.setId(jwt.getClaim("userId"));
+        user.setEmail(jwt.getSubject());
+        user.setRole(Role.valueOf(jwt.getClaimAsString("role")));
+        return user;
     }
 }

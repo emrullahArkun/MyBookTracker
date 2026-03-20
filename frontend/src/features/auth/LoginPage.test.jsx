@@ -88,7 +88,7 @@ describe('LoginPage', () => {
     });
 
     it('should call authApi.login on form submit', async () => {
-        authApi.login.mockResolvedValue({ user: { email: 'a@b.com', role: 'USER' }, token: 'tok' });
+        authApi.login.mockResolvedValue({ user: { email: 'a@b.com', role: 'USER' } });
 
         render(
             <MemoryRouter>
@@ -102,7 +102,7 @@ describe('LoginPage', () => {
 
         await waitFor(() => {
             expect(authApi.login).toHaveBeenCalledWith('a@b.com', 'pass');
-            expect(mockLogin).toHaveBeenCalledWith({ email: 'a@b.com', role: 'USER' }, 'tok');
+            expect(mockLogin).toHaveBeenCalledWith({ email: 'a@b.com', role: 'USER' });
             expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
         });
     });

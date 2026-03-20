@@ -74,16 +74,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleAccountNotVerifiedException_ShouldReturn403() {
-        AccountNotVerifiedException ex = new AccountNotVerifiedException("Not verified");
-
-        ResponseEntity<ErrorResponse> response = handler.handleAccountNotVerifiedException(ex, webRequest);
-
-        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        assertEquals(403, response.getBody().status());
-    }
-
-    @Test
     void handleValidationException_ShouldReturn400_WithFieldErrors() {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);

@@ -5,56 +5,47 @@ export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const login = useCallback((userData, authToken) => {
+    const isAuthenticated = !!user;
+
+    const login = useCallback((userData) => {
         setUser(userData);
-        setToken(authToken);
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', authToken);
     }, []);
 
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
         setUser(null);
-        setToken(null);
         localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        try {
+            await authApi.logout();
+        } catch {
+            // Cookie will expire anyway
+        }
     }, []);
 
     useEffect(() => {
         const handleUnauthorized = () => {
-            logout();
+            setUser(null);
+            localStorage.removeItem('user');
         };
 
         window.addEventListener('auth:unauthorized', handleUnauthorized);
 
         const initAuth = async () => {
-            const storedToken = localStorage.getItem('token');
             const storedUser = localStorage.getItem('user');
 
-            if (storedToken && storedUser) {
+            if (storedUser) {
                 try {
-                    // 1. Optimistically set state
                     const parsedUser = JSON.parse(storedUser);
                     setUser(parsedUser);
-                    setToken(storedToken);
 
-                    // 2. Validate against server
-                    // authApi.getSession() returns the parsed JSON data, not the Response object.
-                    // The apiClient throws on non-2xx responses.
                     const res = await authApi.getSession();
-
                     if (!res) {
                         throw new Error("Session invalid");
                     }
-                    // Optional: check res.valid if the backend sends it
-                    // if (!res.valid) throw ...
-                } catch (error) {
-                    console.error("Session validation failed:", error);
-                    localStorage.removeItem('token');
+                } catch {
                     localStorage.removeItem('user');
-                    setToken(null);
                     setUser(null);
                 }
             }
@@ -65,15 +56,17 @@ export const AuthProvider = ({ children }) => {
         return () => {
             window.removeEventListener('auth:unauthorized', handleUnauthorized);
         };
-    }, [logout]);
+    }, []);
 
     const value = useMemo(() => ({
         user,
-        token,
+        isAuthenticated,
         login,
         logout,
-        loading
-    }), [user, token, login, logout, loading]);
+        loading,
+        // Keep token as alias for isAuthenticated for backward compatibility with useQuery enabled checks
+        token: isAuthenticated,
+    }), [user, isAuthenticated, login, logout, loading]);
 
     return (
         <AuthContext.Provider value={value}>
@@ -89,4 +82,3 @@ export const useAuth = () => {
     }
     return context;
 };
-
