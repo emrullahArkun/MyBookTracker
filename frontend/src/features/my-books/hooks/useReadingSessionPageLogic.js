@@ -57,7 +57,7 @@ export const useReadingSessionPageLogic = (bookId) => {
             }
         };
         fetchBook();
-    }, [bookId, token]);
+    }, [bookId, token, t, toast]);
 
     // 2. Check for session mismatch
     useEffect(() => {
