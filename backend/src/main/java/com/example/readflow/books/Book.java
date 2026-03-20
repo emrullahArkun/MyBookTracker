@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+// A user cannot have duplicate books with the same ISBN
 @Table(name = "books", indexes = {
         @Index(name = "idx_book_user", columnList = "user_id"),
         @Index(name = "idx_book_isbn", columnList = "isbn")
@@ -56,9 +57,11 @@ public class Book {
     @Column(length = 500)
     private String categories;
 
+    // Deleting a book cascades to all its reading sessions
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReadingSession> readingSessions = new ArrayList<>();
 
+    // Helper methods to keep both sides of the bidirectional relationship in sync
     public void addReadingSession(ReadingSession session) {
         readingSessions.add(session);
         session.setBook(this);
@@ -69,6 +72,7 @@ public class Book {
         session.setBook(null);
     }
 
+    // Set sensible defaults before first save
     @PrePersist
     public void prePersist() {
         if (currentPage == null) {
