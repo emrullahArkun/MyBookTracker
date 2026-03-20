@@ -59,7 +59,7 @@ function Navbar() {
     };
 
     const navItems = [
-        { to: '/', label: t('navbar.discovery') },
+        { to: '/discovery', label: t('navbar.discovery') },
         { to: '/search', label: t('navbar.search') },
         { to: '/my-books', label: t('navbar.myBooks'), ref: registerTarget },
         { to: '/stats', label: t('navbar.overview') },

@@ -9,7 +9,7 @@ tasks:
   dev:
     desc: Start Backend in Docker and Frontend locally
     cmds:
-      - docker compose up -d app db # Start backend and db in background
+      - docker compose up --build -d app db # Start backend and db in background
       - cd frontend && npm run dev # Start frontend locally
 
   stop:

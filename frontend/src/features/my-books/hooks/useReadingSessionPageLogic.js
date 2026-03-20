@@ -159,7 +159,17 @@ export const useReadingSessionPageLogic = (bookId) => {
 
     const handleConfirmStop = async () => {
         const pageNum = parseInt(endPage, 10);
-        if (isNaN(pageNum)) return;
+        if (isNaN(pageNum) || pageNum < 0) return;
+
+        if (book.pageCount && pageNum > book.pageCount) {
+            toast({
+                title: t('readingSession.alerts.pageExceeds', 'Page number cannot exceed total pages ({{total}}).', { total: book.pageCount }),
+                status: 'warning',
+                duration: 5000,
+                isClosable: true
+            });
+            return;
+        }
 
         const startPage = book.currentPage || 0;
         const pagesRead = pageNum - startPage;
