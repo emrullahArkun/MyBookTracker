@@ -38,7 +38,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        authController = new AuthController(authService, jwtTokenService, 3600);
+        authController = new AuthController(authService, jwtTokenService, 3600, false);
         mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
         objectMapper = new ObjectMapper();
     }

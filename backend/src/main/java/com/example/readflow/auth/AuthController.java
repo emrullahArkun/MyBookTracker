@@ -18,13 +18,16 @@ public class AuthController {
     private final AuthService authService;
     private final JwtTokenService jwtTokenService;
     private final long ttlSeconds;
+    private final boolean secureCookie;
 
     public AuthController(AuthService authService,
                           JwtTokenService jwtTokenService,
-                          @Value("${app.jwt.ttl-seconds}") long ttlSeconds) {
+                          @Value("${app.jwt.ttl-seconds}") long ttlSeconds,
+                          @Value("${app.jwt.cookie-secure:true}") boolean secureCookie) {
         this.authService = authService;
         this.jwtTokenService = jwtTokenService;
         this.ttlSeconds = ttlSeconds;
+        this.secureCookie = secureCookie;
     }
 
     @PostMapping("/register")
@@ -64,7 +67,7 @@ public class AuthController {
     private ResponseCookie buildJwtCookie(String value, long maxAge) {
         return ResponseCookie.from("jwt", value)
                 .httpOnly(true)
-                .secure(true)
+                .secure(secureCookie)
                 .path("/")
                 .maxAge(maxAge)
                 .sameSite("Lax")
