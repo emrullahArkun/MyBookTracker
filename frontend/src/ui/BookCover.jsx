@@ -8,6 +8,7 @@ const BookCover = forwardRef(({
     borderRadius = "md",
     w = "100%",
     h = "100%",
+    fallbackIconSize,
     ...props
 }, ref) => {
 

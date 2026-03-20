@@ -1,23 +1,28 @@
 package com.example.readflow.books;
 
-import com.example.readflow.sessions.ReadingSession;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.readflow.sessions.ReadingSessionRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class ReadingGoalProgressCalculatorTest {
 
-    private ReadingGoalProgressCalculator calculator;
+    @Mock
+    private ReadingSessionRepository sessionRepository;
 
-    @BeforeEach
-    void setUp() {
-        calculator = new ReadingGoalProgressCalculator();
-    }
+    @InjectMocks
+    private ReadingGoalProgressCalculator calculator;
 
     @Test
     void calculateProgress_ShouldReturnNull_WhenGoalTypeIsNull() {
@@ -26,6 +31,7 @@ class ReadingGoalProgressCalculatorTest {
         book.setReadingGoalPages(100);
 
         assertNull(calculator.calculateProgress(book));
+        verifyNoInteractions(sessionRepository);
     }
 
     @Test
@@ -35,16 +41,31 @@ class ReadingGoalProgressCalculatorTest {
         book.setReadingGoalPages(null);
 
         assertNull(calculator.calculateProgress(book));
+        verifyNoInteractions(sessionRepository);
     }
 
     @Test
-    void calculateProgress_ShouldReturnZero_WhenSessionsAreNull() {
+    void calculateProgress_Weekly_ShouldQueryRepository() {
         Book book = createBook();
         book.setReadingGoalType(ReadingGoalType.WEEKLY);
         book.setReadingGoalPages(100);
-        book.setReadingSessions(null);
 
-        assertEquals(0, calculator.calculateProgress(book));
+        when(sessionRepository.sumPagesReadByBookSince(eq(book), any(Instant.class))).thenReturn(25);
+
+        assertEquals(25, calculator.calculateProgress(book));
+        verify(sessionRepository).sumPagesReadByBookSince(eq(book), any(Instant.class));
+    }
+
+    @Test
+    void calculateProgress_Monthly_ShouldQueryRepository() {
+        Book book = createBook();
+        book.setReadingGoalType(ReadingGoalType.MONTHLY);
+        book.setReadingGoalPages(200);
+
+        when(sessionRepository.sumPagesReadByBookSince(eq(book), any(Instant.class))).thenReturn(50);
+
+        assertEquals(50, calculator.calculateProgress(book));
+        verify(sessionRepository).sumPagesReadByBookSince(eq(book), any(Instant.class));
     }
 
     @Test
@@ -53,111 +74,7 @@ class ReadingGoalProgressCalculatorTest {
         book.setReadingGoalType(ReadingGoalType.WEEKLY);
         book.setReadingGoalPages(100);
 
-        ReadingSession session = new ReadingSession();
-        session.setEndTime(Instant.parse("2020-01-01T00:00:00Z"));
-        session.setPagesRead(50);
-        book.setReadingSessions(List.of(session));
-
-        assertEquals(0, calculator.calculateProgress(book));
-    }
-
-    @Test
-    void calculateProgress_Weekly_ShouldSumPagesRead() {
-        Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
-
-        ReadingSession session = new ReadingSession();
-        session.setEndTime(Instant.now());
-        session.setPagesRead(25);
-
-        book.setReadingSessions(List.of(session));
-
-        assertEquals(25, calculator.calculateProgress(book));
-    }
-
-    @Test
-    void calculateProgress_Monthly_ShouldSumPagesRead() {
-        Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.MONTHLY);
-        book.setReadingGoalPages(200);
-
-        ReadingSession s1 = new ReadingSession();
-        s1.setEndTime(Instant.now());
-        s1.setPagesRead(30);
-
-        ReadingSession s2 = new ReadingSession();
-        s2.setEndTime(Instant.now());
-        s2.setPagesRead(20);
-
-        book.setReadingSessions(List.of(s1, s2));
-
-        assertEquals(50, calculator.calculateProgress(book));
-    }
-
-    @Test
-    void calculateProgress_ShouldFilterOutSessionsWithNullEndTime() {
-        Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
-
-        ReadingSession activeSession = new ReadingSession();
-        activeSession.setEndTime(null);
-        activeSession.setPagesRead(99);
-
-        ReadingSession completedSession = new ReadingSession();
-        completedSession.setEndTime(Instant.now());
-        completedSession.setPagesRead(10);
-
-        book.setReadingSessions(List.of(activeSession, completedSession));
-
-        assertEquals(10, calculator.calculateProgress(book));
-    }
-
-    @Test
-    void calculateProgress_ShouldReturnZero_WhenPagesReadIsNullAndEndPageExists() {
-        Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
-
-        ReadingSession session = new ReadingSession();
-        session.setEndTime(Instant.now());
-        session.setPagesRead(null);
-        session.setEndPage(50);
-
-        book.setReadingSessions(List.of(session));
-
-        assertEquals(0, calculator.calculateProgress(book));
-    }
-
-    @Test
-    void calculateProgress_ShouldReturnZero_WhenPagesReadAndEndPageAreNull() {
-        Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
-
-        ReadingSession session = new ReadingSession();
-        session.setEndTime(Instant.now());
-        session.setPagesRead(null);
-        session.setEndPage(null);
-
-        book.setReadingSessions(List.of(session));
-
-        assertEquals(0, calculator.calculateProgress(book));
-    }
-
-    @Test
-    void calculateProgress_ShouldReturnZero_WhenEndPageIsZero() {
-        Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
-
-        ReadingSession session = new ReadingSession();
-        session.setEndTime(Instant.now());
-        session.setPagesRead(null);
-        session.setEndPage(0);
-
-        book.setReadingSessions(List.of(session));
+        when(sessionRepository.sumPagesReadByBookSince(eq(book), any(Instant.class))).thenReturn(0);
 
         assertEquals(0, calculator.calculateProgress(book));
     }

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Box, SimpleGrid, Grid, GridItem, Card, Text, Flex, Skeleton } from '@chakra-ui/react';
 import { FaBook, FaBookOpen, FaClock, FaFire } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 
+import { useAuth } from '../context/AuthContext';
 import { useThemeTokens } from '../shared/hooks/useThemeTokens';
 import StatsCard from '../features/my-books/components/StatsCard';
 import ReadingHeatmap from '../features/stats/components/ReadingHeatmap';
@@ -13,18 +14,13 @@ import statsApi from '../features/stats/api/statsApi';
 const StatsOverviewPage = () => {
     const { t } = useTranslation();
     const { cardBg, textColor } = useThemeTokens();
+    const { token } = useAuth();
 
-    const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        statsApi.getOverview()
-            .then(setStats)
-            .catch(() => {})
-            .finally(() => setLoading(false));
-    }, []);
+    const { data: stats, isLoading: loading } = useQuery({
+        queryKey: ['stats', 'overview'],
+        queryFn: () => statsApi.getOverview(),
+        enabled: !!token,
+    });
 
     if (loading) {
         return (

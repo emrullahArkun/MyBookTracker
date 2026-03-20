@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -39,4 +40,8 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
     @Query("SELECT COUNT(s) FROM ReadingSession s " +
            "WHERE s.user = :user AND s.status = 'COMPLETED'")
     long countCompletedByUser(@Param("user") User user);
+
+    @Query("SELECT COALESCE(SUM(s.pagesRead), 0) FROM ReadingSession s " +
+           "WHERE s.book = :book AND s.status = 'COMPLETED' AND s.endTime > :since")
+    int sumPagesReadByBookSince(@Param("book") Book book, @Param("since") Instant since);
 }

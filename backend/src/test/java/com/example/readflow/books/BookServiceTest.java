@@ -1,6 +1,5 @@
 package com.example.readflow.books;
 
-import com.example.readflow.sessions.ReadingSessionService;
 import com.example.readflow.books.dto.CreateBookRequest;
 import com.example.readflow.shared.exception.DuplicateResourceException;
 import com.example.readflow.shared.exception.ResourceNotFoundException;
@@ -31,8 +30,6 @@ class BookServiceTest {
     private BookRepository bookRepository;
     @Mock
     private BookMapper bookMapper;
-    @Mock
-    private ReadingSessionService readingSessionService;
     @Mock
     private BookProgressService bookProgressService;
     @InjectMocks
@@ -101,7 +98,6 @@ class BookServiceTest {
 
         bookService.deleteByIdAndUser(1L, user);
 
-        verify(readingSessionService).deleteSessionsByBook(user, book);
         verify(bookRepository).delete(book);
     }
 

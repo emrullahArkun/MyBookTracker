@@ -1,5 +1,7 @@
 package com.example.readflow.books;
 
+import com.example.readflow.sessions.ReadingSessionRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -10,7 +12,10 @@ import java.time.DayOfWeek;
 import java.time.temporal.TemporalAdjusters;
 
 @Service
+@RequiredArgsConstructor
 public class ReadingGoalProgressCalculator {
+
+    private final ReadingSessionRepository sessionRepository;
 
     public Integer calculateProgress(Book book) {
         if (book.getReadingGoalType() == null || book.getReadingGoalPages() == null) {
@@ -30,21 +35,6 @@ public class ReadingGoalProgressCalculator {
         ZoneId zone = ZoneId.systemDefault();
         Instant startInstant = startOfPeriod.atZone(zone).toInstant();
 
-        if (book.getReadingSessions() == null) {
-            return 0;
-        }
-
-        return book.getReadingSessions().stream()
-                .filter(s -> s.getEndTime() != null && s.getEndTime().isAfter(startInstant))
-                .mapToInt(s -> {
-                    if (s.getPagesRead() != null) {
-                        return s.getPagesRead();
-                    }
-                    if (s.getEndPage() != null && s.getEndPage() > 0) {
-                        return 0;
-                    }
-                    return 0;
-                })
-                .sum();
+        return sessionRepository.sumPagesReadByBookSince(book, startInstant);
     }
 }

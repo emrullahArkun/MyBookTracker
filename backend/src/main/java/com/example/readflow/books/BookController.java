@@ -42,6 +42,13 @@ public class BookController {
         return bookService.getAllOwnedIsbns(user);
     }
 
+    @GetMapping("/with-goals")
+    public List<BookDto> getBooksWithGoals(@CurrentUser User user) {
+        return bookService.findBooksWithGoals(user).stream()
+                .map(bookMapper::toDto)
+                .toList();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<BookDto> getBookById(@PathVariable Long id, @CurrentUser User user) {
         Book book = bookService.findByIdAndUser(id, user)

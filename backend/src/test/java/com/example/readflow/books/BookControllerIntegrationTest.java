@@ -1,11 +1,9 @@
 package com.example.readflow.books;
 
 import com.example.readflow.books.dto.CreateBookRequest;
-
-import com.example.readflow.books.Book;
 import com.example.readflow.auth.User;
-
-import com.example.readflow.books.BookRepository;
+import com.example.readflow.auth.Role;
+import com.example.readflow.auth.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,18 +11,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@SuppressWarnings("null")
-@org.springframework.security.test.context.support.WithMockUser(username = "admin", roles = { "USER" })
+@ActiveProfiles("test")
 public class BookControllerIntegrationTest {
 
         @Autowired
@@ -34,7 +33,7 @@ public class BookControllerIntegrationTest {
         private BookRepository bookRepository;
 
         @Autowired
-        private com.example.readflow.auth.UserRepository userRepository;
+        private UserRepository userRepository;
 
         @Autowired
         private ObjectMapper objectMapper;
@@ -44,45 +43,38 @@ public class BookControllerIntegrationTest {
         @BeforeEach
         void setUp() {
                 bookRepository.deleteAll();
-
                 userRepository.deleteAll();
 
-                // Create the user that matches @WithMockUser
                 defaultUser = new User();
-                defaultUser.setEmail("admin");
+                defaultUser.setEmail("admin@test.com");
                 defaultUser.setPassword("password");
-                defaultUser.setRole(com.example.readflow.auth.Role.USER);
+                defaultUser.setRole(Role.USER);
                 defaultUser.setEnabled(true);
-                userRepository.save(defaultUser);
+                defaultUser = userRepository.save(defaultUser);
         }
 
         @Test
         void shouldCreateBook() throws Exception {
-                // Given
-                String author = "J.K. Rowling";
-
-                // When
                 CreateBookRequest request = new CreateBookRequest(
-                                "978-1234567890", "Harry Potter", author, "2001", "http://cover.url",
+                                "978-1234567890", "Harry Potter", "J.K. Rowling", "2001", "http://cover.url",
                                 250, null);
 
-                // Then
                 mockMvc.perform(post("/api/books")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.id").exists())
-                                .andExpect(jsonPath("$.title", is("Harry Potter")))
-                                .andExpect(jsonPath("$.authorName", is(author)));
+                                .andExpect(jsonPath("$.title", is("Harry Potter")));
         }
 
         @Test
         void shouldCreateBookWithAuthorName() throws Exception {
-                // When: Creating a book with ONLY author name
                 CreateBookRequest request = new CreateBookRequest(
                                 "978-9876543210", "New Book", "New Author", null, null, null, null);
 
                 mockMvc.perform(post("/api/books")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
@@ -92,11 +84,9 @@ public class BookControllerIntegrationTest {
 
         @Test
         void shouldGetMyBooks() throws Exception {
-                // Given
                 createBook("My Book", "111-111", "Test Author");
 
-                // When / Then
-                mockMvc.perform(get("/api/books"))
+                mockMvc.perform(get("/api/books").with(jwtForUser()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content", hasSize(1)))
                                 .andExpect(jsonPath("$.content[0].title", is("My Book")));
@@ -104,14 +94,12 @@ public class BookControllerIntegrationTest {
 
         @Test
         void shouldUpdateBookStatus() throws Exception {
-                // Given
                 Book savedBook = createBook("Status Book", "222-222", "Status Author");
 
-                // When
                 Map<String, Boolean> updateRequest = Map.of("completed", true);
 
-                // Then
                 mockMvc.perform(patch("/api/books/" + savedBook.getId() + "/status")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateRequest)))
                                 .andExpect(status().isOk())
@@ -120,17 +108,15 @@ public class BookControllerIntegrationTest {
 
         @Test
         void shouldUpdateBookProgress() throws Exception {
-                // Given
                 Book savedBook = createBook("Progress Book", "333-333", "Progress Author");
                 savedBook.setCurrentPage(0);
                 savedBook.setPageCount(100);
                 bookRepository.save(savedBook);
 
-                // When
                 Map<String, Integer> updateRequest = Map.of("currentPage", 50);
 
-                // Then
                 mockMvc.perform(patch("/api/books/" + savedBook.getId() + "/progress")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateRequest)))
                                 .andExpect(status().isOk())
@@ -139,19 +125,21 @@ public class BookControllerIntegrationTest {
 
         @Test
         void shouldDeleteBook() throws Exception {
-                // Given
                 Book savedBook = createBook("Delete Book", "444-444", "Delete Author");
 
-                // When
-                mockMvc.perform(delete("/api/books/" + savedBook.getId()))
+                mockMvc.perform(delete("/api/books/" + savedBook.getId()).with(jwtForUser()))
                                 .andExpect(status().isNoContent());
 
-                // Then
-                mockMvc.perform(get("/api/books/" + savedBook.getId()))
+                mockMvc.perform(get("/api/books/" + savedBook.getId()).with(jwtForUser()))
                                 .andExpect(status().isNotFound());
         }
 
-        // --- Helper Methods ---
+        private org.springframework.test.web.servlet.request.RequestPostProcessor jwtForUser() {
+                return jwt().jwt(builder -> builder
+                        .subject(defaultUser.getEmail())
+                        .claim("userId", defaultUser.getId())
+                        .claim("role", defaultUser.getRole().name()));
+        }
 
         private Book createBook(String title, String isbn, String author) {
                 Book book = new Book();

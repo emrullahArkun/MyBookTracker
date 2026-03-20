@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +13,8 @@ import {
 } from '@chakra-ui/react';
 import { FaCheckCircle, FaBullseye, FaFire } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../context/AuthContext';
 import { booksApi } from '../features/books/api';
 import apiClient from '../api/apiClient';
 
@@ -102,40 +104,32 @@ const GoalCard = ({ book, index, t, navigate }) => {
 const GoalsPage = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [books, setBooks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [streak, setStreak] = useState({ currentStreak: 0, longestStreak: 0 });
+    const { token } = useAuth();
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [booksResponse, streakResponse] = await Promise.all([
-                    booksApi.getAll(0, 50),
-                    apiClient.get('/api/sessions/streak'),
-                ]);
+    const { data: booksData, isLoading: booksLoading } = useQuery({
+        queryKey: ['goals', 'books'],
+        queryFn: () => booksApi.getWithGoals(),
+        enabled: !!token,
+    });
 
-                const allBooks = booksResponse.content || [];
-                const booksWithGoals = allBooks.filter(b => b.readingGoalType && b.readingGoalPages > 0);
+    const { data: streak = { currentStreak: 0, longestStreak: 0 } } = useQuery({
+        queryKey: ['goals', 'streak'],
+        queryFn: () => apiClient.get('/api/sessions/streak'),
+        enabled: !!token,
+    });
 
-                const sorted = booksWithGoals.sort((a, b) => {
-                    const progA = (a.readingGoalProgress || 0) / a.readingGoalPages;
-                    const progB = (b.readingGoalProgress || 0) / b.readingGoalPages;
-                    if (a.readingGoalType !== b.readingGoalType) return a.readingGoalType === 'WEEKLY' ? -1 : 1;
-                    return progB - progA;
-                });
+    const books = useMemo(() => {
+        const allBooks = booksData || [];
 
-                setBooks(sorted);
-                setStreak(streakResponse);
-            } catch (error) {
-                console.error("Failed to fetch goals", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+        return [...allBooks].sort((a, b) => {
+            const progA = (a.readingGoalProgress || 0) / a.readingGoalPages;
+            const progB = (b.readingGoalProgress || 0) / b.readingGoalPages;
+            if (a.readingGoalType !== b.readingGoalType) return a.readingGoalType === 'WEEKLY' ? -1 : 1;
+            return progB - progA;
+        });
+    }, [booksData]);
 
-        fetchData();
-    }, []);
-
+    const loading = booksLoading;
     const activeBooks = books.filter(b => (b.readingGoalProgress || 0) < b.readingGoalPages);
     const completedBooks = books.filter(b => (b.readingGoalProgress || 0) >= b.readingGoalPages);
 

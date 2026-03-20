@@ -3,7 +3,6 @@ package com.example.readflow.books;
 import com.example.readflow.auth.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +18,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
         List<Book> findByUser(User user);
 
-        @EntityGraph(attributePaths = "readingSessions")
         Page<Book> findByUserOrderByCompletedAsc(User user, Pageable pageable);
 
         void deleteByIdAndUser(Long id, User user);
@@ -44,4 +42,7 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
         @Query("SELECT COUNT(b) FROM Book b WHERE b.user = :user AND b.completed = true")
         int countCompletedByUser(@Param("user") User user);
+
+        @Query("SELECT b FROM Book b WHERE b.user = :user AND b.readingGoalType IS NOT NULL")
+        List<Book> findByUserAndReadingGoalTypeIsNotNull(@Param("user") User user);
 }

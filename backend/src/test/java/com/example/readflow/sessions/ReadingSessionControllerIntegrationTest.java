@@ -11,13 +11,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-
 import org.springframework.http.MediaType;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.time.LocalDate;
 import java.util.Map;
@@ -25,12 +23,13 @@ import java.util.Map;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test") // Uses H2 database
+@ActiveProfiles("test")
 class ReadingSessionControllerIntegrationTest {
 
         @Autowired
@@ -58,10 +57,8 @@ class ReadingSessionControllerIntegrationTest {
         void setUp() {
                 sessionRepository.deleteAll();
                 bookRepository.deleteAll();
-
                 userRepository.deleteAll();
 
-                // Create User
                 testUser = new User();
                 testUser.setEmail("reader@example.com");
                 testUser.setPassword(passwordEncoder.encode("password"));
@@ -69,9 +66,6 @@ class ReadingSessionControllerIntegrationTest {
                 testUser.setEnabled(true);
                 testUser = userRepository.save(testUser);
 
-                // Create Author
-
-                // Create Book
                 testBook = new Book();
                 testBook.setTitle("Reading Timer Test");
                 testBook.setAuthor("Timer Author");
@@ -82,10 +76,10 @@ class ReadingSessionControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "reader@example.com")
         void testStartSession_Success() throws Exception {
                 var request = new com.example.readflow.sessions.dto.StartSessionRequest(testBook.getId());
                 mockMvc.perform(post("/api/sessions/start")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
@@ -95,17 +89,16 @@ class ReadingSessionControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "reader@example.com")
         void testStartSession_AlreadyActive_ShouldRestart() throws Exception {
                 var request = new com.example.readflow.sessions.dto.StartSessionRequest(testBook.getId());
-                // Start first session
                 mockMvc.perform(post("/api/sessions/start")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk());
 
-                // Start second session (should succeed and close the previous one implicitly)
                 mockMvc.perform(post("/api/sessions/start")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
@@ -113,49 +106,51 @@ class ReadingSessionControllerIntegrationTest {
         }
 
         @Test
-        @WithMockUser(username = "reader@example.com")
         void testStopSession_Success() throws Exception {
-                // Start session
                 mockMvc.perform(post("/api/sessions/start")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new com.example.readflow.sessions.dto.StartSessionRequest(
                                                                 testBook.getId()))))
                                 .andExpect(status().isOk());
 
-                // Stop session
                 var stopRequest = new com.example.readflow.sessions.dto.StopSessionRequest(null, null);
                 mockMvc.perform(post("/api/sessions/stop")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(stopRequest)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status", is("COMPLETED")))
                                 .andExpect(jsonPath("$.endTime", notNullValue()));
 
-                // Check DB
                 assertEquals(0, sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(testUser,
                                 java.util.List.of(SessionStatus.ACTIVE)).stream().count());
         }
 
         @Test
-        @WithMockUser(username = "reader@example.com")
         void testGetActiveSession_Found() throws Exception {
-                // Start session
                 mockMvc.perform(post("/api/sessions/start")
+                                .with(jwtForUser())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(Map.of("bookId", testBook.getId()))))
                                 .andExpect(status().isOk());
 
-                // Get Active
-                mockMvc.perform(get("/api/sessions/active"))
+                mockMvc.perform(get("/api/sessions/active").with(jwtForUser()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status", is("ACTIVE")));
         }
 
         @Test
-        @WithMockUser(username = "reader@example.com")
         void testGetActiveSession_None() throws Exception {
-                mockMvc.perform(get("/api/sessions/active"))
+                mockMvc.perform(get("/api/sessions/active").with(jwtForUser()))
                                 .andExpect(status().isNoContent());
+        }
+
+        private RequestPostProcessor jwtForUser() {
+                return jwt().jwt(builder -> builder
+                        .subject(testUser.getEmail())
+                        .claim("userId", testUser.getId())
+                        .claim("role", testUser.getRole().name()));
         }
 }

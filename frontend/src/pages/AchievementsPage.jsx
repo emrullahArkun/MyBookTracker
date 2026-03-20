@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Box, SimpleGrid, Card, Text, Flex, Icon, Skeleton, Badge } from '@chakra-ui/react';
 import {
     FaBookOpen, FaBookReader, FaBuilding, FaScroll,
@@ -6,7 +5,9 @@ import {
     FaCalendarAlt, FaBolt
 } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 
+import { useAuth } from '../context/AuthContext';
 import { useThemeTokens } from '../shared/hooks/useThemeTokens';
 import statsApi from '../features/stats/api/statsApi';
 
@@ -79,18 +80,13 @@ const AchievementCard = ({ achievement, cardBg, textColor }) => {
 const AchievementsPage = () => {
     const { t } = useTranslation();
     const { cardBg, textColor } = useThemeTokens();
+    const { token } = useAuth();
 
-    const [achievements, setAchievements] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        statsApi.getAchievements()
-            .then(setAchievements)
-            .catch(() => {})
-            .finally(() => setLoading(false));
-    }, []);
+    const { data: achievements = [], isLoading: loading } = useQuery({
+        queryKey: ['stats', 'achievements'],
+        queryFn: () => statsApi.getAchievements(),
+        enabled: !!token,
+    });
 
     if (loading) {
         return (

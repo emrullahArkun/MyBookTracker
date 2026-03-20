@@ -38,6 +38,8 @@ public class ReadingSession {
     @Column(nullable = false)
     private SessionStatus status;
 
+    private Integer startPage;
+
     private Integer endPage;
 
     private Integer pagesRead;

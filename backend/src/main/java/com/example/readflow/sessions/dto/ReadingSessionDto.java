@@ -11,7 +11,9 @@ public record ReadingSessionDto(
                 @JsonFormat(shape = JsonFormat.Shape.STRING) Instant startTime,
                 @JsonFormat(shape = JsonFormat.Shape.STRING) Instant endTime,
                 SessionStatus status,
+                Integer startPage,
                 Integer endPage,
+                Integer pagesRead,
                 Long pausedMillis,
                 @JsonFormat(shape = JsonFormat.Shape.STRING) Instant pausedAt) {
 }

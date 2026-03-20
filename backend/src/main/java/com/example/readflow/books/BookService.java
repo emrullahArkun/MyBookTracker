@@ -2,7 +2,6 @@ package com.example.readflow.books;
 
 import com.example.readflow.auth.User;
 import com.example.readflow.books.dto.CreateBookRequest;
-import com.example.readflow.sessions.ReadingSessionService;
 import com.example.readflow.shared.exception.DuplicateResourceException;
 import com.example.readflow.shared.exception.ResourceNotFoundException;
 import jakarta.validation.constraints.NotNull;
@@ -23,7 +22,6 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
-    private final ReadingSessionService readingSessionService;
     private final BookProgressService bookProgressService;
 
     public Page<Book> findAllByUser(User user, Pageable pageable) {
@@ -40,6 +38,10 @@ public class BookService {
 
     public List<String> getAllOwnedIsbns(User user) {
         return bookRepository.findAllIsbnsByUser(user);
+    }
+
+    public List<Book> findBooksWithGoals(User user) {
+        return bookRepository.findByUserAndReadingGoalTypeIsNotNull(user);
     }
 
     @Transactional
@@ -64,8 +66,6 @@ public class BookService {
     public void deleteByIdAndUser(@NotNull Long id, User user) {
         Book book = bookRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
-
-        readingSessionService.deleteSessionsByBook(user, book);
 
         bookRepository.delete(book);
     }
