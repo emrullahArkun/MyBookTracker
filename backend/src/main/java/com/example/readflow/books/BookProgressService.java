@@ -1,14 +1,10 @@
 package com.example.readflow.books;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class BookProgressService {
-
-    private final BookRepository bookRepository;
 
     @Transactional
     public Book updateProgress(Book book, Integer currentPage) {
@@ -25,6 +21,6 @@ public class BookProgressService {
             book.setCompleted(currentPage >= book.getPageCount());
         }
 
-        return bookRepository.save(book);
+        return book;
     }
 }
