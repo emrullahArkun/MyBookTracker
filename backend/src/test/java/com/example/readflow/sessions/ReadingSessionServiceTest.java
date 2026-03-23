@@ -54,7 +54,7 @@ class ReadingSessionServiceTest {
     void startSession_ShouldCreateNewSession() {
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.empty());
-        when(bookRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByIdAndUser(10L, user)).thenReturn(Optional.of(book));
         when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.startSession(user, 10L);
@@ -103,7 +103,7 @@ class ReadingSessionServiceTest {
                 .thenReturn(Optional.of(existing)) // startSession check
                 .thenReturn(Optional.of(existing)) // stopSession finds it
                 .thenReturn(Optional.empty()); // After stop, no more active
-        when(bookRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByIdAndUser(10L, user)).thenReturn(Optional.of(book));
         when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.startSession(user, 10L);
@@ -114,7 +114,7 @@ class ReadingSessionServiceTest {
     void startSession_ShouldThrow_WhenBookNotFound() {
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.empty());
-        when(bookRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.empty());
+        when(bookRepository.findByIdAndUser(10L, user)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> sessionService.startSession(user, 10L));
     }
@@ -367,7 +367,7 @@ class ReadingSessionServiceTest {
 
     @Test
     void getSessionsByBook_ShouldReturnSessions() {
-        when(bookRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.of(book));
+        when(bookRepository.findByIdAndUser(10L, user)).thenReturn(Optional.of(book));
         when(sessionRepository.findByUserAndBook(user, book)).thenReturn(List.of(new ReadingSession()));
 
         List<ReadingSession> result = sessionService.getSessionsByBook(user, 10L);
@@ -376,7 +376,7 @@ class ReadingSessionServiceTest {
 
     @Test
     void getSessionsByBook_ShouldThrow_WhenBookNotFound() {
-        when(bookRepository.findByIdAndUserId(10L, 1L)).thenReturn(Optional.empty());
+        when(bookRepository.findByIdAndUser(10L, user)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
                 () -> sessionService.getSessionsByBook(user, 10L));

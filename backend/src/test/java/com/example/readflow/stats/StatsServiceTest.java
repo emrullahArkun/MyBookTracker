@@ -59,8 +59,8 @@ class StatsServiceTest {
 
     @Test
     void getOverview_ShouldReturnAllStats() {
-        when(bookRepository.countByUser(user)).thenReturn(5);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(2);
+        when(bookRepository.countByUser(user)).thenReturn(5L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(2L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(500L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(
@@ -86,8 +86,8 @@ class StatsServiceTest {
 
     @Test
     void getOverview_ShouldHandleEmptyData() {
-        when(bookRepository.countByUser(user)).thenReturn(0);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(0L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(Collections.emptyList());
@@ -108,8 +108,8 @@ class StatsServiceTest {
         ReadingSession noPages = buildSession(LocalDate.now(), 0, 10);
         noPages.setPagesRead(null);
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(noPages));
@@ -131,8 +131,8 @@ class StatsServiceTest {
         noEnd.setPagesRead(10);
         noEnd.setPausedMillis(0L);
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(noEnd));
@@ -149,8 +149,8 @@ class StatsServiceTest {
         ReadingSession s = buildSession(LocalDate.now(), 10, 10);
         s.setPausedMillis(7_200_000L); // 2h paused but session was only 1h
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
@@ -172,8 +172,8 @@ class StatsServiceTest {
         s.setPagesRead(10);
         s.setPausedMillis(0L);
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
@@ -190,8 +190,8 @@ class StatsServiceTest {
         ReadingSession s = buildSession(LocalDate.now(), 0, 10);
         s.setPagesRead(0);
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
@@ -208,8 +208,8 @@ class StatsServiceTest {
         ReadingSession s = buildSession(LocalDate.now(), 20, 10);
         s.setPausedMillis(1800_000L); // 30 min paused
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(20L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
@@ -224,8 +224,8 @@ class StatsServiceTest {
     @Test
     void getOverview_ShouldLimitGenresToEight() {
         List<String> cats = List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J");
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(Collections.emptyList());
@@ -239,8 +239,8 @@ class StatsServiceTest {
 
     @Test
     void getOverview_ShouldHandleNullCategories() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(Collections.emptyList());
@@ -260,8 +260,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldReturnAllTen() {
-        when(bookRepository.countByUser(user)).thenReturn(0);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(0L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(0L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -277,8 +277,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockFirstSession() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(30L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(1);
@@ -295,8 +295,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockBookworm() {
-        when(bookRepository.countByUser(user)).thenReturn(5);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(5);
+        when(bookRepository.countByUser(user)).thenReturn(5L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(5L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(1500L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(20L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(3);
@@ -313,8 +313,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockMarathon() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(120L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(2L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(1);
@@ -334,8 +334,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldDetectEarlyBird() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -352,8 +352,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldDetectNightOwl() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -370,8 +370,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldDetectNightOwlAfterMidnight() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -388,8 +388,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockWeekStreak() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(100L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(7L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(7);
@@ -410,8 +410,8 @@ class StatsServiceTest {
         fastBook.setCompleted(true);
         fastBook.setStartDate(LocalDate.now().minusDays(5));
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(1);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(1L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(200L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(5L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -432,8 +432,8 @@ class StatsServiceTest {
         notDone.setCompleted(false);
         notDone.setStartDate(LocalDate.now().minusDays(3));
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(50L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(2L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -454,8 +454,8 @@ class StatsServiceTest {
         slowBook.setCompleted(true);
         slowBook.setStartDate(LocalDate.now().minusDays(30));
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(1);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(1L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(200L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(5L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -472,8 +472,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockLibraryBuilder() {
-        when(bookRepository.countByUser(user)).thenReturn(10);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(10L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(0L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -490,8 +490,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockPageTurner() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(1000L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(10L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -508,8 +508,8 @@ class StatsServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockMonthStreak() {
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(100L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(30L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(30);
@@ -534,8 +534,8 @@ class StatsServiceTest {
         noStart.setPagesRead(10);
         noStart.setPausedMillis(0L);
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(0);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
@@ -557,8 +557,8 @@ class StatsServiceTest {
         noDate.setCompleted(true);
         noDate.setStartDate(null);
 
-        when(bookRepository.countByUser(user)).thenReturn(1);
-        when(bookRepository.countCompletedByUser(user)).thenReturn(1);
+        when(bookRepository.countByUser(user)).thenReturn(1L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(1L);
         when(sessionRepository.sumPagesReadByUser(user)).thenReturn(200L);
         when(sessionRepository.countCompletedByUser(user)).thenReturn(5L);
         when(streakService.calculateCurrentStreak(user)).thenReturn(0);
