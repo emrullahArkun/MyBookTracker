@@ -58,11 +58,6 @@ public class BookService {
     }
 
     @Transactional
-    public Book save(@NotNull Book book) {
-        return bookRepository.save(book);
-    }
-
-    @Transactional
     public void deleteByIdAndUser(@NotNull Long id, User user) {
         Book book = bookRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
@@ -72,8 +67,7 @@ public class BookService {
 
     @Transactional
     public void deleteAllByUser(User user) {
-        List<Book> books = bookRepository.findByUser(user);
-        bookRepository.deleteAll(books);
+        bookRepository.deleteByUser(user);
     }
 
     @Transactional
@@ -96,7 +90,7 @@ public class BookService {
             book.setCurrentPage(book.getPageCount());
         }
 
-        return bookRepository.save(book);
+        return book;
     }
 
     @Transactional
@@ -106,6 +100,6 @@ public class BookService {
 
         book.setReadingGoalType(type);
         book.setReadingGoalPages(pages);
-        return bookRepository.save(book);
+        return book;
     }
 }

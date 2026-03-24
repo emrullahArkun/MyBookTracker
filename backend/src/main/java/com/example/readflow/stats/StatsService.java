@@ -25,8 +25,8 @@ public class StatsService {
     private final StreakService streakService;
 
     public StatsOverviewDto getOverview(User user) {
-        int totalBooks = bookRepository.countByUser(user);
-        int completedBooks = bookRepository.countCompletedByUser(user);
+        long totalBooks = bookRepository.countByUser(user);
+        long completedBooks = bookRepository.countByUserAndCompletedTrue(user);
         long totalPagesRead = sessionRepository.sumPagesReadByUser(user);
 
         LocalDate since = LocalDate.now(ZoneOffset.UTC).minusYears(1);
@@ -45,8 +45,8 @@ public class StatsService {
     }
 
     public List<AchievementDto> getAchievements(User user) {
-        int totalBooks = bookRepository.countByUser(user);
-        int completedBooks = bookRepository.countCompletedByUser(user);
+        long totalBooks = bookRepository.countByUser(user);
+        long completedBooks = bookRepository.countByUserAndCompletedTrue(user);
         long totalPages = sessionRepository.sumPagesReadByUser(user);
         long totalSessions = sessionRepository.countCompletedByUser(user);
         int currentStreak = streakService.calculateCurrentStreak(user);

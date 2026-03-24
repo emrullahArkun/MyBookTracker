@@ -109,11 +109,8 @@ class BookServiceTest {
 
     @Test
     void deleteAllByUser_ShouldDeleteAll() {
-        List<Book> books = List.of(new Book(), new Book());
-        when(bookRepository.findByUser(user)).thenReturn(books);
-
         bookService.deleteAllByUser(user);
-        verify(bookRepository).deleteAll(books);
+        verify(bookRepository).deleteByUser(user);
     }
 
     @Test
@@ -137,7 +134,6 @@ class BookServiceTest {
     void updateBookStatus_ShouldSetCompleted() {
         Book book = new Book();
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
-        when(bookRepository.save(any(Book.class))).thenAnswer(i -> i.getArgument(0));
 
         Book result = bookService.updateBookStatus(1L, true, user);
         assertTrue(result.getCompleted());
@@ -147,18 +143,9 @@ class BookServiceTest {
     void updateReadingGoal_ShouldSetGoal() {
         Book book = new Book();
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
-        when(bookRepository.save(any(Book.class))).thenAnswer(i -> i.getArgument(0));
 
         Book result = bookService.updateReadingGoal(1L, ReadingGoalType.WEEKLY, 100, user);
         assertEquals(ReadingGoalType.WEEKLY, result.getReadingGoalType());
         assertEquals(100, result.getReadingGoalPages());
-    }
-
-    @Test
-    void save_ShouldSaveBook() {
-        Book book = new Book();
-        when(bookRepository.save(book)).thenReturn(book);
-
-        assertEquals(book, bookService.save(book));
     }
 }
