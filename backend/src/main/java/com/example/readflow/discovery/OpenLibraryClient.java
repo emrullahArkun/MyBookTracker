@@ -2,21 +2,18 @@ package com.example.readflow.discovery;
 
 import com.example.readflow.discovery.dto.RecommendedBookDto;
 import com.example.readflow.discovery.dto.SearchResultDto;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -27,15 +24,14 @@ public class OpenLibraryClient {
     private static final String FIELDS = "key,title,author_name,cover_i,isbn,subject,first_publish_year,number_of_pages_median";
     private static final String COVER_URL_TEMPLATE = "https://covers.openlibrary.org/b/id/%d-M.jpg";
 
-    private final RestTemplate restTemplate;
-    private final HttpHeaders headers;
+    private final RestClient restClient;
 
     public OpenLibraryClient(
-            RestTemplate restTemplate,
+            RestClient.Builder restClientBuilder,
             @Value("${app.openlibrary.user-agent:ReadFlow (readflow@example.com)}") String userAgent) {
-        this.restTemplate = restTemplate;
-        this.headers = new HttpHeaders();
-        this.headers.set("User-Agent", userAgent);
+        this.restClient = restClientBuilder
+                .defaultHeader("User-Agent", userAgent)
+                .build();
     }
 
     @Cacheable(value = "openLibraryBooks", key = "'author:' + #author + ':' + #maxResults")
@@ -66,17 +62,15 @@ public class OpenLibraryClient {
         return fetchBooksWithTotal(url);
     }
 
-    @SuppressWarnings("unchecked")
     private List<RecommendedBookDto> fetchBooks(String url) {
         try {
-            Map<String, Object> response = doGet(url);
-            if (response == null || !response.containsKey("docs")) {
+            OpenLibraryResponse response = doGet(url);
+            if (response == null || response.docs() == null) {
                 return Collections.emptyList();
             }
 
-            List<Map<String, Object>> docs = (List<Map<String, Object>>) response.get("docs");
-            return docs.stream()
-                    .filter(this::hasCover)
+            return response.docs().stream()
+                    .filter(doc -> doc.coverI() != null)
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
         } catch (RestClientException e) {
@@ -85,22 +79,21 @@ public class OpenLibraryClient {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private SearchResultDto fetchBooksWithTotal(String url) {
         try {
-            Map<String, Object> response = doGet(url);
-            if (response == null || !response.containsKey("docs")) {
-                int total = response != null && response.containsKey("numFound")
-                        ? ((Number) response.get("numFound")).intValue() : 0;
-                return new SearchResultDto(Collections.emptyList(), total);
+            OpenLibraryResponse response = doGet(url);
+            if (response == null) {
+                return new SearchResultDto(Collections.emptyList(), 0);
             }
 
-            int numFound = response.containsKey("numFound")
-                    ? ((Number) response.get("numFound")).intValue() : 0;
+            int numFound = response.numFound() != null ? response.numFound() : 0;
 
-            List<Map<String, Object>> docs = (List<Map<String, Object>>) response.get("docs");
-            List<RecommendedBookDto> books = docs.stream()
-                    .filter(this::hasCover)
+            if (response.docs() == null) {
+                return new SearchResultDto(Collections.emptyList(), numFound);
+            }
+
+            List<RecommendedBookDto> books = response.docs().stream()
+                    .filter(doc -> doc.coverI() != null)
                     .map(this::mapToDto)
                     .collect(Collectors.toList());
 
@@ -111,56 +104,53 @@ public class OpenLibraryClient {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> doGet(String url) {
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        return restTemplate.exchange(url, HttpMethod.GET, entity, Map.class).getBody();
+    private OpenLibraryResponse doGet(String url) {
+        return restClient.get()
+                .uri(url)
+                .retrieve()
+                .body(OpenLibraryResponse.class);
     }
 
-    private boolean hasCover(Map<String, Object> doc) {
-        return doc.containsKey("cover_i") && doc.get("cover_i") != null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private RecommendedBookDto mapToDto(Map<String, Object> doc) {
-        String title = (String) doc.get("title");
-        List<String> authors = (List<String>) doc.get("author_name");
-        List<String> subjects = (List<String>) doc.get("subject");
-
-        // Limit subjects to first 3 to keep it concise
+    private RecommendedBookDto mapToDto(OpenLibraryDoc doc) {
+        List<String> subjects = doc.subject();
         if (subjects != null && subjects.size() > 3) {
             subjects = subjects.subList(0, 3);
         }
 
-        Integer publishYear = doc.containsKey("first_publish_year")
-                ? ((Number) doc.get("first_publish_year")).intValue() : null;
-
-        Integer pageCount = doc.containsKey("number_of_pages_median")
-                ? ((Number) doc.get("number_of_pages_median")).intValue() : null;
-
         // Prefer ISBN-13 over ISBN-10
         String isbn = null;
-        List<String> isbns = (List<String>) doc.get("isbn");
-        if (isbns != null && !isbns.isEmpty()) {
-            isbn = isbns.stream()
+        if (doc.isbn() != null && !doc.isbn().isEmpty()) {
+            isbn = doc.isbn().stream()
                     .filter(i -> i.length() == 13)
                     .findFirst()
-                    .orElse(isbns.stream()
+                    .orElse(doc.isbn().stream()
                             .filter(i -> i.length() == 10)
                             .findFirst()
-                            .orElse(isbns.get(0)));
+                            .orElse(doc.isbn().get(0)));
         }
 
-        // Cover URL from cover_i
-        Number coverId = (Number) doc.get("cover_i");
-        String coverUrl = coverId != null
-                ? String.format(COVER_URL_TEMPLATE, coverId.longValue())
+        String coverUrl = doc.coverI() != null
+                ? String.format(COVER_URL_TEMPLATE, doc.coverI())
                 : null;
 
-        return new RecommendedBookDto(title, authors, subjects, publishYear, pageCount, isbn, coverUrl);
+        return new RecommendedBookDto(doc.title(), doc.authorName(), subjects,
+                doc.firstPublishYear(), doc.numberOfPagesMedian(), isbn, coverUrl);
     }
 
     private String encodeParam(String param) {
         return URLEncoder.encode(param, StandardCharsets.UTF_8);
     }
+
+    // Jackson records for Open Library API response mapping
+    private record OpenLibraryResponse(Integer numFound, List<OpenLibraryDoc> docs) {}
+
+    private record OpenLibraryDoc(
+            String title,
+            @JsonProperty("author_name") List<String> authorName,
+            List<String> subject,
+            @JsonProperty("first_publish_year") Integer firstPublishYear,
+            @JsonProperty("number_of_pages_median") Integer numberOfPagesMedian,
+            List<String> isbn,
+            @JsonProperty("cover_i") Long coverI
+    ) {}
 }

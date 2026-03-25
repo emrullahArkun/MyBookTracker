@@ -3,26 +3,29 @@ package com.example.readflow.auth;
 import com.example.readflow.shared.exception.DuplicateResourceException;
 import com.example.readflow.shared.exception.InvalidCredentialsException;
 import com.example.readflow.shared.exception.ResourceNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
 public class AuthService {
-
-    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    // Pre-encoded dummy hash for timing attack prevention.
+    // Ensures login always runs BCrypt regardless of whether the user exists.
+    private static final String DUMMY_HASH =
+            "$2a$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345";
 
+    @Transactional
     public User registerUser(String email, String password) {
-        if (userRepository.findByEmail(email).isPresent()) {
+        if (userRepository.existsByEmail(email)) {
             throw new DuplicateResourceException("Email already taken");
         }
 
@@ -36,21 +39,23 @@ public class AuthService {
     }
 
     public User login(String email, String password) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
+        User user = userRepository.findByEmail(email).orElse(null);
 
-        log.debug("Login attempt for: {}", email);
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            log.warn("Password mismatch for: {}", email);
+        // Always run BCrypt to prevent timing-based user enumeration
+        String hashToCheck = user != null ? user.getPassword() : DUMMY_HASH;
+        boolean passwordMatches = passwordEncoder.matches(password, hashToCheck);
+
+        if (user == null || !passwordMatches) {
+            log.warn("Failed login attempt for: {}", email);
             throw new InvalidCredentialsException("Invalid credentials");
         }
-        log.info("Login successful for: {}", email);
 
         if (!user.isEnabled()) {
-            user.setEnabled(true);
-            userRepository.save(user);
+            log.warn("Login attempt for disabled account: {}", email);
+            throw new InvalidCredentialsException("Invalid credentials");
         }
 
+        log.info("Login successful for: {}", email);
         return user;
     }
 

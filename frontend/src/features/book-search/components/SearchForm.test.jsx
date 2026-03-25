@@ -11,14 +11,14 @@ vi.mock('react-i18next', () => ({
 describe('SearchForm', () => {
     it('should render search input', () => {
         render(<SearchForm query="" setQuery={vi.fn()} onSearch={vi.fn()} />);
-        expect(screen.getByPlaceholderText('Suche nach Titel, Autor, ISBN...')).toBeDefined();
+        expect(screen.getByPlaceholderText('search.placeholder')).toBeDefined();
     });
 
     it('should call setQuery on input change', () => {
         const setQuery = vi.fn();
         render(<SearchForm query="" setQuery={setQuery} onSearch={vi.fn()} />);
 
-        fireEvent.change(screen.getByPlaceholderText('Suche nach Titel, Autor, ISBN...'), {
+        fireEvent.change(screen.getByPlaceholderText('search.placeholder'), {
             target: { value: 'test' },
         });
 

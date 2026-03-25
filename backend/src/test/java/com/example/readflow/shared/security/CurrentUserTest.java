@@ -1,6 +1,7 @@
 package com.example.readflow.shared.security;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,15 +32,7 @@ class CurrentUserTest {
     }
 
     @Test
-    void currentUser_ShouldNotHaveAuthenticationPrincipal() {
-        java.lang.annotation.Annotation[] annotations = CurrentUser.class.getAnnotations();
-        boolean hasAuthPrincipal = false;
-        for (java.lang.annotation.Annotation a : annotations) {
-            if (a.annotationType().getSimpleName().equals("AuthenticationPrincipal")) {
-                hasAuthPrincipal = true;
-                break;
-            }
-        }
-        assertFalse(hasAuthPrincipal);
+    void currentUser_ShouldBeMetaAnnotatedWithAuthenticationPrincipal() {
+        assertNotNull(CurrentUser.class.getAnnotation(AuthenticationPrincipal.class));
     }
 }

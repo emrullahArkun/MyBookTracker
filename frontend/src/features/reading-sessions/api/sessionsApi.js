@@ -1,7 +1,7 @@
 import apiClient from '../../../api/apiClient';
 
 export const sessionsApi = {
-    getActive: () => apiClient.get(`/api/sessions/active?_t=${new Date().getTime()}`),
+    getActive: () => apiClient.get('/api/sessions/active'),
     getByBookId: (bookId) => apiClient.get(`/api/sessions/book/${bookId}`),
     start: (bookId) => apiClient.post('/api/sessions/start', { bookId }),
     stop: (endTime, endPage) => {

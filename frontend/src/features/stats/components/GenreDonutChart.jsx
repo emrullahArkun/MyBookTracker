@@ -8,70 +8,6 @@ const COLORS = [
     '#B794F4', '#68D391', '#F687B3', '#90CDF4',
 ];
 
-const GENRE_MAP_DE = {
-    'fiction': 'Belletristik',
-    'non-fiction': 'Sachbuch',
-    'nonfiction': 'Sachbuch',
-    'mystery': 'Krimi',
-    'thriller': 'Thriller',
-    'romance': 'Romantik',
-    'science fiction': 'Science-Fiction',
-    'sci-fi': 'Sci-Fi',
-    'fantasy': 'Fantasy',
-    'horror': 'Horror',
-    'biography': 'Biografie',
-    'autobiography': 'Autobiografie',
-    'history': 'Geschichte',
-    'philosophy': 'Philosophie',
-    'psychology': 'Psychologie',
-    'science': 'Wissenschaft',
-    'poetry': 'Lyrik',
-    'drama': 'Drama',
-    'adventure': 'Abenteuer',
-    'children': 'Kinderbuch',
-    "children's literature": 'Kinderliteratur',
-    'young adult': 'Jugendbuch',
-    'comics': 'Comics',
-    'graphic novels': 'Graphic Novels',
-    'cooking': 'Kochen',
-    'travel': 'Reise',
-    'art': 'Kunst',
-    'music': 'Musik',
-    'religion': 'Religion',
-    'politics': 'Politik',
-    'economics': 'Wirtschaft',
-    'education': 'Bildung',
-    'self-help': 'Ratgeber',
-    'health': 'Gesundheit',
-    'sports': 'Sport',
-    'nature': 'Natur',
-    'humor': 'Humor',
-    'crime': 'Krimi',
-    'detective': 'Detektiv',
-    'suspense': 'Spannung',
-    'historical fiction': 'Historischer Roman',
-    'literary fiction': 'Literarische Fiktion',
-    'contemporary': 'Gegenwartsliteratur',
-    'classic': 'Klassiker',
-    'classics': 'Klassiker',
-    'dystopia': 'Dystopie',
-    'war': 'Krieg',
-    'manga': 'Manga',
-    'essays': 'Essays',
-    'journalism': 'Journalismus',
-    'true crime': 'True Crime',
-    'family': 'Familie',
-    'love': 'Liebe',
-    'animals': 'Tiere',
-    'technology': 'Technologie',
-    'business': 'Business',
-    'memoir': 'Memoiren',
-};
-
-const translateGenre = (genre, lang) => {
-    if (lang !== 'de') return genre;
-    return GENRE_MAP_DE[genre.toLowerCase()] || genre;
-};
 
 const CustomTooltip = ({ active, payload, t }) => {
     if (!active || !payload?.length) return null;
@@ -87,14 +23,14 @@ const CustomTooltip = ({ active, payload, t }) => {
 };
 
 const GenreDonutChart = ({ genreDistribution = [] }) => {
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
     const data = useMemo(() =>
         genreDistribution.map(g => ({
-            name: translateGenre(g.genre, i18n.language),
+            name: t(`stats.genre.names.${g.genre.toLowerCase()}`, g.genre),
             value: g.count,
         })),
-        [genreDistribution, i18n.language]
+        [genreDistribution, t]
     );
 
     if (data.length === 0) {

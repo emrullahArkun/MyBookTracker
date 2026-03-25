@@ -35,9 +35,4 @@ public interface SearchHistoryRepository extends JpaRepository<SearchHistory, Lo
     @Modifying
     @Query(value = "DELETE FROM search_history WHERE id = (SELECT id FROM search_history WHERE user_id = :userId ORDER BY timestamp ASC LIMIT 1)", nativeQuery = true)
     void deleteOldestByUserId(@Param("userId") Long userId);
-
-    /**
-     * Get recent searches with limit
-     */
-    List<SearchHistory> findTop10ByUserOrderByTimestampDesc(User user);
 }

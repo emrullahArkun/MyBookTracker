@@ -22,6 +22,8 @@ const ConfirmDialog = ({
     confirmLabel,
     cancelLabel,
     confirmColorScheme = 'red',
+    icon = FaExclamationTriangle,
+    iconColor = 'red.300',
 }) => {
     const cancelRef = useRef();
 
@@ -43,7 +45,7 @@ const ConfirmDialog = ({
                     <AlertDialogHeader pt={8} pb={0} textAlign="center">
                         <Flex justify="center" mb={4}>
                             <Flex w={14} h={14} borderRadius="full" bg="whiteAlpha.100" align="center" justify="center">
-                                <Icon as={FaExclamationTriangle} boxSize={6} color="red.300" />
+                                <Icon as={icon} boxSize={6} color={iconColor} />
                             </Flex>
                         </Flex>
                         <Text fontSize="lg" fontWeight="700" color="white">

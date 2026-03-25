@@ -15,15 +15,20 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import com.example.readflow.shared.security.UserAuthenticationToken;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -79,10 +84,10 @@ class ReadingSessionControllerIntegrationTest {
         void testStartSession_Success() throws Exception {
                 var request = new com.example.readflow.sessions.dto.StartSessionRequest(testBook.getId());
                 mockMvc.perform(post("/api/sessions/start")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk())
+                                .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.status", is("ACTIVE")))
                                 .andExpect(jsonPath("$.bookId", is(testBook.getId().intValue())))
                                 .andExpect(jsonPath("$.startTime", notNullValue()));
@@ -92,32 +97,32 @@ class ReadingSessionControllerIntegrationTest {
         void testStartSession_AlreadyActive_ShouldRestart() throws Exception {
                 var request = new com.example.readflow.sessions.dto.StartSessionRequest(testBook.getId());
                 mockMvc.perform(post("/api/sessions/start")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isCreated());
 
                 mockMvc.perform(post("/api/sessions/start")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk())
+                                .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.status", is("ACTIVE")));
         }
 
         @Test
         void testStopSession_Success() throws Exception {
                 mockMvc.perform(post("/api/sessions/start")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new com.example.readflow.sessions.dto.StartSessionRequest(
                                                                 testBook.getId()))))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isCreated());
 
                 var stopRequest = new com.example.readflow.sessions.dto.StopSessionRequest(null, null);
                 mockMvc.perform(post("/api/sessions/stop")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(stopRequest)))
                                 .andExpect(status().isOk())
@@ -131,10 +136,10 @@ class ReadingSessionControllerIntegrationTest {
         @Test
         void testGetActiveSession_Found() throws Exception {
                 mockMvc.perform(post("/api/sessions/start")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(Map.of("bookId", testBook.getId()))))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isCreated());
 
                 mockMvc.perform(get("/api/sessions/active").with(jwtForUser()))
                                 .andExpect(status().isOk())
@@ -148,9 +153,14 @@ class ReadingSessionControllerIntegrationTest {
         }
 
         private RequestPostProcessor jwtForUser() {
-                return jwt().jwt(builder -> builder
+                Jwt jwt = Jwt.withTokenValue("test-token")
+                        .header("alg", "HS256")
                         .subject(testUser.getEmail())
                         .claim("userId", testUser.getId())
-                        .claim("role", testUser.getRole().name()));
+                        .claim("role", testUser.getRole().name())
+                        .issuedAt(Instant.now())
+                        .expiresAt(Instant.now().plusSeconds(3600))
+                        .build();
+                return authentication(new UserAuthenticationToken(jwt, testUser, Collections.emptyList()));
         }
 }

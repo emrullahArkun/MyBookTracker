@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useMatch } from 'react-router-dom';
 import { FaBook, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,8 +45,16 @@ function Navbar() {
         return () => clearTimeout(timer);
     }, [location.pathname, activeSession, updateIndicator]);
 
-    const isStatsPage = location.pathname.match(/\/books\/\d+\/stats/);
-    const isSessionPage = location.pathname.match(/\/books\/\d+\/session/);
+    useEffect(() => {
+        const nav = navRef.current;
+        if (!nav) return;
+        const observer = new ResizeObserver(() => updateIndicator());
+        observer.observe(nav);
+        return () => observer.disconnect();
+    }, [updateIndicator]);
+
+    const isStatsPage = useMatch('/books/:id/stats');
+    const isSessionPage = useMatch('/books/:id/session');
 
     const handleLogout = () => {
         logout();

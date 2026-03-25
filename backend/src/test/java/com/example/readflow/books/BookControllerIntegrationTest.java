@@ -4,6 +4,7 @@ import com.example.readflow.books.dto.CreateBookRequest;
 import com.example.readflow.auth.User;
 import com.example.readflow.auth.Role;
 import com.example.readflow.auth.UserRepository;
+import com.example.readflow.shared.security.UserAuthenticationToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,13 +12,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -60,7 +65,7 @@ public class BookControllerIntegrationTest {
                                 250, null);
 
                 mockMvc.perform(post("/api/books")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
@@ -74,7 +79,7 @@ public class BookControllerIntegrationTest {
                                 "978-9876543210", "New Book", "New Author", null, null, null, null);
 
                 mockMvc.perform(post("/api/books")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
@@ -99,7 +104,7 @@ public class BookControllerIntegrationTest {
                 Map<String, Boolean> updateRequest = Map.of("completed", true);
 
                 mockMvc.perform(patch("/api/books/" + savedBook.getId() + "/status")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateRequest)))
                                 .andExpect(status().isOk())
@@ -116,7 +121,7 @@ public class BookControllerIntegrationTest {
                 Map<String, Integer> updateRequest = Map.of("currentPage", 50);
 
                 mockMvc.perform(patch("/api/books/" + savedBook.getId() + "/progress")
-                                .with(jwtForUser())
+                                .with(jwtForUser()).with(csrf())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateRequest)))
                                 .andExpect(status().isOk())
@@ -127,7 +132,7 @@ public class BookControllerIntegrationTest {
         void shouldDeleteBook() throws Exception {
                 Book savedBook = createBook("Delete Book", "444-444", "Delete Author");
 
-                mockMvc.perform(delete("/api/books/" + savedBook.getId()).with(jwtForUser()))
+                mockMvc.perform(delete("/api/books/" + savedBook.getId()).with(jwtForUser()).with(csrf()))
                                 .andExpect(status().isNoContent());
 
                 mockMvc.perform(get("/api/books/" + savedBook.getId()).with(jwtForUser()))
@@ -135,10 +140,15 @@ public class BookControllerIntegrationTest {
         }
 
         private org.springframework.test.web.servlet.request.RequestPostProcessor jwtForUser() {
-                return jwt().jwt(builder -> builder
+                Jwt jwt = Jwt.withTokenValue("test-token")
+                        .header("alg", "HS256")
                         .subject(defaultUser.getEmail())
                         .claim("userId", defaultUser.getId())
-                        .claim("role", defaultUser.getRole().name()));
+                        .claim("role", defaultUser.getRole().name())
+                        .issuedAt(Instant.now())
+                        .expiresAt(Instant.now().plusSeconds(3600))
+                        .build();
+                return authentication(new UserAuthenticationToken(jwt, defaultUser, Collections.emptyList()));
         }
 
         private Book createBook(String title, String isbn, String author) {

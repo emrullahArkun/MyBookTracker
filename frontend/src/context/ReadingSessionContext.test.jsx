@@ -518,6 +518,35 @@ describe('ReadingSessionContext', () => {
         expect(sessionsApi.getActive.mock.calls.length).toBeGreaterThan(callCountBefore);
     });
 
+    // --- Timer: tick advancement ---
+
+    it('should advance elapsedSeconds as time passes', async () => {
+        const now = Date.now();
+        sessionsApi.getActive.mockResolvedValue({
+            id: 1,
+            startTime: new Date(now).toISOString(),
+            status: 'ACTIVE',
+            pausedMillis: 0,
+        });
+
+        let captured;
+        await act(async () => {
+            render(
+                <ReadingSessionProvider>
+                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
+                </ReadingSessionProvider>
+            );
+        });
+
+        const initialSeconds = captured.elapsedSeconds;
+
+        act(() => {
+            vi.advanceTimersByTime(5000);
+        });
+
+        expect(captured.elapsedSeconds).toBe(initialSeconds + 5);
+    });
+
     // --- Timer: invalid startTime ---
 
     it('should set elapsedSeconds to 0 when startTime is invalid (NaN)', async () => {

@@ -69,6 +69,8 @@
         "updateProgressFailed": "Fortschritt konnte nicht aktualisiert werden: {{message}}",
         "updateStatusFailed": "Status konnte nicht aktualisiert werden: {{message}}",
         "error": "Fehler: {{message}}",
+        "confirmDeleteSelectedTitle": "Ausgewählte Bücher löschen?",
+        "confirmDeleteAllTitle": "ALLE Bücher löschen?",
         "empty": {
             "line1": "Noch keine Bücher in deiner Bibliothek.",
             "line2": "Gehe zur Suche, um Bücher hinzuzufügen!"
@@ -181,7 +183,11 @@
             "endedRemote": "Die Session wurde in einem anderen Tab beendet.",
             "exitWarning": "Beende erst die Session bevor du verlässt!",
             "exitConfirm": "Beende erst die Session bevor du verlässt. Wirklich verlassen?",
-            "summary": "Du hast {{pages}} Seiten gelesen!"
+            "summary": "Du hast {{pages}} Seiten gelesen!",
+            "fetchError": "Buch konnte nicht geladen werden",
+            "startError": "Session konnte nicht gestartet werden. Bitte erneut versuchen.",
+            "pageExceeds": "Seitenzahl darf die Gesamtzahl ({{total}}) nicht überschreiten.",
+            "stopError": "Session konnte nicht beendet werden. Bitte erneut versuchen."
         },
         "stopModal": {
             "title": "Fertig mit Lesen?",
@@ -195,11 +201,16 @@
             "finished": "Fertig!"
         }
     },
+    "error": {
+        "title": "Etwas ist schiefgelaufen",
+        "retry": "Erneut versuchen"
+    },
     "common": {
         "cancel": "Abbrechen",
         "delete": "Löschen",
         "deleteAll": "Alle löschen",
-        "leave": "Verlassen"
+        "leave": "Verlassen",
+        "back": "Zurück"
     },
     "discovery": {
         "loading": "Empfehlungen werden geladen...",
@@ -237,15 +248,76 @@
             "title": "Genre-Verteilung",
             "empty": "Noch keine Genre-Daten",
             "book": "Buch",
-            "books": "Bücher"
+            "books": "Bücher",
+            "names": {
+                "fiction": "Belletristik",
+                "non-fiction": "Sachbuch",
+                "nonfiction": "Sachbuch",
+                "mystery": "Krimi",
+                "thriller": "Thriller",
+                "romance": "Romantik",
+                "science fiction": "Science-Fiction",
+                "sci-fi": "Sci-Fi",
+                "fantasy": "Fantasy",
+                "horror": "Horror",
+                "biography": "Biografie",
+                "autobiography": "Autobiografie",
+                "history": "Geschichte",
+                "philosophy": "Philosophie",
+                "psychology": "Psychologie",
+                "science": "Wissenschaft",
+                "poetry": "Lyrik",
+                "drama": "Drama",
+                "adventure": "Abenteuer",
+                "children": "Kinderbuch",
+                "children's literature": "Kinderliteratur",
+                "young adult": "Jugendbuch",
+                "comics": "Comics",
+                "graphic novels": "Graphic Novels",
+                "cooking": "Kochen",
+                "travel": "Reise",
+                "art": "Kunst",
+                "music": "Musik",
+                "religion": "Religion",
+                "politics": "Politik",
+                "economics": "Wirtschaft",
+                "education": "Bildung",
+                "self-help": "Ratgeber",
+                "health": "Gesundheit",
+                "sports": "Sport",
+                "nature": "Natur",
+                "humor": "Humor",
+                "crime": "Krimi",
+                "detective": "Detektiv",
+                "suspense": "Spannung",
+                "historical fiction": "Historischer Roman",
+                "literary fiction": "Literarische Fiktion",
+                "contemporary": "Gegenwartsliteratur",
+                "classic": "Klassiker",
+                "classics": "Klassiker",
+                "dystopia": "Dystopie",
+                "war": "Krieg",
+                "manga": "Manga",
+                "essays": "Essays",
+                "journalism": "Journalismus",
+                "true crime": "True Crime",
+                "family": "Familie",
+                "love": "Liebe",
+                "animals": "Tiere",
+                "technology": "Technologie",
+                "business": "Business",
+                "memoir": "Memoiren"
+            }
         },
         "weeklyPace": {
             "title": "Wochen-Tempo",
             "empty": "Noch keine Lesedaten"
         },
+        "error": "Statistiken konnten nicht geladen werden.",
         "achievements": {
             "title": "Erfolge",
             "unlocked": "Erreicht",
+            "locked": "Gesperrt",
             "FIRST_SESSION": {
                 "name": "Erste Schritte",
                 "desc": "Schließe deine erste Lesesession ab"
@@ -327,6 +399,7 @@
             "weeklyInfo": "Wochenziel erreicht!",
             "monthlyInfo": "Monatsziel erreicht!",
             "surpassed": "übertroffen",
+            "noGoal": "Kein aktives Ziel gesetzt.",
             "modal": {
                 "title": "Leseziel setzen",
                 "period": "Zeitraum",

@@ -21,15 +21,6 @@ vi.mock('../../../ui/BookCover', () => ({
     default: ({ book }) => <div data-testid="book-cover">{book?.title}</div>
 }));
 
-vi.mock('./UpdateProgressModal', () => ({
-    default: ({ book, onUpdate, onClose }) => (
-        <div data-testid="update-modal">
-            <button onClick={() => onUpdate(book.id, 50)}>Confirm 50</button>
-            <button onClick={onClose}>Close</button>
-        </div>
-    )
-}));
-
 describe('MyBookCard', () => {
     const defaultBook = {
         id: '1',
@@ -62,15 +53,15 @@ describe('MyBookCard', () => {
 
     it('renders the book cover and progress', () => {
         renderCard();
-        expect(screen.getByTestId('book-cover')).toBeDefined();
+        expect(screen.getByTestId('book-cover')).toBeInTheDocument();
         expect(screen.getAllByText('Test Book').length).toBeGreaterThanOrEqual(1);
         // Pages text (e.g. "10 / 100 bookStats.pages")
-        expect(screen.getByText(/bookStats\.pages/)).toBeDefined();
+        expect(screen.getByText(/bookStats\.pages/)).toBeInTheDocument();
     });
 
     it('renders completed badge if completed', () => {
         renderCard({ ...defaultBook, completed: true });
-        expect(screen.getByText('bookCard.finished')).toBeDefined();
+        expect(screen.getByText('bookCard.finished')).toBeInTheDocument();
     });
 
     it('renders no page count if pageCount is 0', () => {

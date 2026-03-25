@@ -2,7 +2,6 @@ package com.example.readflow.sessions;
 
 import com.example.readflow.books.Book;
 import com.example.readflow.auth.User;
-import com.example.readflow.books.BookProgressService;
 import com.example.readflow.shared.exception.IllegalSessionStateException;
 import com.example.readflow.shared.exception.ResourceNotFoundException;
 
@@ -15,8 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,8 +28,6 @@ class ReadingSessionServiceTest {
     private ReadingSessionRepository sessionRepository;
     @Mock
     private BookRepository bookRepository;
-    @Mock
-    private BookProgressService bookProgressService;
     @InjectMocks
     private ReadingSessionService sessionService;
 
@@ -46,6 +41,7 @@ class ReadingSessionServiceTest {
         book = new Book();
         book.setId(10L);
         book.setCurrentPage(0);
+        book.setPageCount(200);
     }
 
     // --- startSession ---
@@ -82,12 +78,11 @@ class ReadingSessionServiceTest {
         paused.setPausedAt(Instant.now().minusSeconds(60));
 
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
-                .thenReturn(Optional.of(paused)) // First call: find existing (ACTIVE or PAUSED)
-                .thenReturn(Optional.of(paused)); // Second call: find PAUSED for resume
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
+                .thenReturn(Optional.of(paused));
 
         ReadingSession result = sessionService.startSession(user, 10L);
         assertEquals(SessionStatus.ACTIVE, result.getStatus());
+        assertTrue(result.getPausedMillis() > 0);
     }
 
     @Test
@@ -100,14 +95,13 @@ class ReadingSessionServiceTest {
         existing.setStatus(SessionStatus.ACTIVE);
 
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
-                .thenReturn(Optional.of(existing)) // startSession check
-                .thenReturn(Optional.of(existing)) // stopSession finds it
-                .thenReturn(Optional.empty()); // After stop, no more active
+                .thenReturn(Optional.of(existing));
         when(bookRepository.findByIdAndUser(10L, user)).thenReturn(Optional.of(book));
         when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.startSession(user, 10L);
         assertEquals(book, result.getBook());
+        assertEquals(SessionStatus.COMPLETED, existing.getStatus());
     }
 
     @Test
@@ -142,11 +136,10 @@ class ReadingSessionServiceTest {
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
         when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
-        when(bookProgressService.updateProgress(book, 50)).thenReturn(book);
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), 50);
-        assertEquals(50, result.getPagesRead()); // endPage(50) - currentPage(0)
-        verify(bookProgressService).updateProgress(book, 50);
+        assertEquals(50, result.getPagesRead());
+        assertEquals(50, book.getCurrentPage());
     }
 
     @Test
@@ -196,7 +189,6 @@ class ReadingSessionServiceTest {
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
         when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
-        when(bookProgressService.updateProgress(book, 50)).thenReturn(book);
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), 50);
         assertEquals(0, result.getPagesRead()); // Clamped to 0
@@ -242,7 +234,6 @@ class ReadingSessionServiceTest {
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
         when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
-        when(bookProgressService.updateProgress(book, 30)).thenReturn(book);
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), 30);
         assertEquals(30, result.getPagesRead()); // 30 - 0
@@ -355,6 +346,12 @@ class ReadingSessionServiceTest {
     void excludeTime_ShouldThrow_WhenMillisNull() {
         assertThrows(IllegalArgumentException.class,
                 () -> sessionService.excludeTime(user, null));
+    }
+
+    @Test
+    void excludeTime_ShouldThrow_WhenMillisZero() {
+        assertThrows(IllegalArgumentException.class,
+                () -> sessionService.excludeTime(user, 0L));
     }
 
     @Test

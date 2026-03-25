@@ -75,6 +75,29 @@ public class Book {
         session.setBook(null);
     }
 
+    public void updateProgress(Integer newPage) {
+        if (newPage < 0) {
+            throw new IllegalArgumentException("Current page cannot be negative");
+        }
+        if (this.pageCount != null && newPage > this.pageCount) {
+            throw new IllegalArgumentException("Current page cannot exceed total page count");
+        }
+
+        this.currentPage = newPage;
+
+        if (this.pageCount != null) {
+            this.completed = (newPage >= this.pageCount);
+        }
+    }
+
+    public void updateStatus(Boolean completed) {
+        this.completed = completed;
+
+        if (Boolean.TRUE.equals(completed) && this.pageCount != null) {
+            this.currentPage = this.pageCount;
+        }
+    }
+
     // Set sensible defaults before first save
     @PrePersist
     public void prePersist() {

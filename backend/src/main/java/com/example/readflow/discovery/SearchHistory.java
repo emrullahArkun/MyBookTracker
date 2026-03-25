@@ -28,13 +28,7 @@ public class SearchHistory {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Builder.Default
     @Column(nullable = false)
-    private LocalDateTime timestamp;
-
-    @PrePersist
-    public void prePersist() {
-        if (timestamp == null) {
-            timestamp = LocalDateTime.now();
-        }
-    }
+    private LocalDateTime timestamp = LocalDateTime.now();
 }

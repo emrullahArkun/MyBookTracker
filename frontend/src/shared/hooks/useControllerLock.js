@@ -14,8 +14,14 @@ export const useControllerLock = () => {
     const [tabId] = useState(generateTabId());
     const [controllerId, setControllerId] = useState(null); // Who is the current controller?
 
+    const isControllerRef = useRef(false);
     const heartbeatRef = useRef(null);
     const checkRef = useRef(null);
+
+    // Keep ref in sync with state
+    useEffect(() => {
+        isControllerRef.current = isController;
+    }, [isController]);
 
     // Function to acquire or renew the lock
     const acquireLock = useCallback(() => {
@@ -35,11 +41,8 @@ export const useControllerLock = () => {
         const now = Date.now();
 
         if (!raw) {
-            // No lock exists, we can take it (optional auto-take logic could go here, but let's be passive unless we started it)
-            // or if we are already controller, we should re-acquire?
             setControllerId(null);
-            if (isController) {
-                // We lost it? or it was cleared. Re-acquire if we think we are controller?
+            if (isControllerRef.current) {
                 acquireLock();
             } else {
                 setIsController(false);
@@ -55,13 +58,11 @@ export const useControllerLock = () => {
                 const amIController = lock.controllerId === tabId;
                 setIsController(amIController);
             } else {
-                // Expired lock
+                // Expired lock — only re-acquire if WE were the last holder
                 setControllerId(null);
-                if (isController) {
-                    // We were controller, but expired? Renew.
+                if (lock.controllerId === tabId) {
                     acquireLock();
                 } else {
-                    // Someone else expired. We *could* take it, but let's wait for user action or "Take Over"
                     setIsController(false);
                 }
             }
@@ -70,7 +71,7 @@ export const useControllerLock = () => {
             setControllerId(null);
             setIsController(false);
         }
-    }, [tabId, isController, acquireLock]);
+    }, [tabId, acquireLock]);
 
     // Heartbeat: If I am controller, renew lock
     useEffect(() => {

@@ -22,6 +22,9 @@ public class JwtTokenService {
 
     public JwtTokenService(@Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.ttl-seconds}") long ttlSeconds) {
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("JWT secret must be at least 32 bytes long for HS256");
+        }
         try {
             this.signer = new MACSigner(secret.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {

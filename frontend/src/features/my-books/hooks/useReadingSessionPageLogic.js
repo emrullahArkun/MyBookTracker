@@ -34,6 +34,7 @@ export const useReadingSessionPageLogic = (bookId) => {
     const [endPage, setEndPage] = useState('');
     const [hasStopped, setHasStopped] = useState(false);
     const [wasActive, setWasActive] = useState(false);
+    const [startFailed, setStartFailed] = useState(false);
 
     // 1. Fetch book details
     useEffect(() => {
@@ -47,7 +48,7 @@ export const useReadingSessionPageLogic = (bookId) => {
                 }
             } catch {
                 toast({
-                    title: t('readingSession.alerts.fetchError', 'Could not load book'),
+                    title: t('readingSession.alerts.fetchError'),
                     status: 'error',
                     duration: 5000,
                     isClosable: true
@@ -89,15 +90,25 @@ export const useReadingSessionPageLogic = (bookId) => {
     // 4. Auto-start session
     const isStartingRef = useRef(false);
     useEffect(() => {
-        if (!sessionLoading && !activeSession && book && !hasStopped && !wasActive) {
+        if (!sessionLoading && !activeSession && book && !hasStopped && !wasActive && !startFailed) {
             if (isStartingRef.current) return;
             isStartingRef.current = true;
 
-            startSession(bookId).finally(() => {
+            startSession(bookId).then((success) => {
+                if (!success) {
+                    setStartFailed(true);
+                    toast({
+                        title: t('readingSession.alerts.startError'),
+                        status: 'error',
+                        duration: 5000,
+                        isClosable: true
+                    });
+                }
+            }).finally(() => {
                 isStartingRef.current = false;
             });
         }
-    }, [sessionLoading, activeSession, book, bookId, startSession, hasStopped, wasActive]);
+    }, [sessionLoading, activeSession, book, bookId, startSession, hasStopped, wasActive, startFailed, toast, t]);
 
     // 5. Navigation Guard
     useEffect(() => {
@@ -163,7 +174,7 @@ export const useReadingSessionPageLogic = (bookId) => {
 
         if (book.pageCount && pageNum > book.pageCount) {
             toast({
-                title: t('readingSession.alerts.pageExceeds', 'Page number cannot exceed total pages ({{total}}).', { total: book.pageCount }),
+                title: t('readingSession.alerts.pageExceeds', { total: book.pageCount }),
                 status: 'warning',
                 duration: 5000,
                 isClosable: true
@@ -184,6 +195,16 @@ export const useReadingSessionPageLogic = (bookId) => {
                 isClosable: true
             });
             navigate('/my-books');
+        } else {
+            setHasStopped(false);
+            setShowStopConfirm(false);
+            resumeSession();
+            toast({
+                title: t('readingSession.alerts.stopError'),
+                status: 'error',
+                duration: 5000,
+                isClosable: true
+            });
         }
     };
 

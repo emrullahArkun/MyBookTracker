@@ -18,6 +18,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
+          git fetch origin main
+
           # Skip if dev and main have no differences
           if git diff --quiet origin/main..HEAD; then
             echo "No differences between dev and main, skipping."

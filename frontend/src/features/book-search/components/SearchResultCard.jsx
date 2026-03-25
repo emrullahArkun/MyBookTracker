@@ -17,8 +17,7 @@ const SearchResultCard = ({ book, onAdd }) => {
 
         // Start animation
         if (imageRef.current) {
-            const imageSrc = imageRef.current.src || imageRef.current.querySelector?.('img')?.src;
-            flyBook(imageRef.current.getBoundingClientRect(), imageSrc);
+            flyBook(imageRef.current.getBoundingClientRect(), book.coverUrl);
         }
 
         setIsAdding(true);

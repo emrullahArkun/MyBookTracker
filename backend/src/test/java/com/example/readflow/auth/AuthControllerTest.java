@@ -2,6 +2,7 @@ package com.example.readflow.auth;
 
 import com.example.readflow.auth.dto.LoginRequest;
 import com.example.readflow.auth.dto.RegisterRequest;
+import com.example.readflow.shared.security.CurrentUser;
 import com.example.readflow.shared.security.JwtTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,11 +10,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import java.security.Principal;
+import org.springframework.web.bind.support.WebDataBinderFactory;
+import org.springframework.web.context.request.NativeWebRequest;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.method.support.ModelAndViewContainer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -34,17 +38,59 @@ class AuthControllerTest {
     private AuthController authController;
 
     private MockMvc mockMvc;
+    private MockMvc mockMvcNoAuth;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         authController = new AuthController(authService, jwtTokenService, 3600, false);
-        mockMvc = MockMvcBuilders.standaloneSetup(authController).build();
+
+        User authenticatedUser = new User();
+        authenticatedUser.setId(1L);
+        authenticatedUser.setEmail("test@example.com");
+        authenticatedUser.setRole(Role.USER);
+
+        // Resolver that returns an authenticated user
+        HandlerMethodArgumentResolver authResolver = new HandlerMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return parameter.getParameterAnnotation(CurrentUser.class) != null
+                        && parameter.getParameterType().equals(User.class);
+            }
+
+            @Override
+            public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                    NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+                return authenticatedUser;
+            }
+        };
+
+        // Resolver that returns null (unauthenticated)
+        HandlerMethodArgumentResolver noAuthResolver = new HandlerMethodArgumentResolver() {
+            @Override
+            public boolean supportsParameter(MethodParameter parameter) {
+                return parameter.getParameterAnnotation(CurrentUser.class) != null
+                        && parameter.getParameterType().equals(User.class);
+            }
+
+            @Override
+            public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+                    NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
+                return null;
+            }
+        };
+
+        mockMvc = MockMvcBuilders.standaloneSetup(authController)
+                .setCustomArgumentResolvers(authResolver)
+                .build();
+        mockMvcNoAuth = MockMvcBuilders.standaloneSetup(authController)
+                .setCustomArgumentResolvers(noAuthResolver)
+                .build();
         objectMapper = new ObjectMapper();
     }
 
     @Test
-    void register_ShouldReturnOk() throws Exception {
+    void register_ShouldReturnCreated() throws Exception {
         RegisterRequest request = new RegisterRequest("test@example.com", "password123");
 
         User user = new User();
@@ -57,7 +103,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").exists())
                 .andExpect(jsonPath("$.user").exists());
     }
@@ -88,24 +134,16 @@ class AuthControllerTest {
     }
 
     @Test
-    void getSession_ShouldReturnUserDetails_WhenPrincipalExists() throws Exception {
-        Principal principal = () -> "test@example.com";
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setRole(Role.USER);
-
-        when(authService.getUserByEmail("test@example.com")).thenReturn(user);
-
-        mockMvc.perform(get("/api/auth/session")
-                .principal(principal))
+    void getSession_ShouldReturnUserDetails_WhenAuthenticated() throws Exception {
+        mockMvc.perform(get("/api/auth/session"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.email").value("test@example.com"))
                 .andExpect(jsonPath("$.user.role").value("USER"));
     }
 
     @Test
-    void getSession_ShouldReturn401_WhenPrincipalIsNull() throws Exception {
-        mockMvc.perform(get("/api/auth/session"))
+    void getSession_ShouldReturn401_WhenNotAuthenticated() throws Exception {
+        mockMvcNoAuth.perform(get("/api/auth/session"))
                 .andExpect(status().isUnauthorized());
     }
 }

@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     Box,
@@ -7,12 +7,10 @@ import {
     GridItem,
     VStack,
     Spinner,
-    Flex,
-    useDisclosure
+    Flex
 } from '@chakra-ui/react';
 import { useReadingSessionPageLogic } from '../hooks/useReadingSessionPageLogic';
 import { useThemeTokens } from '../../../shared/hooks/useThemeTokens';
-import ConfirmDialog from '../../../shared/components/ConfirmDialog';
 
 import SessionBookSidebar from '../components/SessionBookSidebar';
 import SessionTimerCard from '../components/SessionTimerCard';
@@ -41,14 +39,6 @@ const ReadingSessionPage = () => {
         handleStopCancel,
         handleConfirmStop
     } = useReadingSessionPageLogic(id);
-
-    const navigate = useNavigate();
-    const { isOpen: isExitConfirmOpen, onClose: onExitConfirmClose } = useDisclosure();
-
-    const confirmExit = () => {
-        onExitConfirmClose();
-        navigate('/my-books');
-    };
 
     const { bgColor, cardBg, textColor, subTextColor, brandColor } = useThemeTokens();
 
@@ -105,15 +95,6 @@ const ReadingSessionPage = () => {
                     </GridItem>
                 </Grid>
 
-                <ConfirmDialog
-                    isOpen={isExitConfirmOpen}
-                    onClose={onExitConfirmClose}
-                    onConfirm={confirmExit}
-                    title={t('readingSession.alerts.exitConfirmTitle', 'End Session?')}
-                    body={t('readingSession.alerts.exitConfirm')}
-                    confirmLabel={t('common.leave')}
-                    cancelLabel={t('common.cancel')}
-                />
             </Container>
         </Box>
     );

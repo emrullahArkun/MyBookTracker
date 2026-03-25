@@ -17,6 +17,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -25,15 +26,14 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -45,6 +45,9 @@ class BookControllerTest {
 
         @Mock
         private BookMapper bookMapper;
+
+        @Mock
+        private ReadingGoalProgressCalculator progressCalculator;
 
         @InjectMocks
         private BookController bookController;
@@ -72,7 +75,7 @@ class BookControllerTest {
                 };
 
                 mockMvc = MockMvcBuilders.standaloneSetup(bookController)
-                                .setCustomArgumentResolvers(putPrincipal)
+                                .setCustomArgumentResolvers(putPrincipal, new PageableHandlerMethodArgumentResolver())
                                 .setMessageConverters(createPageAwareMessageConverter())
                                 .build();
                 objectMapper = new ObjectMapper();
@@ -81,21 +84,20 @@ class BookControllerTest {
         private org.springframework.http.converter.json.MappingJackson2HttpMessageConverter createPageAwareMessageConverter() {
                 ObjectMapper om = new ObjectMapper();
                 om.registerModule(new org.springframework.data.web.config.SpringDataJacksonConfiguration.PageModule(
-                        new org.springframework.data.web.config.SpringDataWebSettings(
-                                org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.DIRECT)));
+                                new org.springframework.data.web.config.SpringDataWebSettings(
+                                                org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode.DIRECT)));
                 return new org.springframework.http.converter.json.MappingJackson2HttpMessageConverter(om);
         }
 
         @Test
         void getAllBooks_ShouldReturnPage() throws Exception {
-                // Create a concrete list to avoid potential issues with empty/immutable lists
-                // in PageImpl serialization
                 Book book = new Book();
                 book.setId(1L);
                 List<Book> books = new java.util.ArrayList<>(List.of(book));
                 Page<Book> page = new PageImpl<>(books);
 
                 when(bookService.findAllByUser(any(), any(Pageable.class))).thenReturn(page);
+                when(progressCalculator.calculateProgressBatch(anyList())).thenReturn(Map.of());
                 when(bookMapper.toDto(any(Book.class))).thenReturn(
                                 new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null, false, null,
                                                 null, null, null));
@@ -120,7 +122,7 @@ class BookControllerTest {
         @Test
         void getBookById_ShouldReturnBook() throws Exception {
                 Book book = new Book();
-                when(bookService.findByIdAndUser(eq(1L), any())).thenReturn(Optional.of(book));
+                when(bookService.getBookByIdOrThrow(eq(1L), any())).thenReturn(book);
                 when(bookMapper.toDto(book)).thenReturn(
                                 new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null, false, null,
                                                 null, null, null));
@@ -132,8 +134,10 @@ class BookControllerTest {
 
         @Test
         void createBook_ShouldReturnCreatedBook() throws Exception {
-                CreateBookRequest request = new CreateBookRequest("isbn", "title", "author", 2023, "url", 100, List.of("cat"));
+                CreateBookRequest request = new CreateBookRequest("isbn", "title", "author", 2023, "url", 100,
+                                List.of("cat"));
                 Book book = new Book();
+                book.setId(1L);
                 when(bookService.createBook(any(), any())).thenReturn(book);
                 when(bookMapper.toDto(book)).thenReturn(
                                 new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null, false, null,
@@ -142,7 +146,8 @@ class BookControllerTest {
                 mockMvc.perform(post("/api/books")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isCreated());
+                                .andExpect(status().isCreated())
+                                .andExpect(header().exists("Location"));
         }
 
         @Test
@@ -183,7 +188,7 @@ class BookControllerTest {
                                 .thenReturn(book);
                 when(bookMapper.toDto(book))
                                 .thenReturn(new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null,
-                                                false, "WEEKLY", 100, null, null));
+                                                false, ReadingGoalType.WEEKLY, 100, null, null));
 
                 mockMvc.perform(patch("/api/books/1/goal")
                                 .contentType(MediaType.APPLICATION_JSON)

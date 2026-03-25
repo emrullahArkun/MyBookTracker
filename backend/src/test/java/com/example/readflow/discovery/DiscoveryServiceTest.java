@@ -10,6 +10,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.PageRequest;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -86,7 +88,8 @@ class DiscoveryServiceTest {
 
     @Test
     void getTopAuthors_ShouldReturnLimitedList() {
-        when(bookRepository.findTopAuthorsByUser(user)).thenReturn(List.of("A", "B", "C", "D"));
+        when(bookRepository.findTopAuthorsByUser(user, PageRequest.of(0, 2)))
+                .thenReturn(List.of("A", "B"));
 
         List<String> result = discoveryService.getTopAuthors(user, 2);
         assertEquals(2, result.size());
@@ -96,13 +99,13 @@ class DiscoveryServiceTest {
     // --- getTopCategories ---
 
     @Test
-    void getTopCategories_ShouldCountAndSort() {
-        when(bookRepository.findAllCategoriesByUser(user))
-                .thenReturn(List.of("Thriller", "Krimi", "Thriller", "Sci-Fi"));
+    void getTopCategories_ShouldReturnLimitedList() {
+        when(bookRepository.findTopCategoriesByUser(user, PageRequest.of(0, 2)))
+                .thenReturn(List.of("Thriller", "Krimi"));
 
         List<String> result = discoveryService.getTopCategories(user, 2);
         assertEquals(2, result.size());
-        assertEquals("Thriller", result.get(0)); // count 2
+        assertEquals("Thriller", result.get(0));
     }
 
     // --- getRecentSearches ---

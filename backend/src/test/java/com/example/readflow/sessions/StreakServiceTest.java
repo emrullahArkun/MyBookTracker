@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -35,79 +34,82 @@ class StreakServiceTest {
         user.setId(1L);
     }
 
-    // --- calculateCurrentStreak ---
-
     @Test
-    void calculateCurrentStreak_ShouldReturnZero_WhenNoReadingDays() {
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
+    void calculateStreaks_ShouldReturnZeros_WhenNoReadingDays() {
+        when(sessionRepository.findAllDistinctReadingDays(eq(user), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
 
-        assertEquals(0, streakService.calculateCurrentStreak(user));
+        StreakService.StreakInfo result = streakService.calculateStreaks(user);
+        assertEquals(0, result.current());
+        assertEquals(0, result.longest());
     }
 
     @Test
-    void calculateCurrentStreak_ShouldCountConsecutiveDays_IncludingToday() {
+    void calculateStreaks_ShouldCountConsecutiveDays_IncludingToday() {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
+        when(sessionRepository.findAllDistinctReadingDays(eq(user), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(today, today.minusDays(1), today.minusDays(2)));
 
-        assertEquals(3, streakService.calculateCurrentStreak(user));
+        StreakService.StreakInfo result = streakService.calculateStreaks(user);
+        assertEquals(3, result.current());
+        assertEquals(3, result.longest());
     }
 
     @Test
-    void calculateCurrentStreak_ShouldCountFromYesterday_WhenNoSessionToday() {
+    void calculateStreaks_ShouldCountFromYesterday_WhenNoSessionToday() {
         LocalDate yesterday = LocalDate.now(ZoneOffset.UTC).minusDays(1);
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
+        when(sessionRepository.findAllDistinctReadingDays(eq(user), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(yesterday, yesterday.minusDays(1)));
 
-        assertEquals(2, streakService.calculateCurrentStreak(user));
+        StreakService.StreakInfo result = streakService.calculateStreaks(user);
+        assertEquals(2, result.current());
+        assertEquals(2, result.longest());
     }
 
     @Test
-    void calculateCurrentStreak_ShouldBreakOnGap() {
+    void calculateStreaks_ShouldBreakCurrentOnGap() {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
+        when(sessionRepository.findAllDistinctReadingDays(eq(user), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(today, today.minusDays(1), today.minusDays(3)));
 
-        assertEquals(2, streakService.calculateCurrentStreak(user));
+        StreakService.StreakInfo result = streakService.calculateStreaks(user);
+        assertEquals(2, result.current());
+        assertEquals(2, result.longest());
     }
 
     @Test
-    void calculateCurrentStreak_ShouldReturnZero_WhenLastReadingWasTwoDaysAgo() {
+    void calculateStreaks_ShouldReturnZeroCurrent_WhenLastReadingWasTwoDaysAgo() {
         LocalDate twoDaysAgo = LocalDate.now(ZoneOffset.UTC).minusDays(2);
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
+        when(sessionRepository.findAllDistinctReadingDays(eq(user), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(twoDaysAgo));
 
-        assertEquals(0, streakService.calculateCurrentStreak(user));
-    }
-
-    // --- calculateLongestStreak ---
-
-    @Test
-    void calculateLongestStreak_ShouldReturnZero_WhenNoReadingDays() {
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
-                .thenReturn(Collections.emptyList());
-
-        assertEquals(0, streakService.calculateLongestStreak(user));
+        StreakService.StreakInfo result = streakService.calculateStreaks(user);
+        assertEquals(0, result.current());
+        assertEquals(1, result.longest());
     }
 
     @Test
-    void calculateLongestStreak_ShouldFindLongestConsecutiveRun() {
+    void calculateStreaks_ShouldFindLongestConsecutiveRun() {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
+        when(sessionRepository.findAllDistinctReadingDays(eq(user), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(
                         today, today.minusDays(1),
                         today.minusDays(5), today.minusDays(6), today.minusDays(7)
                 ));
 
-        assertEquals(3, streakService.calculateLongestStreak(user));
+        StreakService.StreakInfo result = streakService.calculateStreaks(user);
+        assertEquals(2, result.current());
+        assertEquals(3, result.longest());
     }
 
     @Test
-    void calculateLongestStreak_ShouldReturnOne_WhenSingleDay() {
-        when(sessionRepository.findDistinctReadingDays(eq(user), any(LocalDate.class)))
-                .thenReturn(List.of(LocalDate.now(ZoneOffset.UTC)));
+    void calculateStreaks_ShouldReturnOneForBoth_WhenSingleDayToday() {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        when(sessionRepository.findAllDistinctReadingDays(eq(user), eq(SessionStatus.COMPLETED)))
+                .thenReturn(List.of(today));
 
-        assertEquals(1, streakService.calculateLongestStreak(user));
+        StreakService.StreakInfo result = streakService.calculateStreaks(user);
+        assertEquals(1, result.current());
+        assertEquals(1, result.longest());
     }
 }

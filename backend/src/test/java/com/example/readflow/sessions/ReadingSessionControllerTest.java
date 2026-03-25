@@ -1,6 +1,7 @@
 package com.example.readflow.sessions;
 
 import com.example.readflow.sessions.dto.ExcludeTimeRequest;
+import com.example.readflow.sessions.dto.ReadingSessionDto;
 import com.example.readflow.sessions.dto.StartSessionRequest;
 import com.example.readflow.sessions.dto.StopSessionRequest;
 import com.example.readflow.books.Book;
@@ -37,12 +38,16 @@ class ReadingSessionControllerTest {
     @Mock
     private StreakService streakService;
 
+    @Mock
+    private ReadingSessionMapper sessionMapper;
+
     @InjectMocks
     private ReadingSessionController sessionController;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
     private ReadingSession session;
+    private ReadingSessionDto sessionDto;
 
     @BeforeEach
     void setUp() {
@@ -58,17 +63,21 @@ class ReadingSessionControllerTest {
         session.setBook(book);
         session.setStartTime(Instant.now());
         session.setStatus(SessionStatus.ACTIVE);
+
+        sessionDto = new ReadingSessionDto(10L, 1L, session.getStartTime(), null,
+                SessionStatus.ACTIVE, null, null, null, null, null);
     }
 
     @Test
-    void startSession_ShouldReturnSession() throws Exception {
+    void startSession_ShouldReturnCreated() throws Exception {
         StartSessionRequest request = new StartSessionRequest(1L);
         when(sessionService.startSession(any(), eq(1L))).thenReturn(session);
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(post("/api/sessions/start")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(10));
     }
 
@@ -76,6 +85,7 @@ class ReadingSessionControllerTest {
     void stopSession_ShouldReturnSession() throws Exception {
         StopSessionRequest request = new StopSessionRequest(Instant.now(), 50);
         when(sessionService.stopSession(any(), any(), eq(50))).thenReturn(session);
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(post("/api/sessions/stop")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -84,11 +94,14 @@ class ReadingSessionControllerTest {
     }
 
     @Test
-    void stopSession_ShouldReturnSession_WhenNoRequestBody() throws Exception {
+    void stopSession_ShouldAcceptEmptyBody() throws Exception {
+        StopSessionRequest request = new StopSessionRequest(null, null);
         when(sessionService.stopSession(any(), eq(null), eq(null))).thenReturn(session);
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(post("/api/sessions/stop")
-                .contentType(MediaType.APPLICATION_JSON))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10));
     }
@@ -96,6 +109,7 @@ class ReadingSessionControllerTest {
     @Test
     void getActiveSession_ShouldReturnSession_WhenExists() throws Exception {
         when(sessionService.getActiveSession(any())).thenReturn(Optional.of(session));
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(get("/api/sessions/active"))
                 .andExpect(status().isOk())
@@ -114,6 +128,7 @@ class ReadingSessionControllerTest {
     void excludeTime_ShouldReturnSession() throws Exception {
         ExcludeTimeRequest request = new ExcludeTimeRequest(1000L);
         when(sessionService.excludeTime(any(), eq(1000L))).thenReturn(session);
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(post("/api/sessions/active/exclude-time")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -124,6 +139,7 @@ class ReadingSessionControllerTest {
     @Test
     void pauseSession_ShouldReturnSession() throws Exception {
         when(sessionService.pauseSession(any())).thenReturn(session);
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(post("/api/sessions/active/pause"))
                 .andExpect(status().isOk());
@@ -132,6 +148,7 @@ class ReadingSessionControllerTest {
     @Test
     void resumeSession_ShouldReturnSession() throws Exception {
         when(sessionService.resumeSession(any())).thenReturn(session);
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(post("/api/sessions/active/resume"))
                 .andExpect(status().isOk());
@@ -140,6 +157,7 @@ class ReadingSessionControllerTest {
     @Test
     void getSessionsByBook_ShouldReturnList() throws Exception {
         when(sessionService.getSessionsByBook(any(), eq(1L))).thenReturn(List.of(session));
+        when(sessionMapper.toDto(session)).thenReturn(sessionDto);
 
         mockMvc.perform(get("/api/sessions/book/1"))
                 .andExpect(status().isOk())
@@ -148,8 +166,7 @@ class ReadingSessionControllerTest {
 
     @Test
     void getStreak_ShouldReturnStreakData() throws Exception {
-        when(streakService.calculateCurrentStreak(any())).thenReturn(5);
-        when(streakService.calculateLongestStreak(any())).thenReturn(12);
+        when(streakService.calculateStreaks(any())).thenReturn(new StreakService.StreakInfo(5, 12));
 
         mockMvc.perform(get("/api/sessions/streak"))
                 .andExpect(status().isOk())

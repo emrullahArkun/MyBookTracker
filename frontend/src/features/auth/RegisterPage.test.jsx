@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import RegisterPage from './RegisterPage';
 
 const mockNavigate = vi.fn();
+const mockToast = vi.fn();
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -25,7 +26,7 @@ vi.mock('./api/authApi', () => ({
 
 vi.mock('@chakra-ui/react', async () => {
     const actual = await vi.importActual('@chakra-ui/react');
-    return { ...actual, useToast: () => vi.fn() };
+    return { ...actual, useToast: () => mockToast };
 });
 
 vi.mock('../../ui/layouts/AuthLayout', () => ({
@@ -59,10 +60,10 @@ describe('RegisterPage', () => {
 
     it('should render 3 input fields and submit button', () => {
         render(<MemoryRouter><RegisterPage /></MemoryRouter>);
-        expect(screen.getByLabelText('auth.email')).toBeDefined();
-        expect(screen.getByLabelText('auth.password')).toBeDefined();
-        expect(screen.getByLabelText('auth.confirmPassword')).toBeDefined();
-        expect(screen.getByText('auth.register.button')).toBeDefined();
+        expect(screen.getByLabelText('auth.email')).toBeInTheDocument();
+        expect(screen.getByLabelText('auth.password')).toBeInTheDocument();
+        expect(screen.getByLabelText('auth.confirmPassword')).toBeInTheDocument();
+        expect(screen.getByText('auth.register.button')).toBeInTheDocument();
     });
 
     it('should show error for empty email', async () => {
@@ -70,7 +71,7 @@ describe('RegisterPage', () => {
         fillForm('', 'pass', 'pass');
         fireEvent.click(screen.getByText('auth.register.button'));
 
-        expect(screen.getByText('auth.required')).toBeDefined();
+        expect(screen.getByText('auth.required')).toBeInTheDocument();
     });
 
     it('should show error for invalid email', async () => {
@@ -78,7 +79,7 @@ describe('RegisterPage', () => {
         fillForm('invalid', 'pass', 'pass');
         fireEvent.click(screen.getByText('auth.register.button'));
 
-        expect(screen.getByText('Invalid email format')).toBeDefined();
+        expect(screen.getByText('auth.invalidEmail')).toBeInTheDocument();
     });
 
     it('should show error for empty password', async () => {
@@ -94,7 +95,7 @@ describe('RegisterPage', () => {
         fillForm('a@b.com', 'pass1', 'pass2');
         fireEvent.click(screen.getByText('auth.register.button'));
 
-        expect(screen.getByText('auth.passwordsDoNotMatch')).toBeDefined();
+        expect(screen.getByText('auth.passwordsDoNotMatch')).toBeInTheDocument();
     });
 
     it('should call register API and navigate on success', async () => {
@@ -118,12 +119,17 @@ describe('RegisterPage', () => {
         fireEvent.click(screen.getByText('auth.register.button'));
 
         await waitFor(() => {
-            expect(authApi.register).toHaveBeenCalled();
+            expect(mockToast).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    description: 'Email taken',
+                    status: 'error',
+                })
+            );
         });
     });
 
     it('should render login link', () => {
         render(<MemoryRouter><RegisterPage /></MemoryRouter>);
-        expect(screen.getByText('auth.login.button')).toBeDefined();
+        expect(screen.getByText('auth.login.button')).toBeInTheDocument();
     });
 });

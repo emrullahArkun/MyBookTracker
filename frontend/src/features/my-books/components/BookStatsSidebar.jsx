@@ -78,18 +78,18 @@ const BookStatsSidebar = ({
                     <Box w="full" bg="whiteAlpha.50" p={4} borderRadius="xl" border="1px solid" borderColor="whiteAlpha.100">
                         <Flex justify="space-between" align="center" mb={2}>
                             <Text fontSize="xs" fontWeight="600" color="gray.400" textTransform="uppercase" letterSpacing="wider">
-                                {t('bookStats.goal.title', 'Reading Goal')}
+                                {t('bookStats.goal.title')}
                             </Text>
                             <Button size="xs" colorScheme="teal" variant="ghost" onClick={onOpenModal}>
-                                {goalProgress ? t('bookStats.goal.edit', 'Edit') : t('bookStats.goal.set', 'Set Goal')}
+                                {goalProgress ? t('bookStats.goal.edit') : t('bookStats.goal.set')}
                             </Button>
                         </Flex>
 
                         {goalProgress ? (
                             <VStack align="start" spacing={1} w="full">
                                 <Flex justify="space-between" w="full" fontSize="xs" color="teal.200" mb={1}>
-                                    <Text>{goalProgress.type === 'WEEKLY' ? 'Weekly' : 'Monthly'}</Text>
-                                    <Text>{goalProgress.current} / {goalProgress.target} pages</Text>
+                                    <Text>{goalProgress.type === 'WEEKLY' ? t('bookStats.goal.modal.weekly') : t('bookStats.goal.modal.monthly')}</Text>
+                                    <Text>{goalProgress.current} / {goalProgress.target} {t('bookStats.pages')}</Text>
                                 </Flex>
                                 <Progress
                                     value={goalProgress.percent}
@@ -105,10 +105,10 @@ const BookStatsSidebar = ({
                                     <Flex align="center" mt={1} color="green.300">
                                         <Icon as={FaCheck} mr={1} boxSize={3} />
                                         <Text fontSize="xs" fontWeight="bold">
-                                            {goalProgress.type === 'WEEKLY' ? t('bookStats.goal.weeklyInfo', 'Weekly goal reached!') : t('bookStats.goal.monthlyInfo', 'Monthly goal reached!')}
+                                            {goalProgress.type === 'WEEKLY' ? t('bookStats.goal.weeklyInfo') : t('bookStats.goal.monthlyInfo')}
                                             {goalProgress.multiplier >= 2 && (
                                                 <Text as="span" ml={1} color="green.200" textTransform="uppercase" fontSize="xx-s">
-                                                    ({goalProgress.multiplier}x {t('bookStats.goal.surpassed', 'surpassed')}!)
+                                                    ({goalProgress.multiplier}x {t('bookStats.goal.surpassed')}!)
                                                 </Text>
                                             )}
                                         </Text>
@@ -116,7 +116,7 @@ const BookStatsSidebar = ({
                                 )}
                             </VStack>
                         ) : (
-                            <Text fontSize="xs" color="gray.500">No active goal set.</Text>
+                            <Text fontSize="xs" color="gray.500">{t('bookStats.goal.noGoal')}</Text>
                         )}
                     </Box>
 

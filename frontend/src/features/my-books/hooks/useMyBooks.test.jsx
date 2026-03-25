@@ -86,6 +86,36 @@ describe('useMyBooks wrapper tests', () => {
         });
     });
 
+    it('should optimistically remove book before API resolves', async () => {
+        let resolveDelete;
+        booksApi.delete.mockImplementation(() => new Promise((resolve) => {
+            resolveDelete = resolve;
+        }));
+
+        const { result } = renderHook(() => useMyBooks(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.books).toHaveLength(1);
+        });
+
+        act(() => {
+            result.current.deleteBook(1);
+        });
+
+        // Book should be gone via optimistic update, before API resolves
+        await waitFor(() => {
+            expect(result.current.books).toHaveLength(0);
+        });
+
+        // API has not resolved yet, but UI already updated
+        expect(booksApi.delete).toHaveBeenCalledWith(1);
+
+        // Now resolve the API call
+        await act(async () => {
+            resolveDelete();
+        });
+    });
+
     it('should call deleteAll mutation', async () => {
         const { result } = renderHook(() => useMyBooks(), { wrapper });
         await waitFor(() => expect(result.current.books).toHaveLength(1));

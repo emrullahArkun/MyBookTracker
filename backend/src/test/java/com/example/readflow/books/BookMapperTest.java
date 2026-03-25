@@ -4,31 +4,18 @@ import com.example.readflow.books.dto.BookDto;
 import com.example.readflow.books.dto.CreateBookRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
 class BookMapperTest {
 
     private BookMapper mapper;
 
-    @Mock
-    private ReadingGoalProgressCalculator calculator;
-
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mapper = Mappers.getMapper(BookMapper.class);
-        ReflectionTestUtils.setField(mapper, "calculator", calculator);
+        mapper = new BookMapperImpl();
     }
 
     // --- toDto tests ---
@@ -38,8 +25,6 @@ class BookMapperTest {
         Book book = createBook();
         book.setAuthor("John Doe");
         book.setCategories(List.of("Fiction", "Thriller"));
-
-        when(calculator.calculateProgress(any(Book.class))).thenReturn(25);
 
         BookDto dto = mapper.toDto(book);
 
@@ -52,7 +37,7 @@ class BookMapperTest {
         assertEquals(300, dto.pageCount());
         assertEquals(50, dto.currentPage());
         assertEquals(List.of("Fiction", "Thriller"), dto.categories());
-        assertEquals(25, dto.readingGoalProgress());
+        assertNull(dto.readingGoalProgress()); // Progress is set separately, not by mapper
     }
 
     @Test
@@ -61,8 +46,6 @@ class BookMapperTest {
         book.setId(1L);
         book.setIsbn("isbn");
         book.setTitle("title");
-
-        when(calculator.calculateProgress(any(Book.class))).thenReturn(null);
 
         BookDto dto = mapper.toDto(book);
 

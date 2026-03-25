@@ -36,10 +36,10 @@ describe('BookGoalModal', () => {
 
     it('should render modal with title and fields', () => {
         renderModal();
-        expect(screen.getByText('bookStats.goal.modal.title')).toBeDefined();
-        expect(screen.getByText('bookStats.goal.modal.weekly')).toBeDefined();
-        expect(screen.getByText('bookStats.goal.modal.monthly')).toBeDefined();
-        expect(screen.getByDisplayValue('50')).toBeDefined();
+        expect(screen.getByText('bookStats.goal.modal.title')).toBeInTheDocument();
+        expect(screen.getByText('bookStats.goal.modal.weekly')).toBeInTheDocument();
+        expect(screen.getByText('bookStats.goal.modal.monthly')).toBeInTheDocument();
+        expect(screen.getByDisplayValue('50')).toBeInTheDocument();
     });
 
     it('should call onClose when cancel button is clicked', () => {

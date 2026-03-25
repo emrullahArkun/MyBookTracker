@@ -8,10 +8,10 @@ import com.example.readflow.sessions.dto.StopSessionRequest;
 import com.example.readflow.shared.security.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,36 +23,34 @@ public class ReadingSessionController {
 
     private final ReadingSessionService sessionService;
     private final StreakService streakService;
+    private final ReadingSessionMapper sessionMapper;
 
     @PostMapping("/start")
     public ResponseEntity<ReadingSessionDto> startSession(
             @RequestBody @Valid StartSessionRequest request,
             @CurrentUser User user) {
         ReadingSession session = sessionService.startSession(user, request.bookId());
-        return ResponseEntity.ok(mapToDto(session));
+        return ResponseEntity.status(HttpStatus.CREATED).body(sessionMapper.toDto(session));
     }
 
     @PostMapping("/stop")
     public ResponseEntity<ReadingSessionDto> stopSession(
-            @RequestBody(required = false) @Valid StopSessionRequest request,
+            @RequestBody @Valid StopSessionRequest request,
             @CurrentUser User user) {
-        Instant endTime = null;
-        Integer endPage = null;
-
-        if (request != null) {
-            endTime = request.endTime();
-            endPage = request.endPage();
-        }
-        ReadingSession session = sessionService.stopSession(user, endTime, endPage);
-        return ResponseEntity.ok(mapToDto(session));
+        ReadingSession session = sessionService.stopSession(user, request.endTime(), request.endPage());
+        return ResponseEntity.ok(sessionMapper.toDto(session));
     }
 
     @GetMapping("/active")
     public ResponseEntity<ReadingSessionDto> getActiveSession(@CurrentUser User user) {
         return sessionService.getActiveSession(user)
-                .map(this::mapToDto)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+                .map(sessionMapper::toDto)
+                .map(dto -> ResponseEntity.ok()
+                        .cacheControl(org.springframework.http.CacheControl.noStore())
+                        .body(dto))
+                .orElse(ResponseEntity.noContent()
+                        .cacheControl(org.springframework.http.CacheControl.noStore())
+                        .build());
     }
 
     @PostMapping("/active/exclude-time")
@@ -60,19 +58,19 @@ public class ReadingSessionController {
             @RequestBody @Valid ExcludeTimeRequest request,
             @CurrentUser User user) {
         ReadingSession session = sessionService.excludeTime(user, request.millis());
-        return ResponseEntity.ok(mapToDto(session));
+        return ResponseEntity.ok(sessionMapper.toDto(session));
     }
 
     @PostMapping("/active/pause")
     public ResponseEntity<ReadingSessionDto> pauseSession(@CurrentUser User user) {
         ReadingSession session = sessionService.pauseSession(user);
-        return ResponseEntity.ok(mapToDto(session));
+        return ResponseEntity.ok(sessionMapper.toDto(session));
     }
 
     @PostMapping("/active/resume")
     public ResponseEntity<ReadingSessionDto> resumeSession(@CurrentUser User user) {
         ReadingSession session = sessionService.resumeSession(user);
-        return ResponseEntity.ok(mapToDto(session));
+        return ResponseEntity.ok(sessionMapper.toDto(session));
     }
 
     @GetMapping("/book/{bookId}")
@@ -80,30 +78,17 @@ public class ReadingSessionController {
             @CurrentUser User user) {
         List<ReadingSessionDto> sessions = sessionService.getSessionsByBook(user, bookId)
                 .stream()
-                .map(this::mapToDto)
+                .map(sessionMapper::toDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(sessions);
     }
 
     @GetMapping("/streak")
     public ResponseEntity<Map<String, Integer>> getStreak(@CurrentUser User user) {
+        StreakService.StreakInfo streakInfo = streakService.calculateStreaks(user);
         return ResponseEntity.ok(Map.of(
-                "currentStreak", streakService.calculateCurrentStreak(user),
-                "longestStreak", streakService.calculateLongestStreak(user)
+                "currentStreak", streakInfo.current(),
+                "longestStreak", streakInfo.longest()
         ));
-    }
-
-    private ReadingSessionDto mapToDto(ReadingSession session) {
-        return new ReadingSessionDto(
-                session.getId(),
-                session.getBook().getId(),
-                session.getStartTime(),
-                session.getEndTime(),
-                session.getStatus(),
-                session.getStartPage(),
-                session.getEndPage(),
-                session.getPagesRead(),
-                session.getPausedMillis(),
-                session.getPausedAt());
     }
 }

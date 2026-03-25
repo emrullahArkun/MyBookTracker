@@ -1,4 +1,4 @@
-import { Box, SimpleGrid, Card, Text, Flex, Icon, Skeleton, Badge } from '@chakra-ui/react';
+import { Box, SimpleGrid, Card, Text, Flex, Icon, Skeleton, Badge, VisuallyHidden } from '@chakra-ui/react';
 import {
     FaBookOpen, FaBookReader, FaBuilding, FaScroll,
     FaRunning, FaSun, FaMoon, FaCalendarCheck,
@@ -53,18 +53,21 @@ const AchievementCard = ({ achievement, cardBg, textColor }) => {
                     <Icon as={meta.icon} boxSize={5} />
                 </Flex>
                 <Box flex={1} minW={0}>
+                    <VisuallyHidden>
+                        {unlocked ? t('stats.achievements.unlocked') : t('stats.achievements.locked')}
+                    </VisuallyHidden>
                     <Flex align="center" gap={2} mb={0.5}>
                         <Text fontSize="sm" fontWeight="700" color={unlocked ? textColor : 'gray.400'} noOfLines={1}>
-                            {t(`stats.achievements.${achievement.id}.name`)}
+                            {t(`stats.achievements.${achievement.id}.name`, achievement.id)}
                         </Text>
                         {unlocked && (
-                            <Badge colorScheme="teal" variant="subtle" fontSize="9px" borderRadius="full">
+                            <Badge colorScheme="teal" variant="subtle" fontSize="9px" borderRadius="full" aria-hidden="true">
                                 {t('stats.achievements.unlocked')}
                             </Badge>
                         )}
                     </Flex>
                     <Text fontSize="xs" color="gray.300" noOfLines={1} textAlign="left">
-                        {t(`stats.achievements.${achievement.id}.desc`)}
+                        {t(`stats.achievements.${achievement.id}.desc`, '')}
                     </Text>
                     {achievement.unlockedDetail && (
                         <Text fontSize="xs" color={unlocked ? 'teal.200' : 'gray.400'} mt={0.5}>

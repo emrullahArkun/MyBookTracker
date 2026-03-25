@@ -11,4 +11,9 @@ public record StatsOverviewDto(
         int longestStreak,
         List<GenreStatDto> genreDistribution,
         List<DailyActivityDto> dailyActivity) {
+
+    public StatsOverviewDto {
+        genreDistribution = genreDistribution == null ? List.of() : List.copyOf(genreDistribution);
+        dailyActivity = dailyActivity == null ? List.of() : List.copyOf(dailyActivity);
+    }
 }

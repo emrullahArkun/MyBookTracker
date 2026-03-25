@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.Duration;
 import java.time.Instant;
 
 @Getter
@@ -50,8 +51,62 @@ public class ReadingSession {
     @Column(name = "paused_at")
     private Instant pausedAt;
 
+    public static ReadingSession startNew(User user, Book book, Instant now) {
+        ReadingSession session = new ReadingSession();
+        session.user = user;
+        session.book = book;
+        session.startTime = now;
+        session.startPage = book.getCurrentPage() != null ? book.getCurrentPage() : 0;
+        session.status = SessionStatus.ACTIVE;
+        return session;
+    }
+
     public long getPausedMillisOrZero() {
         return pausedMillis != null ? pausedMillis : 0L;
+    }
+
+    public void pause(Instant now) {
+        if (this.status != SessionStatus.ACTIVE) {
+            throw new IllegalStateException("Only active sessions can be paused.");
+        }
+        this.status = SessionStatus.PAUSED;
+        this.pausedAt = now;
+    }
+
+    public void resume(Instant now) {
+        if (this.status != SessionStatus.PAUSED) {
+            throw new IllegalStateException("Only paused sessions can be resumed.");
+        }
+        if (this.pausedAt != null) {
+            long gap = Duration.between(this.pausedAt, now).toMillis();
+            if (gap > 0) {
+                this.pausedMillis = getPausedMillisOrZero() + gap;
+            }
+        }
+        this.status = SessionStatus.ACTIVE;
+        this.pausedAt = null;
+    }
+
+    public void finish(Instant now, Integer endPage) {
+        if (this.status == SessionStatus.PAUSED && this.pausedAt != null) {
+            long gap = Duration.between(this.pausedAt, now).toMillis();
+            if (gap > 0) {
+                this.pausedMillis = getPausedMillisOrZero() + gap;
+            }
+        }
+        this.pausedAt = null;
+        this.endTime = now;
+        this.endPage = endPage;
+        this.status = SessionStatus.COMPLETED;
+
+        if (endPage != null) {
+            int sessionStartPage = this.startPage != null ? this.startPage : 0;
+            this.pagesRead = Math.max(0, endPage - sessionStartPage);
+        }
+    }
+
+    public void addExcludedTime(long millis) {
+        this.pausedMillis = getPausedMillisOrZero() + millis;
     }
 
     @Override

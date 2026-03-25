@@ -24,6 +24,7 @@ const DiscoverySection = ({
     emptyMessage
 }) => {
     const Icon = ICONS[iconType] || FaBook;
+    const addBookMutation = useAddBookToLibrary();
 
     if (!books || books.length === 0) {
         return (
@@ -50,7 +51,7 @@ const DiscoverySection = ({
             </div>
             <div className={styles.booksGrid}>
                 {books.map((book, index) => (
-                    <DiscoveryBookCard key={book.isbn || index} book={book} />
+                    <DiscoveryBookCard key={book.isbn || index} book={book} onAdd={addBookMutation.mutateAsync} />
                 ))}
             </div>
         </div>
@@ -60,13 +61,11 @@ const DiscoverySection = ({
 /**
  * Individual book card with add-to-library functionality
  */
-const DiscoveryBookCard = ({ book }) => {
+const DiscoveryBookCard = ({ book, onAdd }) => {
     const [isAdding, setIsAdding] = useState(false);
     const imageRef = useRef(null);
     const { t } = useTranslation();
     const { flyBook } = useAnimation();
-
-    const addBookMutation = useAddBookToLibrary();
 
     const handleAddClick = async (e) => {
         e.stopPropagation();
@@ -79,7 +78,7 @@ const DiscoveryBookCard = ({ book }) => {
 
         setIsAdding(true);
         try {
-            await addBookMutation.mutateAsync(book);
+            await onAdd(book);
         } finally {
             setIsAdding(false);
         }

@@ -25,10 +25,13 @@ public interface BookRepository extends JpaRepository<Book, Long> {
         Optional<Book> findByIdAndUser(Long id, User user);
 
         @Query("SELECT b.author FROM Book b WHERE b.user = :user AND b.author IS NOT NULL GROUP BY b.author ORDER BY COUNT(b) DESC")
-        List<String> findTopAuthorsByUser(@Param("user") User user);
+        List<String> findTopAuthorsByUser(@Param("user") User user, Pageable pageable);
 
         @Query("SELECT c FROM Book b JOIN b.categories c WHERE b.user = :user")
         List<String> findAllCategoriesByUser(@Param("user") User user);
+
+        @Query("SELECT c FROM Book b JOIN b.categories c WHERE b.user = :user AND c IS NOT NULL AND c <> '' GROUP BY c ORDER BY COUNT(c) DESC")
+        List<String> findTopCategoriesByUser(@Param("user") User user, Pageable pageable);
 
         @Query("SELECT b.isbn FROM Book b WHERE b.user = :user")
         List<String> findAllIsbnsByUser(@Param("user") User user);
@@ -36,6 +39,9 @@ public interface BookRepository extends JpaRepository<Book, Long> {
         long countByUser(User user);
 
         long countByUserAndCompletedTrue(User user);
+
+        @Query("SELECT COUNT(b) > 0 FROM Book b WHERE b.user = :user AND b.completed = true AND b.startDate >= :since")
+        boolean existsSpeedReadBook(@Param("user") User user, @Param("since") java.time.LocalDate since);
 
         List<Book> findByUserAndReadingGoalTypeIsNotNull(User user);
 }

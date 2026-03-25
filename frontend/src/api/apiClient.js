@@ -8,16 +8,18 @@ function getCsrfToken() {
     }
 }
 
+const MUTATION_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
 const apiClient = {
     async request(url, options = {}) {
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        };
+        const headers = { ...options.headers };
 
-        const csrfToken = getCsrfToken();
-        if (csrfToken) {
-            headers['X-XSRF-TOKEN'] = csrfToken;
+        const method = (options.method || 'GET').toUpperCase();
+        if (MUTATION_METHODS.includes(method)) {
+            const csrfToken = getCsrfToken();
+            if (csrfToken) {
+                headers['X-XSRF-TOKEN'] = csrfToken;
+            }
         }
 
         const config = {
@@ -26,8 +28,11 @@ const apiClient = {
             headers,
         };
 
-        const response = await fetch(url, config);
-        return response;
+        try {
+            return await fetch(url, config);
+        } catch (error) {
+            throw new Error('Network error. Please check your connection.');
+        }
     },
 
     async requestJson(url, options = {}) {
@@ -69,6 +74,7 @@ const apiClient = {
         return this.requestJson(url, {
             ...options,
             method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...options.headers },
             body: data ? JSON.stringify(data) : undefined
         });
     },
@@ -77,6 +83,7 @@ const apiClient = {
         return this.requestJson(url, {
             ...options,
             method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...options.headers },
             body: data ? JSON.stringify(data) : undefined
         });
     },

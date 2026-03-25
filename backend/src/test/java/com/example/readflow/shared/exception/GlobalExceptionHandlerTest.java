@@ -4,13 +4,13 @@ import com.example.readflow.shared.dto.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.Set;
@@ -74,7 +74,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleValidationException_ShouldReturn400_WithFieldErrors() {
+    void handleMethodArgumentNotValid_ShouldReturn400_WithFieldErrors() {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);
 
@@ -84,12 +84,14 @@ class GlobalExceptionHandlerTest {
         when(ex.getBindingResult()).thenReturn(bindingResult);
         when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError1, fieldError2));
 
-        ResponseEntity<ErrorResponse> response = handler.handleValidationException(ex, webRequest);
+        ResponseEntity<Object> response = handler.handleMethodArgumentNotValid(
+                ex, new HttpHeaders(), HttpStatus.BAD_REQUEST, webRequest);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertEquals(400, response.getBody().status());
-        assertTrue(response.getBody().message().contains("title: must not be blank"));
-        assertTrue(response.getBody().message().contains("isbn: must not be blank"));
+        ErrorResponse body = (ErrorResponse) response.getBody();
+        assertEquals(400, body.status());
+        assertTrue(body.message().contains("title: must not be blank"));
+        assertTrue(body.message().contains("isbn: must not be blank"));
     }
 
     @Test
@@ -103,7 +105,21 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleGlobalException_ShouldReturn500_ForUnexpectedException() throws Exception {
+    void handleExceptionInternal_ShouldReturnErrorResponse() {
+        Exception ex = new RuntimeException("Method not allowed");
+
+        ResponseEntity<Object> response = handler.handleExceptionInternal(
+                ex, null, new HttpHeaders(), HttpStatus.METHOD_NOT_ALLOWED, webRequest);
+
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, response.getStatusCode());
+        ErrorResponse body = (ErrorResponse) response.getBody();
+        assertEquals(405, body.status());
+        assertEquals("Method Not Allowed", body.error());
+        assertEquals("/api/test", body.path());
+    }
+
+    @Test
+    void handleGlobalException_ShouldReturn500_ForUnexpectedException() {
         Exception ex = new RuntimeException("Something broke");
 
         ResponseEntity<ErrorResponse> response = handler.handleGlobalException(ex, webRequest);
@@ -111,13 +127,5 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals(500, response.getBody().status());
         assertEquals("An unexpected error occurred", response.getBody().message());
-    }
-
-    @Test
-    void handleGlobalException_ShouldRethrow_WhenNoResourceFoundException() throws Exception {
-        NoResourceFoundException ex = mock(NoResourceFoundException.class);
-
-        assertThrows(NoResourceFoundException.class,
-                () -> handler.handleGlobalException(ex, webRequest));
     }
 }

@@ -81,8 +81,8 @@ class StatsControllerTest {
     @Test
     void getAchievements_ShouldReturnList() throws Exception {
         List<AchievementDto> achievements = List.of(
-                new AchievementDto("FIRST_SESSION", true, "1 sessions"),
-                new AchievementDto("BOOKWORM", false, "0/5"));
+                new AchievementDto(AchievementType.FIRST_SESSION, true, "1 sessions"),
+                new AchievementDto(AchievementType.BOOKWORM, false, "0/5"));
 
         when(statsService.getAchievements(any())).thenReturn(achievements);
 

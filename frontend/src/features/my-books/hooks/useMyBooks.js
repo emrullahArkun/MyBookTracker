@@ -3,9 +3,6 @@ import { useAuth } from '../../../context/AuthContext';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { booksApi } from '../../books/api';
 
-/**
- * Creates a mutation with optimistic update boilerplate.
- */
 const createOptimisticMutation = (queryClient, queryKey, mutationFn, updater) => ({
     mutationFn,
     onMutate: async (vars) => {
@@ -26,7 +23,10 @@ const createOptimisticMutation = (queryClient, queryKey, mutationFn, updater) =>
     }
 });
 
-export const useMyBooks = (pageSize = 12) => {
+const PAGE_SIZE = 12;
+
+export const useMyBooks = () => {
+    const pageSize = PAGE_SIZE;
     const [page, setPage] = useState(0);
     const [selectedBooks, setSelectedBooks] = useState(new Set());
     const { token } = useAuth();
@@ -106,35 +106,27 @@ export const useMyBooks = (pageSize = 12) => {
         });
     };
 
-    const deleteSelected = async () => {
-        const ids = Array.from(selectedBooks);
-
-        await queryClient.cancelQueries({ queryKey: ['myBooks'] });
-        const previousData = queryClient.getQueryData(queryKey);
-
-        if (previousData) {
-            queryClient.setQueryData(queryKey, {
-                ...previousData,
-                content: previousData.content.filter(book => !selectedBooks.has(book.id))
-            });
+    const deleteSelectedMutation = useMutation({
+        ...createOptimisticMutation(queryClient, queryKey,
+            async (ids) => {
+                const results = await Promise.allSettled(ids.map(id => booksApi.delete(id)));
+                if (results.some(r => r.status === 'rejected')) {
+                    throw new Error('Some deletions failed');
+                }
+            },
+            (prev, ids) => ({
+                ...prev,
+                content: prev.content.filter(book => !ids.includes(book.id))
+            })
+        ),
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+            setSelectedBooks(new Set());
         }
+    });
 
-        setSelectedBooks(new Set());
-
-        const results = await Promise.allSettled(
-            ids.map(id => booksApi.delete(id))
-        );
-
-        const failed = results.some(r => r.status === 'rejected');
-
-        if (failed) {
-            // Some deletions failed — rollback optimistic update
-            if (previousData) {
-                queryClient.setQueryData(queryKey, previousData);
-            }
-        }
-
-        queryClient.invalidateQueries({ queryKey: ['myBooks'] });
+    const deleteSelected = () => {
+        deleteSelectedMutation.mutate(Array.from(selectedBooks));
     };
 
     const deleteAll = () => {

@@ -3,7 +3,7 @@ import { useToast } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../context/AuthContext';
 import { booksApi } from '../../books/api';
-import { getOpenLibraryCoverUrl } from '../../../utils/googleBooks';
+import { getOpenLibraryCoverUrl } from '../../../utils/coverUtils';
 
 const TOAST_STYLE = {
     containerStyle: { marginTop: '80px' },
@@ -35,10 +35,8 @@ export const useAddBookToLibrary = () => {
         mutationFn: async (book) => {
             if (!token) throw new Error(t('search.toast.loginRequired'));
 
-            const isbn = book.isbn;
-            if (!isbn) throw new Error(t('search.toast.noIsbn'));
-
-            const coverUrl = book.coverUrl || getOpenLibraryCoverUrl(isbn);
+            const isbn = book.isbn || null;
+            const coverUrl = book.coverUrl || (isbn ? getOpenLibraryCoverUrl(isbn) : '');
 
             const categories = Array.isArray(book.categories)
                 ? book.categories
@@ -59,21 +57,7 @@ export const useAddBookToLibrary = () => {
         onSuccess: ({ isbn }) => {
             queryClient.invalidateQueries({ queryKey: ['myBooks'] });
             queryClient.invalidateQueries({ queryKey: ['ownedIsbns', user?.email] });
-
-            // Optimistically remove the added book from discovery cache
-            const cleanIsbn = isbn?.replace(/-/g, '');
-            if (cleanIsbn) {
-                queryClient.setQueryData(['discovery', user?.email], (old) => {
-                    if (!old) return old;
-                    const filterBooks = (books) =>
-                        (books || []).filter(b => b.isbn?.replace(/-/g, '') !== cleanIsbn);
-                    return {
-                        byAuthor: { ...old.byAuthor, books: filterBooks(old.byAuthor?.books) },
-                        byCategory: { ...old.byCategory, books: filterBooks(old.byCategory?.books) },
-                        bySearch: { ...old.bySearch, books: filterBooks(old.bySearch?.books) },
-                    };
-                });
-            }
+            queryClient.invalidateQueries({ queryKey: ['discovery'] });
             toast.close('add-book-toast');
             toast({
                 id: 'add-book-toast',

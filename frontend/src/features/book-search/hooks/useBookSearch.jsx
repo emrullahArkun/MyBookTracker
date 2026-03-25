@@ -4,9 +4,8 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useAddBookToLibrary } from '../../books/hooks/useAddBookToLibrary';
 import discoveryApi from '../../discovery/api/discoveryApi';
 
-// Constants for debounced logging
-const LOG_DEBOUNCE_MS = 2000; // Wait 2 seconds after last keystroke
-const MIN_QUERY_LENGTH = 3;  // Minimum 3 characters to log
+const PAGE_SIZE = 36;
+const MIN_QUERY_LENGTH = 3;
 
 export const useBookSearch = () => {
     const [query, setQuery] = useState('');
@@ -15,54 +14,39 @@ export const useBookSearch = () => {
 
     // Track last logged query to prevent duplicates
     const lastLoggedQuery = useRef('');
-    const logTimeoutRef = useRef(null);
 
-    // Debounced search logging - logs after user stops typing for 2 seconds
+    // Log search when user actively submits (searchTerm changes)
     useEffect(() => {
-        if (logTimeoutRef.current) {
-            clearTimeout(logTimeoutRef.current);
-        }
-
-        const trimmedQuery = query.trim();
-
-        if (trimmedQuery.length >= MIN_QUERY_LENGTH &&
-            trimmedQuery.toLowerCase() !== lastLoggedQuery.current.toLowerCase() &&
+        const trimmed = searchTerm.trim();
+        if (trimmed.length >= MIN_QUERY_LENGTH &&
+            trimmed.toLowerCase() !== lastLoggedQuery.current.toLowerCase() &&
             token) {
-
-            logTimeoutRef.current = setTimeout(() => {
-                discoveryApi.logSearch(trimmedQuery).then(() => {
-                    lastLoggedQuery.current = trimmedQuery;
-                }).catch(() => {
-                    // Silently ignore logging errors
-                });
-            }, LOG_DEBOUNCE_MS);
+            discoveryApi.logSearch(trimmed).then(() => {
+                lastLoggedQuery.current = trimmed;
+            }).catch(() => {
+                // Silently ignore logging errors
+            });
         }
-
-        return () => {
-            if (logTimeoutRef.current) {
-                clearTimeout(logTimeoutRef.current);
-            }
-        };
-    }, [query, token]);
+    }, [searchTerm, token]);
 
     const {
         data,
         error,
         fetchNextPage,
         hasNextPage,
-        isFetching,
+        isFetchingNextPage,
         isLoading
     } = useInfiniteQuery({
         queryKey: ['books', searchTerm],
         queryFn: async ({ pageParam = 0 }) => {
             if (!searchTerm.trim()) return { items: [], totalItems: 0 };
-            return discoveryApi.search(searchTerm.trim(), pageParam, 36);
+            return discoveryApi.search(searchTerm.trim(), pageParam, PAGE_SIZE);
         },
         getNextPageParam: (lastPage, allPages) => {
             // Stop if last page returned no items (all filtered or truly exhausted)
             if (!lastPage.items || lastPage.items.length === 0) return undefined;
             // Use raw page offset for Google API (page count × page size)
-            const nextStart = allPages.length * 36;
+            const nextStart = allPages.length * PAGE_SIZE;
             if (nextStart >= (lastPage.totalItems || 0)) return undefined;
             return nextStart;
         },
@@ -91,7 +75,8 @@ export const useBookSearch = () => {
         results,
         error: error ? error.message : null,
         hasMore: hasNextPage,
-        loading: isLoading || isFetching,
+        isLoading,
+        isFetchingNextPage,
         searchBooks,
         loadMore: fetchNextPage,
         addBookToLibrary: addBookMutation.mutateAsync,

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { FaTrash, FaTrashAlt, FaChevronLeft, FaChevronRight, FaSearch } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useMyBooks } from './hooks/useMyBooks';
@@ -21,9 +21,6 @@ import {
 function MyBooks() {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const containerRef = useRef(null);
-
-    const [dynamicPageSize, setDynamicPageSize] = useState(12);
 
     const {
         books,
@@ -31,7 +28,6 @@ function MyBooks() {
         error,
         selectedBooks,
         toggleSelection,
-        deleteBook,
         deleteSelected,
         deleteAll,
         updateBookProgress,
@@ -39,16 +35,13 @@ function MyBooks() {
         setPage,
         totalPages,
         deleteError
-    } = useMyBooks(dynamicPageSize);
+    } = useMyBooks();
 
     const toast = useToast();
 
     // Dialog States
-    const { isOpen: isDeleteOpen, onClose: onDeleteClose } = useDisclosure();
     const { isOpen: isDeleteAllOpen, onOpen: onDeleteAllOpen, onClose: onDeleteAllClose } = useDisclosure();
     const { isOpen: isDeleteSelectedOpen, onOpen: onDeleteSelectedOpen, onClose: onDeleteSelectedClose } = useDisclosure();
-
-    const [bookToDelete, setBookToDelete] = useState(null);
 
     useEffect(() => {
         if (deleteError) {
@@ -61,14 +54,6 @@ function MyBooks() {
         }
     }, [deleteError, toast, t]);
 
-    const confirmDelete = () => {
-        if (bookToDelete) {
-            deleteBook(bookToDelete);
-            setBookToDelete(null);
-            onDeleteClose();
-        }
-    };
-
     const confirmDeleteSelected = () => {
         deleteSelected();
         onDeleteSelectedClose();
@@ -79,48 +64,11 @@ function MyBooks() {
         onDeleteAllClose();
     };
 
-    // Dynamic Page Size Calculation
-    useEffect(() => {
-        const calculatePageSize = () => {
-            const width = window.innerWidth;
-            const padding = width >= 768 ? 64 : 32;
-            const scrollbarBuffer = 20;
-            const availableWidth = width - padding - scrollbarBuffer;
-            const cardWidth = 200;
-            const gap = 24;
-            const itemWidth = cardWidth + gap;
-
-            let columns = Math.floor((availableWidth + gap) / itemWidth);
-            if (width < 480) {
-                columns = 2;
-            } else if (columns < 1) {
-                columns = 1;
-            }
-
-            const newPageSize = columns * 3;
-            setDynamicPageSize(prev => prev !== newPageSize ? newPageSize : prev);
-        };
-
-        calculatePageSize();
-
-        let timeoutId;
-        const debouncedResize = () => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(calculatePageSize, 150);
-        };
-
-        window.addEventListener('resize', debouncedResize);
-        return () => {
-            clearTimeout(timeoutId);
-            window.removeEventListener('resize', debouncedResize);
-        };
-    }, []);
-
     if (loading && page === 0 && books.length === 0) return <Center h="200px" color="white">{t('myBooks.loading')}</Center>;
     if (error) return <Center h="200px" color="red.300">{t('myBooks.error', { message: error })}</Center>;
 
     return (
-        <Box w="100%" px={{ base: 4, md: 8 }} py={6} ref={containerRef} minH="calc(100vh - 80px)">
+        <Box w="100%" px={{ base: 4, md: 8 }} py={6} minH="calc(100vh - 80px)">
             {/* Actions */}
             <Flex justify="flex-end" align="center" mb={6} wrap="wrap" gap={3}>
                 {selectedBooks.size > 0 && (
@@ -222,20 +170,10 @@ function MyBooks() {
                     )}
 
                     <ConfirmDialog
-                        isOpen={isDeleteOpen}
-                        onClose={onDeleteClose}
-                        onConfirm={confirmDelete}
-                        title={t('myBooks.confirmDeleteTitle', 'Delete Book?')}
-                        body={t('myBooks.confirmDelete')}
-                        confirmLabel={t('common.delete')}
-                        cancelLabel={t('common.cancel')}
-                    />
-
-                    <ConfirmDialog
                         isOpen={isDeleteSelectedOpen}
                         onClose={onDeleteSelectedClose}
                         onConfirm={confirmDeleteSelected}
-                        title={t('myBooks.confirmDeleteSelectedTitle', 'Delete Selected Books?')}
+                        title={t('myBooks.confirmDeleteSelectedTitle')}
                         body={t('myBooks.confirmDeleteSelected', { count: selectedBooks.size })}
                         confirmLabel={t('common.delete')}
                         cancelLabel={t('common.cancel')}
@@ -245,7 +183,7 @@ function MyBooks() {
                         isOpen={isDeleteAllOpen}
                         onClose={onDeleteAllClose}
                         onConfirm={confirmDeleteAll}
-                        title={t('myBooks.confirmDeleteAllTitle', 'Delete ALL Books?')}
+                        title={t('myBooks.confirmDeleteAllTitle')}
                         body={t('myBooks.confirmDeleteAll')}
                         confirmLabel={t('common.deleteAll')}
                         cancelLabel={t('common.cancel')}

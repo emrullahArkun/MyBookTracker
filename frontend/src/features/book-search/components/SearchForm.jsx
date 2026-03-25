@@ -13,9 +13,8 @@ const SearchForm = ({ query, setQuery, onSearch }) => {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('search.placeholder', 'Suche nach Titel, Autor, ISBN...')}
+                placeholder={t('search.placeholder')}
                 className={styles.searchInput}
-                autoFocus
             />
         </form>
     );

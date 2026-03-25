@@ -6,18 +6,19 @@ import com.example.readflow.books.dto.CreateBookRequest;
 import com.example.readflow.books.dto.SetGoalRequest;
 import com.example.readflow.books.dto.UpdateProgressRequest;
 import com.example.readflow.books.dto.UpdateStatusRequest;
-import com.example.readflow.shared.exception.ResourceNotFoundException;
 import com.example.readflow.shared.security.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/books")
@@ -26,34 +27,51 @@ public class BookController {
 
     private final BookService bookService;
     private final BookMapper bookMapper;
+    private final ReadingGoalProgressCalculator progressCalculator;
 
     @GetMapping
-    public Page<BookDto> getAllBooks(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+    public ResponseEntity<Page<BookDto>> getAllBooks(
+            @PageableDefault(size = 10) Pageable pageable,
             @CurrentUser User user) {
-        Pageable pageable = PageRequest.of(page, size);
-        return bookService.findAllByUser(user, pageable)
-                .map(bookMapper::toDto);
+        Page<Book> bookPage = bookService.findAllByUser(user, pageable);
+        Map<Long, Integer> progressMap = progressCalculator.calculateProgressBatch(bookPage.getContent());
+
+        Page<BookDto> dtoPage = bookPage.map(book -> {
+            BookDto dto = bookMapper.toDto(book);
+            Integer progress = progressMap.get(book.getId());
+            return progress != null ? BookDto.copyWithProgress(dto, progress) : dto;
+        });
+
+        return ResponseEntity.ok(dtoPage);
     }
 
     @GetMapping("/owned")
-    public List<String> getAllOwnedIsbns(@CurrentUser User user) {
-        return bookService.getAllOwnedIsbns(user);
+    public ResponseEntity<List<String>> getAllOwnedIsbns(@CurrentUser User user) {
+        return ResponseEntity.ok(bookService.getAllOwnedIsbns(user));
     }
 
     @GetMapping("/with-goals")
-    public List<BookDto> getBooksWithGoals(@CurrentUser User user) {
-        return bookService.findBooksWithGoals(user).stream()
-                .map(bookMapper::toDto)
+    public ResponseEntity<List<BookDto>> getBooksWithGoals(@CurrentUser User user) {
+        List<Book> books = bookService.findBooksWithGoals(user);
+        Map<Long, Integer> progressMap = progressCalculator.calculateProgressBatch(books);
+
+        List<BookDto> dtos = books.stream()
+                .map(book -> {
+                    BookDto dto = bookMapper.toDto(book);
+                    Integer progress = progressMap.get(book.getId());
+                    return progress != null ? BookDto.copyWithProgress(dto, progress) : dto;
+                })
                 .toList();
+
+        return ResponseEntity.ok(dtos);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<BookDto> getBookById(@PathVariable Long id, @CurrentUser User user) {
-        Book book = bookService.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
-        return ResponseEntity.ok(bookMapper.toDto(book));
+        Book book = bookService.getBookByIdOrThrow(id, user);
+        BookDto dto = bookMapper.toDto(book);
+        Integer progress = progressCalculator.calculateProgress(book);
+        return ResponseEntity.ok(progress != null ? BookDto.copyWithProgress(dto, progress) : dto);
     }
 
     @PostMapping
@@ -61,7 +79,14 @@ public class BookController {
             @RequestBody @Valid CreateBookRequest request,
             @CurrentUser User user) {
         Book savedBook = bookService.createBook(request, user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(bookMapper.toDto(savedBook));
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedBook.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(bookMapper.toDto(savedBook));
     }
 
     @PatchMapping("/{id}/progress")

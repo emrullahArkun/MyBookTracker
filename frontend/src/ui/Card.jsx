@@ -1,4 +1,3 @@
-
 import './Card.css';
 
 export const Card = ({ children, className = '', ...props }) => {

@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ReadingSessionProvider } from '../../context/ReadingSessionContext';
 import AuthGateLoader from './AuthGateLoader';
 
 const ProtectedRoute = ({ requireAdmin }) => {
@@ -18,7 +19,11 @@ const ProtectedRoute = ({ requireAdmin }) => {
         return <Navigate to="/" replace />;
     }
 
-    return <Outlet />;
+    return (
+        <ReadingSessionProvider>
+            <Outlet />
+        </ReadingSessionProvider>
+    );
 };
 
 export default ProtectedRoute;

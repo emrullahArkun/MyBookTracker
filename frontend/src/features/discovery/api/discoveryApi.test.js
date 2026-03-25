@@ -43,13 +43,13 @@ describe('discoveryApi', () => {
         expect(apiClient.get).toHaveBeenCalledWith('/api/discovery/search?q=test&startIndex=0&maxResults=36');
     });
 
-    it('logSearch should POST with encoded query', async () => {
+    it('logSearch should POST with query in body', async () => {
         await discoveryApi.logSearch('test query');
-        expect(apiClient.post).toHaveBeenCalledWith('/api/discovery/search-log?query=test%20query');
+        expect(apiClient.post).toHaveBeenCalledWith('/api/discovery/search-log', { query: 'test query' });
     });
 
-    it('logSearch should encode special characters', async () => {
+    it('logSearch should pass special characters in body', async () => {
         await discoveryApi.logSearch('C++ Bücher & co');
-        expect(apiClient.post).toHaveBeenCalledWith('/api/discovery/search-log?query=C%2B%2B%20B%C3%BCcher%20%26%20co');
+        expect(apiClient.post).toHaveBeenCalledWith('/api/discovery/search-log', { query: 'C++ Bücher & co' });
     });
 });

@@ -33,21 +33,21 @@ const BookGoalModal = ({
         <Modal isOpen={isOpen} onClose={onClose} isCentered>
             <ModalOverlay backdropFilter="blur(4px)" />
             <ModalContent bg="gray.800" color="white">
-                <ModalHeader>{t('bookStats.goal.modal.title', 'Set Reading Goal')}</ModalHeader>
+                <ModalHeader>{t('bookStats.goal.modal.title')}</ModalHeader>
                 <ModalCloseButton />
                 <ModalBody>
                     <VStack spacing={4}>
                         <FormControl>
-                            <FormLabel>{t('bookStats.goal.modal.period', 'Goal Period')}</FormLabel>
+                            <FormLabel>{t('bookStats.goal.modal.period')}</FormLabel>
                             <RadioGroup value={goalType} onChange={setGoalType}>
                                 <Stack direction="row" spacing={4}>
-                                    <Radio value="WEEKLY" colorScheme="teal">{t('bookStats.goal.modal.weekly', 'Weekly')}</Radio>
-                                    <Radio value="MONTHLY" colorScheme="teal">{t('bookStats.goal.modal.monthly', 'Monthly')}</Radio>
+                                    <Radio value="WEEKLY" colorScheme="teal">{t('bookStats.goal.modal.weekly')}</Radio>
+                                    <Radio value="MONTHLY" colorScheme="teal">{t('bookStats.goal.modal.monthly')}</Radio>
                                 </Stack>
                             </RadioGroup>
                         </FormControl>
                         <FormControl>
-                            <FormLabel>{t('bookStats.goal.modal.pages', 'Number of Pages')}</FormLabel>
+                            <FormLabel>{t('bookStats.goal.modal.pages')}</FormLabel>
                             <Input
                                 type="number"
                                 value={goalPages}
@@ -59,9 +59,9 @@ const BookGoalModal = ({
                     </VStack>
                 </ModalBody>
                 <ModalFooter>
-                    <Button variant="ghost" mr={3} onClick={onClose} color="gray.400">{t('bookStats.goal.modal.cancel', 'Cancel')}</Button>
+                    <Button variant="ghost" mr={3} onClick={onClose} color="gray.400">{t('bookStats.goal.modal.cancel')}</Button>
                     <Button colorScheme="teal" onClick={handleSaveGoal} isLoading={isSavingGoal}>
-                        {t('bookStats.goal.modal.save', 'Save Goal')}
+                        {t('bookStats.goal.modal.save')}
                     </Button>
                 </ModalFooter>
             </ModalContent>

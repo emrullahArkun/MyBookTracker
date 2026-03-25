@@ -3,9 +3,6 @@ package com.example.readflow.auth;
 import com.example.readflow.shared.exception.DuplicateResourceException;
 import com.example.readflow.shared.exception.InvalidCredentialsException;
 import com.example.readflow.shared.exception.ResourceNotFoundException;
-import com.example.readflow.auth.Role;
-import com.example.readflow.auth.User;
-import com.example.readflow.auth.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,7 +31,7 @@ class AuthServiceTest {
 
     @Test
     void registerUser_ShouldCreateUser() {
-        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
+        when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
         when(passwordEncoder.encode("password")).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -48,7 +45,7 @@ class AuthServiceTest {
 
     @Test
     void registerUser_ShouldThrow_WhenEmailTaken() {
-        when(userRepository.findByEmail("taken@example.com")).thenReturn(Optional.of(new User()));
+        when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
 
         assertThrows(DuplicateResourceException.class,
                 () -> authService.registerUser("taken@example.com", "password"));
@@ -69,6 +66,7 @@ class AuthServiceTest {
     @Test
     void login_ShouldThrow_WhenUserNotFound() {
         when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
         assertThrows(InvalidCredentialsException.class,
                 () -> authService.login("missing@example.com", "password"));
@@ -85,16 +83,14 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_ShouldAutoEnable_WhenUserDisabled() {
+    void login_ShouldThrow_WhenUserDisabled() {
         User user = new User("test@example.com", "encoded", Role.USER);
         user.setEnabled(false);
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password", "encoded")).thenReturn(true);
-        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
-        User result = authService.login("test@example.com", "password");
-        assertTrue(result.isEnabled());
-        verify(userRepository).save(user);
+        assertThrows(InvalidCredentialsException.class,
+                () -> authService.login("test@example.com", "password"));
     }
 
     // --- getUserByEmail ---

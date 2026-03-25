@@ -40,12 +40,15 @@ public class SecurityConfig {
     private String jwtSecret;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:4173}")
-    private List<String> allowedOrigins;
+    private String[] allowedOrigins;
 
     private final CookieBearerTokenResolver cookieBearerTokenResolver;
+    private final JwtUserAuthenticationConverter jwtUserAuthenticationConverter;
 
-    public SecurityConfig(CookieBearerTokenResolver cookieBearerTokenResolver) {
+    public SecurityConfig(CookieBearerTokenResolver cookieBearerTokenResolver,
+                          JwtUserAuthenticationConverter jwtUserAuthenticationConverter) {
         this.cookieBearerTokenResolver = cookieBearerTokenResolver;
+        this.jwtUserAuthenticationConverter = jwtUserAuthenticationConverter;
     }
 
     @Bean
@@ -63,12 +66,14 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/logout", "/api/auth/session").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .bearerTokenResolver(cookieBearerTokenResolver)
-                        .jwt(jwt -> jwt.decoder(jwtDecoder())));
+                        .jwt(jwt -> jwt
+                                .decoder(jwtDecoder())
+                                .jwtAuthenticationConverter(jwtUserAuthenticationConverter)));
 
         return http.build();
     }
@@ -104,7 +109,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedOrigins(List.of(allowedOrigins));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

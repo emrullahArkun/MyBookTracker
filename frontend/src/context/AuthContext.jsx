@@ -37,13 +37,11 @@ export const AuthProvider = ({ children }) => {
 
             if (storedUser) {
                 try {
-                    const parsedUser = JSON.parse(storedUser);
-                    setUser(parsedUser);
-
                     const res = await authApi.getSession();
                     if (!res) {
                         throw new Error("Session invalid");
                     }
+                    setUser(JSON.parse(storedUser));
                 } catch {
                     localStorage.removeItem('user');
                     setUser(null);

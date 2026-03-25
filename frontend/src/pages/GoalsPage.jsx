@@ -10,6 +10,8 @@ import {
     Icon,
     Badge,
     SimpleGrid,
+    Flex,
+    Spinner,
 } from '@chakra-ui/react';
 import { FaCheckCircle, FaBullseye, FaFire } from 'react-icons/fa';
 import { motion } from 'framer-motion';
@@ -20,7 +22,28 @@ import apiClient from '../api/apiClient';
 
 const MotionBox = motion(Box);
 
-const GoalCard = ({ book, index, t, navigate }) => {
+const KpiBox = ({ value, label, valueColor, borderColor = 'whiteAlpha.100', children }) => (
+    <Box
+        bg="whiteAlpha.100"
+        borderRadius="xl"
+        py={4}
+        border="1px solid"
+        borderColor={borderColor}
+        textAlign="center"
+    >
+        {children || (
+            <Text fontSize="2xl" fontWeight="bold" color={valueColor}>{value}</Text>
+        )}
+        <Text fontSize="xs" color="gray.400" textTransform="uppercase" fontWeight="bold">
+            {label}
+        </Text>
+    </Box>
+);
+
+const GoalCard = ({ book, index }) => {
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+
     const progress = book.readingGoalProgress || 0;
     const target = book.readingGoalPages || 1;
     const percent = Math.min(100, Math.round((progress / target) * 100));
@@ -68,7 +91,7 @@ const GoalCard = ({ book, index, t, navigate }) => {
                         {isFinished ? (
                             <HStack spacing={1} color="green.300">
                                 <Icon as={FaCheckCircle} />
-                                <Text fontSize="sm" fontWeight="bold">Done!</Text>
+                                <Text fontSize="sm" fontWeight="bold">{t('home.completedGoals')}</Text>
                                 {multiplier >= 2 && (
                                     <Text fontSize="sm">({multiplier}x)</Text>
                                 )}
@@ -103,7 +126,6 @@ const GoalCard = ({ book, index, t, navigate }) => {
 
 const GoalsPage = () => {
     const { t } = useTranslation();
-    const navigate = useNavigate();
     const { token } = useAuth();
 
     const { data: booksData, isLoading: booksLoading } = useQuery({
@@ -112,90 +134,58 @@ const GoalsPage = () => {
         enabled: !!token,
     });
 
-    const { data: streak = { currentStreak: 0, longestStreak: 0 } } = useQuery({
+    const { data: streak = { currentStreak: 0, longestStreak: 0 }, isLoading: streakLoading } = useQuery({
         queryKey: ['goals', 'streak'],
         queryFn: () => apiClient.get('/api/sessions/streak'),
         enabled: !!token,
     });
 
-    const books = useMemo(() => {
+    const { activeBooks, completedBooks } = useMemo(() => {
         const allBooks = booksData || [];
 
-        return [...allBooks].sort((a, b) => {
+        const sorted = [...allBooks].sort((a, b) => {
+            if (a.readingGoalType !== b.readingGoalType) return a.readingGoalType === 'WEEKLY' ? -1 : 1;
             const progA = a.readingGoalPages ? (a.readingGoalProgress || 0) / a.readingGoalPages : 0;
             const progB = b.readingGoalPages ? (b.readingGoalProgress || 0) / b.readingGoalPages : 0;
-            if (a.readingGoalType !== b.readingGoalType) return a.readingGoalType === 'WEEKLY' ? -1 : 1;
             return progB - progA;
         });
+
+        const active = sorted.filter(b => (b.readingGoalProgress || 0) < (b.readingGoalPages || 0));
+        const completed = sorted.filter(b => (b.readingGoalProgress || 0) >= (b.readingGoalPages || 0));
+
+        return { activeBooks: active, completedBooks: completed };
     }, [booksData]);
 
-    const loading = booksLoading;
-    const activeBooks = books.filter(b => (b.readingGoalProgress || 0) < (b.readingGoalPages || 0));
-    const completedBooks = books.filter(b => (b.readingGoalProgress || 0) >= (b.readingGoalPages || 0));
+    const loading = booksLoading || streakLoading;
+
+    if (loading) {
+        return (
+            <Flex justify="center" align="center" h="calc(100vh - 80px)">
+                <Spinner size="xl" color="teal.200" thickness="4px" />
+            </Flex>
+        );
+    }
 
     return (
         <Box px={{ base: 4, md: 10 }} py={8} maxW="1100px" mx="auto" minH="calc(100vh - 80px)">
             {/* Stats row */}
             <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mb={8} maxW="640px">
-                <Box
-                    bg="whiteAlpha.100"
-                    borderRadius="xl"
-                    py={4}
-                    border="1px solid"
-                    borderColor="whiteAlpha.100"
-                    textAlign="center"
-                >
-                    <Text fontSize="2xl" fontWeight="bold" color="teal.200">{activeBooks.length}</Text>
-                    <Text fontSize="xs" color="gray.400" textTransform="uppercase" fontWeight="bold">
-                        {t('home.active')}
-                    </Text>
-                </Box>
-                <Box
-                    bg="whiteAlpha.100"
-                    borderRadius="xl"
-                    py={4}
-                    border="1px solid"
-                    borderColor="whiteAlpha.100"
-                    textAlign="center"
-                >
-                    <Text fontSize="2xl" fontWeight="bold" color="green.300">{completedBooks.length}</Text>
-                    <Text fontSize="xs" color="gray.400" textTransform="uppercase" fontWeight="bold">
-                        {t('bookStats.completed')}
-                    </Text>
-                </Box>
-                <Box
-                    bg="whiteAlpha.100"
-                    borderRadius="xl"
-                    py={4}
-                    border="1px solid"
+                <KpiBox value={activeBooks.length} label={t('home.active')} valueColor="teal.200" />
+                <KpiBox value={completedBooks.length} label={t('bookStats.completed')} valueColor="green.300" />
+                <KpiBox
+                    label={t('home.streak.current')}
                     borderColor={streak.currentStreak > 0 ? 'orange.700' : 'whiteAlpha.100'}
-                    textAlign="center"
                 >
                     <HStack spacing={2} justify="center">
                         {streak.currentStreak > 0 && <Icon as={FaFire} color="orange.300" />}
                         <Text fontSize="2xl" fontWeight="bold" color="orange.300">{streak.currentStreak}</Text>
                     </HStack>
-                    <Text fontSize="xs" color="gray.400" textTransform="uppercase" fontWeight="bold">
-                        {t('home.streak.current')}
-                    </Text>
-                </Box>
-                <Box
-                    bg="whiteAlpha.100"
-                    borderRadius="xl"
-                    py={4}
-                    border="1px solid"
-                    borderColor="whiteAlpha.100"
-                    textAlign="center"
-                >
-                    <Text fontSize="2xl" fontWeight="bold" color="gray.300">{streak.longestStreak}</Text>
-                    <Text fontSize="xs" color="gray.400" textTransform="uppercase" fontWeight="bold">
-                        {t('home.streak.longest')}
-                    </Text>
-                </Box>
+                </KpiBox>
+                <KpiBox value={streak.longestStreak} label={t('home.streak.longest')} valueColor="gray.300" />
             </SimpleGrid>
 
             {/* Empty state */}
-            {!loading && books.length === 0 && (
+            {!loading && activeBooks.length === 0 && completedBooks.length === 0 && (
                 <Box
                     textAlign="center"
                     py={16}
@@ -220,7 +210,7 @@ const GoalsPage = () => {
                     </Text>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5} mb={8}>
                         {activeBooks.map((book, index) => (
-                            <GoalCard key={book.id} book={book} index={index} t={t} navigate={navigate} />
+                            <GoalCard key={book.id} book={book} index={index} />
                         ))}
                     </SimpleGrid>
                 </>
@@ -234,7 +224,7 @@ const GoalsPage = () => {
                     </Text>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5}>
                         {completedBooks.map((book, index) => (
-                            <GoalCard key={book.id} book={book} index={index} t={t} navigate={navigate} />
+                            <GoalCard key={book.id} book={book} index={index} />
                         ))}
                     </SimpleGrid>
                 </>

@@ -11,12 +11,19 @@ import GenreDonutChart from '../features/stats/components/GenreDonutChart';
 import WeeklyPaceChart from '../features/stats/components/WeeklyPaceChart';
 import statsApi from '../features/stats/api/statsApi';
 
+const formatTime = (minutes) => {
+    if (minutes < 60) return `${minutes}m`;
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+};
+
 const StatsOverviewPage = () => {
     const { t } = useTranslation();
     const { cardBg, textColor } = useThemeTokens();
     const { token } = useAuth();
 
-    const { data: stats, isLoading: loading } = useQuery({
+    const { data: stats, isLoading: loading, isError, refetch } = useQuery({
         queryKey: ['stats', 'overview'],
         queryFn: () => statsApi.getOverview(),
         enabled: !!token,
@@ -55,14 +62,19 @@ const StatsOverviewPage = () => {
         );
     }
 
-    if (!stats) return null;
+    if (isError) {
+        return (
+            <Flex direction="column" align="center" justify="center" h="calc(100vh - 80px)" gap={4}>
+                <Text color="gray.400">{t('stats.error')}</Text>
+                <Box as="button" px={5} py={2} bg="teal.500" color="white" borderRadius="lg" fontWeight="600"
+                    _hover={{ bg: 'teal.400' }} onClick={() => refetch()}>
+                    {t('discovery.retry')}
+                </Box>
+            </Flex>
+        );
+    }
 
-    const formatTime = (minutes) => {
-        if (minutes < 60) return `${minutes}m`;
-        const h = Math.floor(minutes / 60);
-        const m = minutes % 60;
-        return m > 0 ? `${h}h ${m}m` : `${h}h`;
-    };
+    if (!stats) return null;
 
     return (
         <Box px={{ base: 4, md: 10 }} py={8} maxW="1100px" mx="auto">

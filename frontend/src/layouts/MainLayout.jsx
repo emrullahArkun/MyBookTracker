@@ -1,13 +1,12 @@
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useToast } from '@chakra-ui/react';
+import { Outlet, useMatch, useNavigate } from 'react-router-dom';
+import { Box, Flex, useToast } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import Navbar from '../shared/components/Navbar';
 import { useReadingSessionContext } from '../context/ReadingSessionContext';
 
 const MainLayout = ({ fullWidth = false }) => {
     const { t } = useTranslation();
-    const location = useLocation();
-    const isSessionPage = location.pathname.match(/\/books\/\d+\/session/);
+    const isSessionPage = useMatch('/books/:id/session');
 
     const toast = useToast();
 
@@ -30,76 +29,62 @@ const MainLayout = ({ fullWidth = false }) => {
     const showSessionAlert = activeSession && !isSessionPage && activeSession.bookId;
 
     return (
-        <div
-            style={{
-                minHeight: '100vh',
-                backgroundColor: 'var(--accent-800)',
-                backgroundImage: `repeating-linear-gradient(
-                    to right,
-                    transparent,
-                    transparent 39px,
-                    rgba(0, 0, 0, 0.1) 40px,
-                    rgba(0, 0, 0, 0.1) 41px
-                )`,
-            }}
+        <Box
+            minH="100vh"
+            bg="var(--accent-800)"
+            backgroundImage="repeating-linear-gradient(to right, transparent, transparent 39px, rgba(0, 0, 0, 0.1) 40px, rgba(0, 0, 0, 0.1) 41px)"
         >
-            <div style={{ position: 'relative' }}>
+            <Box position="relative">
                 {showSessionAlert && (
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: '20px',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            zIndex: 3000,
-                            width: 'auto'
-                        }}
+                    <Box
+                        position="fixed"
+                        top="20px"
+                        left="50%"
+                        transform="translateX(-50%)"
+                        zIndex="toast"
+                        width="auto"
                     >
-                        <div
-                            style={{
-                                backgroundColor: '#319795', // Teal 500
-                                color: 'white',
-                                padding: '12px 24px',
-                                borderRadius: '9999px',
-                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '12px',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s'
-                            }}
+                        <Flex
+                            as="button"
+                            bg="teal.500"
+                            color="white"
+                            px={6}
+                            py={3}
+                            borderRadius="full"
+                            boxShadow="lg"
+                            align="center"
+                            gap={3}
+                            cursor="pointer"
+                            transition="transform 0.2s"
+                            _hover={{ transform: 'scale(1.05)' }}
                             onClick={() => navigate(`/books/${activeSession.bookId}/session`)}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
-                            <span style={{ fontWeight: 'bold' }}>⚠️ {t('session.returnToSession')}</span>
-                        </div>
-                    </div>
+                            <Box as="span" fontWeight="bold">⚠️ {t('session.returnToSession')}</Box>
+                        </Flex>
+                    </Box>
                 )}
                 <Navbar />
                 {isSessionPage && (
-                    <div
-                        style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: '90px',
-                            zIndex: 2000,
-                            cursor: 'not-allowed',
-                            backgroundColor: 'transparent'
-                        }}
+                    <Box
+                        position="fixed"
+                        top={0}
+                        left={0}
+                        right={0}
+                        h="90px"
+                        zIndex="overlay"
+                        cursor="not-allowed"
+                        bg="transparent"
                         onClick={handleOverlayClick}
                     />
                 )}
-            </div>
-            <div
+            </Box>
+            <Box
                 className="main-layout-content"
-                style={fullWidth ? { maxWidth: '100%', paddingLeft: 0, paddingRight: 0 } : undefined}
+                {...(fullWidth && { maxW: '100%', pl: 0, pr: 0 })}
             >
                 <Outlet />
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 };
 

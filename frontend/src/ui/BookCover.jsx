@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { Image, Center, Skeleton, Box } from '@chakra-ui/react';
-import { getOpenLibraryCoverUrl } from '../utils/googleBooks';
+import { getOpenLibraryCoverUrl } from '../utils/coverUtils';
 
 const BookCover = forwardRef(({
     book,
@@ -98,13 +98,9 @@ const BookCover = forwardRef(({
                 {...props}
                 bg="linear-gradient(145deg, #3a3a3a 0%, #1a1a1a 100%)"
                 color="white"
-                display="flex"
                 flexDirection="column"
-                justifyContent="center"
-                alignItems="center"
                 p={3}
                 textAlign="center"
-                style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}
             >
                 <Box
                     fontSize={["xs", "sm", "md"]}

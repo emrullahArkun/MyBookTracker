@@ -33,7 +33,7 @@ const discoveryApi = {
     /**
      * Log a search query
      */
-    logSearch: (query) => apiClient.post(`/api/discovery/search-log?query=${encodeURIComponent(query)}`),
+    logSearch: (query) => apiClient.post('/api/discovery/search-log', { query }),
 };
 
 export default discoveryApi;

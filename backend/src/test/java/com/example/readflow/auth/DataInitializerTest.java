@@ -8,8 +8,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
@@ -30,7 +28,7 @@ class DataInitializerTest {
 
     @Test
     void initData_ShouldCreateAdminUser_WhenNotExists() throws Exception {
-        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.empty());
+        when(userRepository.existsByEmail("admin@example.com")).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
 
         CommandLineRunner runner = dataInitializer.initData();
@@ -41,7 +39,7 @@ class DataInitializerTest {
 
     @Test
     void initData_ShouldNotCreateAdminUser_WhenAlreadyExists() throws Exception {
-        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(new User()));
+        when(userRepository.existsByEmail("admin@example.com")).thenReturn(true);
 
         CommandLineRunner runner = dataInitializer.initData();
         runner.run();

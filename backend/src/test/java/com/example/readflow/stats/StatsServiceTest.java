@@ -1,7 +1,6 @@
 package com.example.readflow.stats;
 
 import com.example.readflow.auth.User;
-import com.example.readflow.books.Book;
 import com.example.readflow.books.BookRepository;
 import com.example.readflow.sessions.ReadingSession;
 import com.example.readflow.sessions.ReadingSessionRepository;
@@ -61,15 +60,14 @@ class StatsServiceTest {
     void getOverview_ShouldReturnAllStats() {
         when(bookRepository.countByUser(user)).thenReturn(5L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(2L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(500L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(500L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(
                         buildSession(LocalDate.now().minusDays(1), 30, 10),
                         buildSession(LocalDate.now(), 50, 14)));
         when(bookRepository.findAllCategoriesByUser(user))
                 .thenReturn(List.of("Thriller", "Krimi", "Thriller"));
-        when(streakService.calculateCurrentStreak(user)).thenReturn(3);
-        when(streakService.calculateLongestStreak(user)).thenReturn(7);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(3, 7));
 
         StatsOverviewDto result = statsService.getOverview(user);
 
@@ -88,12 +86,11 @@ class StatsServiceTest {
     void getOverview_ShouldHandleEmptyData() {
         when(bookRepository.countByUser(user)).thenReturn(0L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
 
@@ -110,12 +107,11 @@ class StatsServiceTest {
 
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(noPages));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertTrue(result.dailyActivity().isEmpty());
@@ -133,12 +129,11 @@ class StatsServiceTest {
 
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(noEnd));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertEquals(0, result.totalReadingMinutes());
@@ -151,12 +146,11 @@ class StatsServiceTest {
 
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertEquals(0, result.totalReadingMinutes());
@@ -174,12 +168,11 @@ class StatsServiceTest {
 
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertEquals(0, result.totalReadingMinutes());
@@ -192,12 +185,11 @@ class StatsServiceTest {
 
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertTrue(result.dailyActivity().isEmpty());
@@ -210,12 +202,11 @@ class StatsServiceTest {
 
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(20L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(20L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertEquals(30, result.totalReadingMinutes()); // 60min - 30min paused
@@ -226,12 +217,11 @@ class StatsServiceTest {
         List<String> cats = List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J");
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(cats);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertTrue(result.genreDistribution().size() <= 8);
@@ -241,15 +231,14 @@ class StatsServiceTest {
     void getOverview_ShouldHandleNullCategories() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
         List<String> catsWithNull = new java.util.ArrayList<>();
         catsWithNull.add(null);
         catsWithNull.add("Fiction");
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(catsWithNull);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
 
         StatsOverviewDto result = statsService.getOverview(user);
         assertEquals(1, result.genreDistribution().size());
@@ -262,13 +251,12 @@ class StatsServiceTest {
     void getAchievements_ShouldReturnAllTen() {
         when(bookRepository.countByUser(user)).thenReturn(0L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(0L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         assertEquals(10, result.size());
@@ -279,17 +267,16 @@ class StatsServiceTest {
     void getAchievements_ShouldUnlockFirstSession() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(30L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(1);
-        when(streakService.calculateLongestStreak(user)).thenReturn(1);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(30L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(1, 1));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(buildSession(LocalDate.now(), 30, 10)));
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto firstSession = result.stream()
-                .filter(a -> a.id().equals("FIRST_SESSION")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.FIRST_SESSION).findFirst().orElseThrow();
         assertTrue(firstSession.unlocked());
     }
 
@@ -297,17 +284,16 @@ class StatsServiceTest {
     void getAchievements_ShouldUnlockBookworm() {
         when(bookRepository.countByUser(user)).thenReturn(5L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(5L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(1500L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(20L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(3);
-        when(streakService.calculateLongestStreak(user)).thenReturn(8);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(1500L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(20L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(3, 8));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(buildSession(LocalDate.now(), 50, 10)));
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto bookworm = result.stream()
-                .filter(a -> a.id().equals("BOOKWORM")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.BOOKWORM).findFirst().orElseThrow();
         assertTrue(bookworm.unlocked());
     }
 
@@ -315,20 +301,19 @@ class StatsServiceTest {
     void getAchievements_ShouldUnlockMarathon() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(120L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(2L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(1);
-        when(streakService.calculateLongestStreak(user)).thenReturn(1);
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(120L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(2L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(1, 1));
         // Two sessions on same day = 120 pages total
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(
                         buildSession(LocalDate.now(), 60, 10),
                         buildSession(LocalDate.now(), 60, 14)));
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto marathon = result.stream()
-                .filter(a -> a.id().equals("MARATHON")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.MARATHON).findFirst().orElseThrow();
         assertTrue(marathon.unlocked());
     }
 
@@ -336,17 +321,16 @@ class StatsServiceTest {
     void getAchievements_ShouldDetectEarlyBird() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(buildSession(LocalDate.now(), 10, 6))); // 6 AM
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto earlyBird = result.stream()
-                .filter(a -> a.id().equals("EARLY_BIRD")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.EARLY_BIRD).findFirst().orElseThrow();
         assertTrue(earlyBird.unlocked());
     }
 
@@ -354,17 +338,16 @@ class StatsServiceTest {
     void getAchievements_ShouldDetectNightOwl() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(buildSession(LocalDate.now(), 10, 23))); // 11 PM
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto nightOwl = result.stream()
-                .filter(a -> a.id().equals("NIGHT_OWL")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.NIGHT_OWL).findFirst().orElseThrow();
         assertTrue(nightOwl.unlocked());
     }
 
@@ -372,17 +355,16 @@ class StatsServiceTest {
     void getAchievements_ShouldDetectNightOwlAfterMidnight() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(buildSession(LocalDate.now(), 10, 1))); // 1 AM
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto nightOwl = result.stream()
-                .filter(a -> a.id().equals("NIGHT_OWL")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.NIGHT_OWL).findFirst().orElseThrow();
         assertTrue(nightOwl.unlocked());
     }
 
@@ -390,83 +372,50 @@ class StatsServiceTest {
     void getAchievements_ShouldUnlockWeekStreak() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(100L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(7L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(7);
-        when(streakService.calculateLongestStreak(user)).thenReturn(7);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(100L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(7L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(7, 7));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto weekStreak = result.stream()
-                .filter(a -> a.id().equals("WEEK_STREAK")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.WEEK_STREAK).findFirst().orElseThrow();
         assertTrue(weekStreak.unlocked());
     }
 
     @Test
     void getAchievements_ShouldUnlockSpeedReader() {
-        Book fastBook = new Book();
-        fastBook.setCompleted(true);
-        fastBook.setStartDate(LocalDate.now().minusDays(5));
-
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(1L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(200L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(5L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(200L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(5L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(List.of(fastBook));
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(true);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto speed = result.stream()
-                .filter(a -> a.id().equals("SPEED_READER")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.SPEED_READER).findFirst().orElseThrow();
         assertTrue(speed.unlocked());
     }
 
     @Test
-    void getAchievements_ShouldNotUnlockSpeedReader_WhenBookNotCompleted() {
-        Book notDone = new Book();
-        notDone.setCompleted(false);
-        notDone.setStartDate(LocalDate.now().minusDays(3));
-
+    void getAchievements_ShouldNotUnlockSpeedReader_WhenNoFastBook() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(50L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(2L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(50L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(2L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(List.of(notDone));
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto speed = result.stream()
-                .filter(a -> a.id().equals("SPEED_READER")).findFirst().orElseThrow();
-        assertFalse(speed.unlocked());
-    }
-
-    @Test
-    void getAchievements_ShouldNotUnlockSpeedReader_WhenTookTooLong() {
-        Book slowBook = new Book();
-        slowBook.setCompleted(true);
-        slowBook.setStartDate(LocalDate.now().minusDays(30));
-
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(1L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(200L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(5L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
-                .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(List.of(slowBook));
-
-        List<AchievementDto> result = statsService.getAchievements(user);
-        AchievementDto speed = result.stream()
-                .filter(a -> a.id().equals("SPEED_READER")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.SPEED_READER).findFirst().orElseThrow();
         assertFalse(speed.unlocked());
     }
 
@@ -474,17 +423,16 @@ class StatsServiceTest {
     void getAchievements_ShouldUnlockLibraryBuilder() {
         when(bookRepository.countByUser(user)).thenReturn(10L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(0L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(0L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto lib = result.stream()
-                .filter(a -> a.id().equals("LIBRARY_BUILDER")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.LIBRARY_BUILDER).findFirst().orElseThrow();
         assertTrue(lib.unlocked());
     }
 
@@ -492,17 +440,16 @@ class StatsServiceTest {
     void getAchievements_ShouldUnlockPageTurner() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(1000L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(10L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(1000L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto pt = result.stream()
-                .filter(a -> a.id().equals("PAGE_TURNER")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.PAGE_TURNER).findFirst().orElseThrow();
         assertTrue(pt.unlocked());
     }
 
@@ -510,17 +457,16 @@ class StatsServiceTest {
     void getAchievements_ShouldUnlockMonthStreak() {
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(100L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(30L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(30);
-        when(streakService.calculateLongestStreak(user)).thenReturn(30);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(100L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(30L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(30, 30));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         AchievementDto monthStreak = result.stream()
-                .filter(a -> a.id().equals("MONTH_STREAK")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.MONTH_STREAK).findFirst().orElseThrow();
         assertTrue(monthStreak.unlocked());
     }
 
@@ -536,40 +482,18 @@ class StatsServiceTest {
 
         when(bookRepository.countByUser(user)).thenReturn(1L);
         when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(1L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
+        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
+        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(noStart));
-        when(bookRepository.findByUser(user)).thenReturn(Collections.emptyList());
+        when(bookRepository.existsSpeedReadBook(eq(user), any(LocalDate.class))).thenReturn(false);
 
         List<AchievementDto> result = statsService.getAchievements(user);
         // Should not crash, early bird/night owl should not be unlocked
         AchievementDto earlyBird = result.stream()
-                .filter(a -> a.id().equals("EARLY_BIRD")).findFirst().orElseThrow();
+                .filter(a -> a.id() == AchievementType.EARLY_BIRD).findFirst().orElseThrow();
         assertFalse(earlyBird.unlocked());
     }
 
-    @Test
-    void getAchievements_ShouldHandleBookWithNullStartDate() {
-        Book noDate = new Book();
-        noDate.setCompleted(true);
-        noDate.setStartDate(null);
-
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(1L);
-        when(sessionRepository.sumPagesReadByUser(user)).thenReturn(200L);
-        when(sessionRepository.countCompletedByUser(user)).thenReturn(5L);
-        when(streakService.calculateCurrentStreak(user)).thenReturn(0);
-        when(streakService.calculateLongestStreak(user)).thenReturn(0);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any()))
-                .thenReturn(Collections.emptyList());
-        when(bookRepository.findByUser(user)).thenReturn(List.of(noDate));
-
-        List<AchievementDto> result = statsService.getAchievements(user);
-        AchievementDto speed = result.stream()
-                .filter(a -> a.id().equals("SPEED_READER")).findFirst().orElseThrow();
-        assertFalse(speed.unlocked());
-    }
 }

@@ -73,8 +73,8 @@ describe('LoginPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByLabelText('auth.email')).toBeDefined();
-        expect(screen.getByLabelText('auth.password')).toBeDefined();
+        expect(screen.getByLabelText('auth.email')).toBeInTheDocument();
+        expect(screen.getByLabelText('auth.password')).toBeInTheDocument();
     });
 
     it('should render submit button', () => {
@@ -84,7 +84,7 @@ describe('LoginPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('auth.login.button')).toBeDefined();
+        expect(screen.getByText('auth.login.button')).toBeInTheDocument();
     });
 
     it('should call authApi.login on form submit', async () => {
@@ -121,7 +121,7 @@ describe('LoginPage', () => {
         fireEvent.click(screen.getByText('auth.login.button'));
 
         await waitFor(() => {
-            expect(screen.getByText('Invalid credentials')).toBeDefined();
+            expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
         });
     });
 
@@ -132,6 +132,6 @@ describe('LoginPage', () => {
             </MemoryRouter>
         );
 
-        expect(screen.getByText('auth.register.button')).toBeDefined();
+        expect(screen.getByText('auth.register.button')).toBeInTheDocument();
     });
 });

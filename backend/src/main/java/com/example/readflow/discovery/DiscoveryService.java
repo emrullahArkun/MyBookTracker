@@ -2,20 +2,25 @@ package com.example.readflow.discovery;
 
 import com.example.readflow.auth.User;
 import com.example.readflow.books.BookRepository;
+import com.example.readflow.discovery.dto.DiscoveryResponse;
 import com.example.readflow.discovery.dto.RecommendedBookDto;
 import com.example.readflow.discovery.dto.SearchResultDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class DiscoveryService {
 
     private static final int MAX_SEARCH_HISTORY_PER_USER = 50;
@@ -55,22 +60,11 @@ public class DiscoveryService {
     }
 
     public List<String> getTopAuthors(User user, int limit) {
-        List<String> authors = bookRepository.findTopAuthorsByUser(user);
-        return authors.stream().limit(limit).collect(Collectors.toList());
+        return bookRepository.findTopAuthorsByUser(user, PageRequest.of(0, limit));
     }
 
     public List<String> getTopCategories(User user, int limit) {
-        List<String> allCategories = bookRepository.findAllCategoriesByUser(user);
-
-        Map<String, Long> categoryCount = allCategories.stream()
-                .filter(s -> s != null && !s.isEmpty())
-                .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
-
-        return categoryCount.entrySet().stream()
-                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-                .limit(limit)
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+        return bookRepository.findTopCategoriesByUser(user, PageRequest.of(0, limit));
     }
 
     public List<String> getRecentSearches(User user, int limit) {
@@ -97,6 +91,69 @@ public class DiscoveryService {
         SearchResultDto result = openLibraryClient.searchBooks(query, startIndex, maxResults);
         List<RecommendedBookDto> filtered = filterOwnedBooks(result.items(), ownedIsbns);
         return new SearchResultDto(filtered, result.totalItems());
+    }
+
+    private static final int DEFAULT_LIMIT = 5;
+    private static final int MAX_RESULTS = 10;
+
+    private static <T> T pickRandomOrNull(List<T> list) {
+        return list.isEmpty() ? null : list.get(ThreadLocalRandom.current().nextInt(list.size()));
+    }
+
+    public DiscoveryResponse.AuthorSection getAuthorSection(User user, Set<String> ownedIsbns) {
+        List<String> topAuthors = getTopAuthors(user, 3);
+        String selected = pickRandomOrNull(topAuthors);
+        List<RecommendedBookDto> books = selected == null
+                ? Collections.emptyList()
+                : getRecommendationsByAuthor(selected, ownedIsbns, MAX_RESULTS);
+        return new DiscoveryResponse.AuthorSection(topAuthors, books);
+    }
+
+    public DiscoveryResponse.CategorySection getCategorySection(User user, Set<String> ownedIsbns) {
+        List<String> topCategories = getTopCategories(user, 3);
+        String selected = pickRandomOrNull(topCategories);
+        List<RecommendedBookDto> books = selected == null
+                ? Collections.emptyList()
+                : getRecommendationsByCategory(selected, ownedIsbns, MAX_RESULTS);
+        return new DiscoveryResponse.CategorySection(topCategories, books);
+    }
+
+    public DiscoveryResponse.SearchSection getSearchSection(User user, Set<String> ownedIsbns) {
+        List<String> recentSearches = getRecentSearches(user, DEFAULT_LIMIT);
+        String selected = pickRandomOrNull(recentSearches);
+        List<RecommendedBookDto> books = selected == null
+                ? Collections.emptyList()
+                : getRecommendationsByQuery(selected, ownedIsbns, MAX_RESULTS);
+        return new DiscoveryResponse.SearchSection(recentSearches, books);
+    }
+
+    public DiscoveryResponse getDiscoveryData(User user) {
+        // Alle DB-Aufrufe synchron im Haupt-Thread (Hibernate-Session ist Thread-gebunden)
+        Set<String> ownedIsbns = getOwnedIsbns(user);
+        List<String> topAuthors = getTopAuthors(user, 3);
+        String selectedAuthor = pickRandomOrNull(topAuthors);
+        List<String> topCategories = getTopCategories(user, 3);
+        String selectedCategory = pickRandomOrNull(topCategories);
+        List<String> recentSearches = getRecentSearches(user, DEFAULT_LIMIT);
+        String selectedSearch = pickRandomOrNull(recentSearches);
+
+        // Nur die langsamen externen API-Aufrufe parallelisieren
+        CompletableFuture<List<RecommendedBookDto>> authorBooksFuture = CompletableFuture.supplyAsync(() ->
+                selectedAuthor == null ? Collections.emptyList()
+                        : getRecommendationsByAuthor(selectedAuthor, ownedIsbns, MAX_RESULTS));
+        CompletableFuture<List<RecommendedBookDto>> categoryBooksFuture = CompletableFuture.supplyAsync(() ->
+                selectedCategory == null ? Collections.emptyList()
+                        : getRecommendationsByCategory(selectedCategory, ownedIsbns, MAX_RESULTS));
+        CompletableFuture<List<RecommendedBookDto>> searchBooksFuture = CompletableFuture.supplyAsync(() ->
+                selectedSearch == null ? Collections.emptyList()
+                        : getRecommendationsByQuery(selectedSearch, ownedIsbns, MAX_RESULTS));
+
+        CompletableFuture.allOf(authorBooksFuture, categoryBooksFuture, searchBooksFuture).join();
+
+        return new DiscoveryResponse(
+                new DiscoveryResponse.AuthorSection(topAuthors, authorBooksFuture.join()),
+                new DiscoveryResponse.CategorySection(topCategories, categoryBooksFuture.join()),
+                new DiscoveryResponse.SearchSection(recentSearches, searchBooksFuture.join()));
     }
 
     private List<RecommendedBookDto> filterOwnedBooks(List<RecommendedBookDto> books, Set<String> ownedIsbns) {

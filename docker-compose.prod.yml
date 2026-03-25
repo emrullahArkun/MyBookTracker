@@ -1,6 +1,6 @@
 services:
   app:
-    build: ./backend
+    build: ./backend # TODO: Replace with pre-built image from CI/CD pipeline (e.g. image: ghcr.io/emrullaharkun/readflow-backend:latest)
     ports:
       - "8080:8080"
     depends_on:

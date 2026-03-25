@@ -69,6 +69,8 @@
         "updateProgressFailed": "Failed to update progress: {{message}}",
         "updateStatusFailed": "Failed to update status: {{message}}",
         "error": "Error: {{message}}",
+        "confirmDeleteSelectedTitle": "Delete Selected Books?",
+        "confirmDeleteAllTitle": "Delete ALL Books?",
         "empty": {
             "line1": "No books in your library yet.",
             "line2": "Go to Home to add books!"
@@ -181,7 +183,11 @@
             "endedRemote": "The session was ended in another tab.",
             "exitWarning": "Finish the session before leaving!",
             "exitConfirm": "Finish the session before leaving. Really leave?",
-            "summary": "You read {{pages}} pages!"
+            "summary": "You read {{pages}} pages!",
+            "fetchError": "Could not load book",
+            "startError": "Could not start session. Please try again.",
+            "pageExceeds": "Page number cannot exceed total pages ({{total}}).",
+            "stopError": "Could not stop session. Please try again."
         },
         "stopModal": {
             "title": "Finished Reading?",
@@ -195,11 +201,16 @@
             "finished": "Finished!"
         }
     },
+    "error": {
+        "title": "Something went wrong",
+        "retry": "Try Again"
+    },
     "common": {
         "cancel": "Cancel",
         "delete": "Delete",
         "deleteAll": "Delete All",
-        "leave": "Leave"
+        "leave": "Leave",
+        "back": "Back"
     },
     "discovery": {
         "loading": "Loading recommendations...",
@@ -243,9 +254,11 @@
             "title": "Weekly Pace",
             "empty": "No reading data yet"
         },
+        "error": "Could not load statistics.",
         "achievements": {
             "title": "Achievements",
             "unlocked": "Done",
+            "locked": "Locked",
             "FIRST_SESSION": {
                 "name": "First Steps",
                 "desc": "Complete your first reading session"
@@ -327,6 +340,7 @@
             "weeklyInfo": "Weekly goal reached!",
             "monthlyInfo": "Monthly goal reached!",
             "surpassed": "surpassed",
+            "noGoal": "No active goal set.",
             "modal": {
                 "title": "Set Reading Goal",
                 "period": "Goal Period",

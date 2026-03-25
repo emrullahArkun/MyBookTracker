@@ -83,13 +83,12 @@ describe('AnimationContext', () => {
             return null;
         };
 
-        const originalError = console.error;
-        console.error = vi.fn();
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         expect(() => render(<BadComponent />)).toThrow(
             'useAnimation must be used within an AnimationProvider'
         );
 
-        console.error = originalError;
+        errorSpy.mockRestore();
     });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { getOpenLibraryCoverUrl } from './googleBooks';
+import { getOpenLibraryCoverUrl } from './coverUtils';
 
-describe('googleBooks utils', () => {
+describe('coverUtils', () => {
     describe('getOpenLibraryCoverUrl', () => {
         it('returns OpenLibrary URL for valid ISBN', () => {
             expect(getOpenLibraryCoverUrl('9781234567890')).toBe('https://covers.openlibrary.org/b/isbn/9781234567890-M.jpg');

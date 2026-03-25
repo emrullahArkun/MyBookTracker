@@ -10,22 +10,23 @@ import static org.junit.jupiter.api.Assertions.*;
 class SearchHistoryTest {
 
     @Test
-    void prePersist_ShouldSetTimestamp_WhenNull() {
-        SearchHistory history = new SearchHistory();
-        assertNull(history.getTimestamp());
-
-        history.prePersist();
+    void builder_ShouldSetDefaultTimestamp_WhenNotProvided() {
+        SearchHistory history = SearchHistory.builder()
+                .query("test")
+                .user(new User())
+                .build();
 
         assertNotNull(history.getTimestamp());
     }
 
     @Test
-    void prePersist_ShouldNotOverrideExistingTimestamp() {
+    void builder_ShouldUseProvidedTimestamp_WhenSet() {
         LocalDateTime fixed = LocalDateTime.of(2024, 6, 15, 10, 0);
-        SearchHistory history = new SearchHistory();
-        history.setTimestamp(fixed);
-
-        history.prePersist();
+        SearchHistory history = SearchHistory.builder()
+                .query("test")
+                .user(new User())
+                .timestamp(fixed)
+                .build();
 
         assertEquals(fixed, history.getTimestamp());
     }

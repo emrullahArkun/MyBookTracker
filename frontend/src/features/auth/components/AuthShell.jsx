@@ -7,17 +7,13 @@ const MotionBox = motion.create(Box);
 function AuthShell({ children }) {
     return (
         <Flex
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            zIndex={20}
+            minH="100dvh"
             align="flex-start"
             justify="center"
             bgGradient="linear(to-br, teal.50, gray.100)"
-            overflow="hidden"
+            overflowY="auto"
             pt={{ base: "15vh", md: "12vh" }}
+            pb={8}
         >
             <LanguageSwitcher variant="auth" />
 

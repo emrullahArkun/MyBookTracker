@@ -18,11 +18,11 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Validated
+@Transactional(readOnly = true)
 public class BookService {
 
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
-    private final BookProgressService bookProgressService;
 
     public Page<Book> findAllByUser(User user, Pageable pageable) {
         return bookRepository.findByUserOrderByCompletedAsc(user, pageable);
@@ -30,6 +30,11 @@ public class BookService {
 
     public Optional<Book> findByIdAndUser(@NotNull Long id, User user) {
         return bookRepository.findByIdAndUser(id, user);
+    }
+
+    public Book getBookByIdOrThrow(@NotNull Long id, User user) {
+        return findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Book not found with id: " + id));
     }
 
     public boolean existsByIsbnAndUser(String isbn, User user) {
@@ -59,9 +64,7 @@ public class BookService {
 
     @Transactional
     public void deleteByIdAndUser(@NotNull Long id, User user) {
-        Book book = bookRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
-
+        Book book = getBookByIdOrThrow(id, user);
         bookRepository.delete(book);
     }
 
@@ -72,31 +75,21 @@ public class BookService {
 
     @Transactional
     public Book updateBookProgress(@NotNull Long id, @NotNull Integer currentPage, User user) {
-        Book book = findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
-
-        return bookProgressService.updateProgress(book, currentPage);
+        Book book = getBookByIdOrThrow(id, user);
+        book.updateProgress(currentPage);
+        return book;
     }
 
     @Transactional
     public Book updateBookStatus(@NotNull Long id, @NotNull Boolean completed, User user) {
-        Book book = findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
-
-        book.setCompleted(completed);
-
-        // Keep currentPage consistent with completed status
-        if (completed && book.getPageCount() != null) {
-            book.setCurrentPage(book.getPageCount());
-        }
-
+        Book book = getBookByIdOrThrow(id, user);
+        book.updateStatus(completed);
         return book;
     }
 
     @Transactional
     public Book updateReadingGoal(@NotNull Long id, ReadingGoalType type, Integer pages, User user) {
-        Book book = findByIdAndUser(id, user)
-                .orElseThrow(() -> new ResourceNotFoundException("Book not found"));
+        Book book = getBookByIdOrThrow(id, user);
 
         book.setReadingGoalType(type);
         book.setReadingGoalPages(pages);

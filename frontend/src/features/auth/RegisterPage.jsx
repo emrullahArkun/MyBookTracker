@@ -32,7 +32,7 @@ function RegisterPage() {
         if (!email) {
             newErrors.email = t('auth.required');
         } else if (!email.includes('@')) {
-            newErrors.email = t('auth.invalidEmail', 'Invalid email format');
+            newErrors.email = t('auth.invalidEmail');
         }
 
         if (!password) newErrors.password = t('auth.required');
@@ -56,7 +56,7 @@ function RegisterPage() {
 
             toast({
                 title: t('auth.register.title'),
-                description: t('auth.register.success', "Registration successful! Please login."),
+                description: t('auth.register.success'),
                 status: "success",
                 duration: 5000,
                 isClosable: true,
@@ -65,7 +65,7 @@ function RegisterPage() {
             navigate('/login');
         } catch (err) {
             toast({
-                title: t('auth.errorTitle', "Error"),
+                title: t('auth.errorTitle'),
                 description: err.message,
                 status: "error",
                 duration: 5000,
@@ -88,7 +88,7 @@ function RegisterPage() {
                         label={t('auth.email')}
                         type="email"
                         value={email}
-                        onChange={e => setEmail(e.target.value)}
+                        onChange={e => { setEmail(e.target.value); setErrors(prev => ({ ...prev, email: undefined })); }}
                         placeholder={t('auth.enterEmail')}
                         leftIcon={<MdEmail />}
                         error={errors.email}
@@ -100,7 +100,7 @@ function RegisterPage() {
                         label={t('auth.password')}
                         type="password"
                         value={password}
-                        onChange={e => setPassword(e.target.value)}
+                        onChange={e => { setPassword(e.target.value); setErrors(prev => ({ ...prev, password: undefined })); }}
                         placeholder={t('auth.enterPassword')}
                         leftIcon={<MdLock />}
                         error={errors.password}
@@ -112,7 +112,7 @@ function RegisterPage() {
                         label={t('auth.confirmPassword')}
                         type="password"
                         value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
+                        onChange={e => { setConfirmPassword(e.target.value); setErrors(prev => ({ ...prev, confirmPassword: undefined })); }}
                         placeholder={t('auth.confirmPassword')}
                         leftIcon={<MdLock />}
                         error={errors.confirmPassword}

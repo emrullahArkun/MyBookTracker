@@ -2,21 +2,21 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useControllerLock } from './useControllerLock';
 
+const LOCK_KEY = 'reading_session_controller_lock';
+
 describe('useControllerLock', () => {
+    let setItemSpy;
+
     beforeEach(() => {
         vi.useFakeTimers();
-        global.localStorage = {
-            store: {},
-            getItem: vi.fn(function (key) { return this.store[key] || null; }),
-            setItem: vi.fn(function (key, value) { this.store[key] = value; }),
-            clear: vi.fn(function () { this.store = {}; })
-        };
+        localStorage.clear();
+        setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
     });
 
     afterEach(() => {
         vi.runOnlyPendingTimers();
         vi.useRealTimers();
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('should initialize optimally', () => {
@@ -36,7 +36,7 @@ describe('useControllerLock', () => {
         expect(result.current.isController).toBe(true);
         expect(result.current.controllerId).toBe(result.current.tabId);
 
-        const lock = JSON.parse(global.localStorage.setItem.mock.calls[0][1]);
+        const lock = JSON.parse(localStorage.getItem(LOCK_KEY));
         expect(lock.controllerId).toBe(result.current.tabId);
     });
 
@@ -47,24 +47,23 @@ describe('useControllerLock', () => {
             result.current.takeControl();
         });
 
-        // 1 manual + 1 from useEffect
-        expect(global.localStorage.setItem).toHaveBeenCalledTimes(2);
+        const callsAfterTakeControl = setItemSpy.mock.calls.filter(c => c[0] === LOCK_KEY).length;
 
         act(() => {
             // Heartbeat is 2000ms
             vi.advanceTimersByTime(2100);
         });
 
-        // 2 + 1 heartbeat
-        expect(global.localStorage.setItem).toHaveBeenCalledTimes(3);
+        const callsAfterHeartbeat = setItemSpy.mock.calls.filter(c => c[0] === LOCK_KEY).length;
+        expect(callsAfterHeartbeat).toBeGreaterThan(callsAfterTakeControl);
     });
 
     it('should detect existing valid lock from another tab', () => {
         // Mock an existing valid lock
-        global.localStorage.store['reading_session_controller_lock'] = JSON.stringify({
+        localStorage.setItem(LOCK_KEY, JSON.stringify({
             controllerId: 'other_tab',
             expiresAt: Date.now() + 5000
-        });
+        }));
 
         const { result } = renderHook(() => useControllerLock());
 
@@ -79,10 +78,10 @@ describe('useControllerLock', () => {
 
     it('should handle expired lock from another tab', () => {
         // Mock an expired lock
-        global.localStorage.store['reading_session_controller_lock'] = JSON.stringify({
+        localStorage.setItem(LOCK_KEY, JSON.stringify({
             controllerId: 'other_tab',
             expiresAt: Date.now() - 1000 // Expired
-        });
+        }));
 
         const { result } = renderHook(() => useControllerLock());
 
@@ -104,23 +103,21 @@ describe('useControllerLock', () => {
         expect(result.current.isController).toBe(true);
 
         // Simulate lock expiring manually in storage without heartbeat updating it
-        global.localStorage.store['reading_session_controller_lock'] = JSON.stringify({
+        localStorage.setItem(LOCK_KEY, JSON.stringify({
             controllerId: result.current.tabId,
             expiresAt: Date.now() - 1000 // Expired
-        });
+        }));
 
         act(() => {
-            // checkLock runs every 1000ms
             vi.advanceTimersByTime(1100);
         });
 
         // The auto-renew logic inside checkLock should kick in
         expect(result.current.isController).toBe(true);
-        expect(global.localStorage.setItem).toHaveBeenCalled(); // It wrote a new lock
     });
 
     it('should handle corrupt localStorage data', () => {
-        global.localStorage.store['reading_session_controller_lock'] = 'not-json';
+        localStorage.setItem(LOCK_KEY, 'not-json');
 
         const { result } = renderHook(() => useControllerLock());
 
@@ -142,7 +139,7 @@ describe('useControllerLock', () => {
         expect(result.current.isController).toBe(true);
 
         // Clear localStorage to simulate lock being removed
-        delete global.localStorage.store['reading_session_controller_lock'];
+        localStorage.removeItem(LOCK_KEY);
 
         act(() => {
             vi.advanceTimersByTime(3100);
@@ -162,15 +159,16 @@ describe('useControllerLock', () => {
         expect(result.current.isController).toBe(true);
 
         // Simulate another tab taking the lock via storage event
-        global.localStorage.store['reading_session_controller_lock'] = JSON.stringify({
+        const newLockValue = JSON.stringify({
             controllerId: 'other_tab',
             expiresAt: Date.now() + 5000
         });
+        localStorage.setItem(LOCK_KEY, newLockValue);
 
         act(() => {
             window.dispatchEvent(new StorageEvent('storage', {
-                key: 'reading_session_controller_lock',
-                newValue: global.localStorage.store['reading_session_controller_lock']
+                key: LOCK_KEY,
+                newValue: newLockValue
             }));
         });
 

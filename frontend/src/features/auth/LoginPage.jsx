@@ -34,7 +34,7 @@ function LoginPage() {
             login({ email: data.user.email, role: data.user.role });
             toast({
                 title: t('auth.login.title'),
-                description: t('auth.login.success', "Successfully logged in."),
+                description: t('auth.login.success'),
                 status: "success",
                 duration: 3000,
                 isClosable: true,
@@ -45,14 +45,6 @@ function LoginPage() {
             navigate(from, { replace: true });
         } catch (err) {
             setError(err.message);
-            toast({
-                title: t('auth.errorTitle', "Error"),
-                description: err.message,
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-                position: "top-right"
-            });
         } finally {
             setIsLoading(false);
         }
@@ -63,7 +55,7 @@ function LoginPage() {
             title={t('auth.login.title')}
             icon={<MdLogin />}
         >
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form onSubmit={handleSubmit} noValidate className={styles.form}>
                 <div className={styles.inputsContainer}>
                     <TextField
                         label={t('auth.email')}

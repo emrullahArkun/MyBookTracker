@@ -5,17 +5,14 @@ import com.example.readflow.books.dto.CreateBookRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
-import org.springframework.beans.factory.annotation.Autowired;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-public abstract class BookMapper {
-
-    @Autowired
-    protected ReadingGoalProgressCalculator calculator;
+@Mapper(componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface BookMapper {
 
     @Mapping(target = "authorName", source = "author")
-    @Mapping(target = "readingGoalProgress", expression = "java(calculator.calculateProgress(book))")
-    public abstract BookDto toDto(Book book);
+    @Mapping(target = "readingGoalProgress", ignore = true)
+    BookDto toDto(Book book);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "author", source = "authorName")
@@ -26,6 +23,6 @@ public abstract class BookMapper {
     @Mapping(target = "readingGoalType", ignore = true)
     @Mapping(target = "readingGoalPages", ignore = true)
     @Mapping(target = "readingSessions", ignore = true)
-    public abstract Book toEntity(CreateBookRequest request);
+    Book toEntity(CreateBookRequest request);
 
 }

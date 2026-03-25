@@ -245,12 +245,14 @@ describe('MyBooks Component', () => {
         it('shows and handles pagination buttons', async () => {
             const user = userEvent.setup();
             server.use(
-                http.get('/api/books', () => {
+                http.get('/api/books', ({ request }) => {
+                    const url = new URL(request.url);
+                    const page = Number(url.searchParams.get('page') || '0');
                     return HttpResponse.json({
                         content: [{ id: 1, title: 'B1' }, { id: 2, title: 'B2' }],
                         totalElements: 20,
                         totalPages: 2,
-                        number: 0
+                        number: page
                     });
                 })
             );

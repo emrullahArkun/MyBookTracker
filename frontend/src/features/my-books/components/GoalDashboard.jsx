@@ -56,7 +56,7 @@ const GoalDashboard = () => {
                     _active={{ bg: 'whiteAlpha.300' }}
                 >
                     <HStack spacing={4} align="center">
-                        <Text fontSize="5xl" fontWeight="bold">{t('home.goals', 'My Goals')}</Text>
+                        <Text fontSize="5xl" fontWeight="bold">{t('home.goals')}</Text>
                         {activeGoalsCount > 0 && (
                             <Badge
                                 colorScheme="teal"
@@ -76,12 +76,12 @@ const GoalDashboard = () => {
                 </MenuButton>
                 <MenuList bg="gray.800" borderColor="gray.700" p={2} boxShadow="xl" maxH="400px" overflowY="auto" width="320px">
                     <Text px={3} py={2} fontSize="xs" fontWeight="bold" color="gray.400" textTransform="uppercase">
-                        {t('home.yourTargets', 'Your Targets')}
+                        {t('home.yourTargets')}
                     </Text>
 
                     {books.length === 0 && (
                         <Box px={3} py={4} textAlign="center" color="gray.500" fontSize="sm">
-                            {t('home.noGoals', 'No active goals')}
+                            {t('home.noGoals')}
                         </Box>
                     )}
 
@@ -116,7 +116,7 @@ const GoalDashboard = () => {
                                             {isFinished ? (
                                                 <HStack spacing={1} color="green.300">
                                                     <Icon as={FaCheckCircle} />
-                                                    <Text>Done!</Text>
+                                                    <Text>{t('home.completedGoals')}</Text>
                                                     {multiplier >= 2 && <Text>({multiplier}x)</Text>}
                                                 </HStack>
                                             ) : (

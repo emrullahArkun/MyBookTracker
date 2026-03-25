@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { FaPlay, FaChartBar } from 'react-icons/fa';
@@ -13,7 +12,6 @@ import {
     Flex
 } from '@chakra-ui/react';
 import BookCover from '../../../ui/BookCover';
-import UpdateProgressModal from './UpdateProgressModal';
 
 
 const MyBookCard = ({
@@ -24,13 +22,6 @@ const MyBookCard = ({
 }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const handleUpdate = (id, page) => {
-        onUpdateProgress(id, page);
-        setIsModalOpen(false);
-    };
-
     const info = book.volumeInfo || book;
     const authors = info.authors || info.authorName;
     const authorText = Array.isArray(authors) ? authors[0] : authors;
@@ -213,13 +204,6 @@ const MyBookCard = ({
                 )}
             </VStack>
 
-            {isModalOpen && (
-                <UpdateProgressModal
-                    book={book}
-                    onClose={() => setIsModalOpen(false)}
-                    onUpdate={handleUpdate}
-                />
-            )}
         </Box>
     );
 };

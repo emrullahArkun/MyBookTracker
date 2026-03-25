@@ -10,4 +10,9 @@ public record RecommendedBookDto(
         Integer pageCount,
         String isbn,
         String coverUrl) {
+
+    public RecommendedBookDto {
+        authors = authors == null ? List.of() : List.copyOf(authors);
+        categories = categories == null ? List.of() : List.copyOf(categories);
+    }
 }

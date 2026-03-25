@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { Box, Text, Flex, Tooltip } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 
@@ -61,9 +61,16 @@ const ReadingHeatmap = ({ dailyActivity = [] }) => {
     }, [dailyActivity]);
 
     const totalWidth = (WEEKS + 1) * (CELL_SIZE + CELL_GAP);
+    const scrollRef = useRef(null);
+
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+    }, [grid]);
 
     return (
-        <Box w="full" overflowX="auto">
+        <Box ref={scrollRef} w="full" overflowX="auto">
             {/* Month labels */}
             <Flex ml="0px" mb={1} position="relative" h="16px" minW={`${totalWidth}px`}>
                 {months.map((m, i) => (

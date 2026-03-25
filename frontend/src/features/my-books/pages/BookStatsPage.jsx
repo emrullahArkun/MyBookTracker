@@ -60,11 +60,11 @@ const BookStatsPage = () => {
         setIsSavingGoal(true);
         try {
             await booksApi.updateGoal(id, goalType, parseInt(goalPages, 10));
-            toast({ title: t('bookStats.goal.modal.success', 'Goal updated!'), status: 'success', duration: 3000 });
+            toast({ title: t('bookStats.goal.modal.success'), status: 'success', duration: 3000 });
             refetch();
             onClose();
         } catch (error) {
-            toast({ title: t('bookStats.goal.modal.error', 'Failed to update goal'), status: 'error', duration: 3000 });
+            toast({ title: t('bookStats.goal.modal.error'), status: 'error', duration: 3000 });
         } finally {
             setIsSavingGoal(false);
         }
@@ -156,7 +156,7 @@ const BookStatsPage = () => {
             </Box>
 
             {/* No Sessions Modal */}
-            <Modal isOpen={!hasSessions && !loading && !!book} onClose={() => {}} isCentered closeOnOverlayClick={false} closeOnEsc={false}>
+            <Modal isOpen={!hasSessions && !loading && !!book} onClose={() => navigate('/my-books')} isCentered>
                 <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(4px)" />
                 <ModalContent bg="gray.900" border="1px solid" borderColor="whiteAlpha.100" borderRadius="2xl" mx={4}>
                     <ModalBody py={10} px={8} textAlign="center">
@@ -171,15 +171,26 @@ const BookStatsPage = () => {
                         <Text fontSize="sm" color="gray.400" mb={6}>
                             {t('bookStats.noSessions.desc')}
                         </Text>
-                        <Button
-                            colorScheme="teal"
-                            size="lg"
-                            borderRadius="xl"
-                            px={10}
-                            onClick={() => navigate(`/books/${id}/session`)}
-                        >
-                            {t('bookStats.noSessions.button')}
-                        </Button>
+                        <Flex direction="column" gap={3} align="center">
+                            <Button
+                                colorScheme="teal"
+                                size="lg"
+                                borderRadius="xl"
+                                px={10}
+                                onClick={() => navigate(`/books/${id}/session`)}
+                            >
+                                {t('bookStats.noSessions.button')}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                color="gray.400"
+                                size="sm"
+                                onClick={() => navigate('/my-books')}
+                                _hover={{ color: 'white' }}
+                            >
+                                {t('common.back')}
+                            </Button>
+                        </Flex>
                     </ModalBody>
                 </ModalContent>
             </Modal>

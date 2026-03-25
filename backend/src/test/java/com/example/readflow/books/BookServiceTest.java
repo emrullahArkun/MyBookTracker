@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,8 +29,6 @@ class BookServiceTest {
     private BookRepository bookRepository;
     @Mock
     private BookMapper bookMapper;
-    @Mock
-    private BookProgressService bookProgressService;
     @InjectMocks
     private BookService bookService;
 
@@ -114,13 +111,14 @@ class BookServiceTest {
     }
 
     @Test
-    void updateBookProgress_ShouldDelegateToProgressService() {
+    void updateBookProgress_ShouldUpdateProgressOnBook() {
         Book book = new Book();
+        book.setPageCount(100);
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
-        when(bookProgressService.updateProgress(book, 50)).thenReturn(book);
 
-        bookService.updateBookProgress(1L, 50, user);
-        verify(bookProgressService).updateProgress(book, 50);
+        Book result = bookService.updateBookProgress(1L, 50, user);
+        assertEquals(50, result.getCurrentPage());
+        assertFalse(result.getCompleted());
     }
 
     @Test

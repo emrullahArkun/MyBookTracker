@@ -15,24 +15,30 @@ describe('apiClient', () => {
     afterEach(() => {
         global.fetch = originalFetch;
         vi.restoreAllMocks();
+        document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/';
     });
 
     // ==================== request() ====================
 
     describe('request()', () => {
-        it('should add Content-Type header and credentials by default', async () => {
+        it('should include credentials by default', async () => {
             global.fetch.mockResolvedValue({ ok: true });
             await apiClient.request('/api/test');
 
             expect(global.fetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
                 credentials: 'include',
-                headers: expect.objectContaining({
-                    'Content-Type': 'application/json',
-                }),
             }));
         });
 
-        it('should merge custom headers with defaults', async () => {
+        it('should not set Content-Type header by default', async () => {
+            global.fetch.mockResolvedValue({ ok: true });
+            await apiClient.request('/api/test');
+
+            const headers = global.fetch.mock.calls[0][1].headers;
+            expect(headers['Content-Type']).toBeUndefined();
+        });
+
+        it('should merge custom headers', async () => {
             global.fetch.mockResolvedValue({ ok: true });
             await apiClient.request('/api/test', {
                 headers: { 'X-Custom': 'value' },
@@ -40,32 +46,39 @@ describe('apiClient', () => {
 
             expect(global.fetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
                 headers: expect.objectContaining({
-                    'Content-Type': 'application/json',
                     'X-Custom': 'value',
                 }),
             }));
         });
 
-        it('should include X-XSRF-TOKEN header when CSRF cookie is present', async () => {
+        it('should include CSRF token for POST requests', async () => {
             document.cookie = 'XSRF-TOKEN=test-csrf-token';
-
             global.fetch.mockResolvedValue({ ok: true });
-            await apiClient.request('/api/test');
+
+            await apiClient.request('/api/test', { method: 'POST' });
 
             expect(global.fetch).toHaveBeenCalledWith('/api/test', expect.objectContaining({
                 headers: expect.objectContaining({
                     'X-XSRF-TOKEN': 'test-csrf-token',
                 }),
             }));
-
-            document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/';
         });
 
-        it('should throw on fetch failure', async () => {
-            const error = new Error('Network error');
-            global.fetch.mockRejectedValue(error);
+        it('should not include CSRF token for GET requests', async () => {
+            document.cookie = 'XSRF-TOKEN=test-csrf-token';
+            global.fetch.mockResolvedValue({ ok: true });
 
-            await expect(apiClient.request('/api/test')).rejects.toThrow('Network error');
+            await apiClient.request('/api/test');
+
+            const headers = global.fetch.mock.calls[0][1].headers;
+            expect(headers['X-XSRF-TOKEN']).toBeUndefined();
+        });
+
+        it('should throw user-friendly message on network error', async () => {
+            global.fetch.mockRejectedValue(new TypeError('Failed to fetch'));
+
+            await expect(apiClient.request('/api/test'))
+                .rejects.toThrow('Network error. Please check your connection.');
         });
     });
 
@@ -77,6 +90,7 @@ describe('apiClient', () => {
 
             await expect(apiClient.handleResponse(response)).rejects.toThrow('Unauthorized');
             expect(window.dispatchEvent).toHaveBeenCalledWith(expect.any(CustomEvent));
+            expect(window.dispatchEvent.mock.calls[0][0].type).toBe('auth:unauthorized');
         });
 
         it('should throw with error message from JSON on non-ok response', async () => {
@@ -135,11 +149,8 @@ describe('apiClient', () => {
                 json: vi.fn().mockResolvedValue({ message: 'Forbidden' }),
             };
 
-            try {
-                await apiClient.handleResponse(response);
-            } catch (error) {
-                expect(error.status).toBe(403);
-            }
+            await expect(apiClient.handleResponse(response))
+                .rejects.toHaveProperty('status', 403);
         });
     });
 
@@ -161,7 +172,8 @@ describe('apiClient', () => {
         it('should rethrow errors', async () => {
             global.fetch.mockRejectedValue(new Error('Network error'));
 
-            await expect(apiClient.requestJson('/api/test')).rejects.toThrow('Network error');
+            await expect(apiClient.requestJson('/api/test'))
+                .rejects.toThrow('Network error. Please check your connection.');
         });
     });
 
@@ -182,7 +194,7 @@ describe('apiClient', () => {
     });
 
     describe('post()', () => {
-        it('should call with POST method and body', async () => {
+        it('should call with POST method, body, and Content-Type', async () => {
             global.fetch.mockResolvedValue({
                 status: 200, ok: true,
                 json: vi.fn().mockResolvedValue({}),
@@ -192,6 +204,9 @@ describe('apiClient', () => {
             expect(global.fetch).toHaveBeenCalledWith('/api/books', expect.objectContaining({
                 method: 'POST',
                 body: JSON.stringify({ title: 'Test' }),
+                headers: expect.objectContaining({
+                    'Content-Type': 'application/json',
+                }),
             }));
         });
 
@@ -210,7 +225,7 @@ describe('apiClient', () => {
     });
 
     describe('patch()', () => {
-        it('should call with PATCH method and body', async () => {
+        it('should call with PATCH method, body, and Content-Type', async () => {
             global.fetch.mockResolvedValue({
                 status: 200, ok: true,
                 json: vi.fn().mockResolvedValue({}),
@@ -220,6 +235,9 @@ describe('apiClient', () => {
             expect(global.fetch).toHaveBeenCalledWith('/api/books/1', expect.objectContaining({
                 method: 'PATCH',
                 body: JSON.stringify({ page: 50 }),
+                headers: expect.objectContaining({
+                    'Content-Type': 'application/json',
+                }),
             }));
         });
 

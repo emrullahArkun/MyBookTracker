@@ -2,7 +2,6 @@ package com.example.readflow.sessions;
 
 import com.example.readflow.auth.User;
 import com.example.readflow.books.Book;
-import com.example.readflow.books.BookProgressService;
 import com.example.readflow.books.BookRepository;
 import com.example.readflow.shared.exception.IllegalSessionStateException;
 import com.example.readflow.shared.exception.ResourceNotFoundException;
@@ -10,18 +9,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ReadingSessionService {
 
     private final ReadingSessionRepository sessionRepository;
     private final BookRepository bookRepository;
-    private final BookProgressService bookProgressService;
 
     @Transactional
     public ReadingSession startSession(User user, Long bookId) {
@@ -32,24 +30,17 @@ public class ReadingSessionService {
             ReadingSession existing = existingOpt.get();
             if (existing.getBook().getId().equals(bookId)) {
                 if (existing.getStatus() == SessionStatus.PAUSED) {
-                    return resumeSession(user);
+                    existing.resume(Instant.now());
                 }
                 return existing;
             }
-            stopSession(user, Instant.now(), null);
+            existing.finish(Instant.now(), null);
         }
 
         Book book = bookRepository.findByIdAndUser(bookId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found or access denied"));
 
-        ReadingSession session = new ReadingSession();
-        session.setUser(user);
-        session.setBook(book);
-        session.setStartTime(Instant.now());
-        session.setStartPage(book.getCurrentPage() != null ? book.getCurrentPage() : 0);
-        session.setStatus(SessionStatus.ACTIVE);
-
-        return sessionRepository.save(session);
+        return sessionRepository.save(ReadingSession.startNew(user, book, Instant.now()));
     }
 
     @Transactional
@@ -59,21 +50,10 @@ public class ReadingSessionService {
                 .orElseThrow(() -> new ResourceNotFoundException("No active reading session found"));
 
         Instant safeEndTime = endTime != null ? endTime : Instant.now();
-
-        accumulatePausedTime(session, safeEndTime);
-
-        session.setPausedAt(null);
-        session.setEndTime(safeEndTime);
-        session.setEndPage(endPage);
-        session.setStatus(SessionStatus.COMPLETED);
+        session.finish(safeEndTime, endPage);
 
         if (endPage != null) {
-            int sessionStartPage = session.getStartPage() != null ? session.getStartPage() : 0;
-            int pagesRead = Math.max(0, endPage - sessionStartPage);
-
-            session.setPagesRead(pagesRead);
-
-            bookProgressService.updateProgress(session.getBook(), endPage);
+            session.getBook().updateProgress(endPage);
         }
 
         return sessionRepository.save(session);
@@ -90,8 +70,7 @@ public class ReadingSessionService {
                 List.of(SessionStatus.ACTIVE))
                 .orElseThrow(() -> new IllegalSessionStateException("No active session found to pause"));
 
-        session.setStatus(SessionStatus.PAUSED);
-        session.setPausedAt(Instant.now());
+        session.pause(Instant.now());
         return sessionRepository.save(session);
     }
 
@@ -101,23 +80,20 @@ public class ReadingSessionService {
                 List.of(SessionStatus.PAUSED))
                 .orElseThrow(() -> new IllegalSessionStateException("No paused session found to resume"));
 
-        Instant now = Instant.now();
-        accumulatePausedTime(session, now);
-        session.setStatus(SessionStatus.ACTIVE);
-        session.setPausedAt(null);
+        session.resume(Instant.now());
         return sessionRepository.save(session);
     }
 
     @Transactional
     public ReadingSession excludeTime(User user, Long millis) {
-        if (millis == null || millis < 0) {
+        if (millis == null || millis <= 0) {
             throw new IllegalArgumentException("Invalid millis");
         }
         ReadingSession session = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE))
                 .orElseThrow(() -> new IllegalSessionStateException("No active session found"));
 
-        session.setPausedMillis(session.getPausedMillisOrZero() + millis);
+        session.addExcludedTime(millis);
         return sessionRepository.save(session);
     }
 
@@ -130,14 +106,5 @@ public class ReadingSessionService {
     @Transactional
     public void deleteSessionsByBook(User user, Book book) {
         sessionRepository.deleteByUserAndBook(user, book);
-    }
-
-    private void accumulatePausedTime(ReadingSession session, Instant endTime) {
-        if (session.getStatus() == SessionStatus.PAUSED && session.getPausedAt() != null) {
-            long gap = Duration.between(session.getPausedAt(), endTime).toMillis();
-            if (gap > 0) {
-                session.setPausedMillis(session.getPausedMillisOrZero() + gap);
-            }
-        }
     }
 }

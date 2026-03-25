@@ -2,14 +2,15 @@ package com.example.readflow.auth;
 
 import com.example.readflow.auth.dto.*;
 import com.example.readflow.shared.security.JwtTokenService;
+import com.example.readflow.shared.security.CurrentUser;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -33,7 +34,8 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@RequestBody @Valid RegisterRequest request) {
         User user = authService.registerUser(request.email(), request.password());
-        return ResponseEntity.ok(new RegisterResponse("Registration successful. Please login.", UserDto.from(user)));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new RegisterResponse("Registration successful. Please login.", UserDto.from(user)));
     }
 
     @PostMapping("/login")
@@ -56,11 +58,10 @@ public class AuthController {
     }
 
     @GetMapping("/session")
-    public ResponseEntity<SessionResponse> getSession(Principal principal) {
-        if (principal == null) {
+    public ResponseEntity<SessionResponse> getSession(@CurrentUser User user) {
+        if (user == null) {
             return ResponseEntity.status(401).build();
         }
-        User user = authService.getUserByEmail(principal.getName());
         return ResponseEntity.ok(new SessionResponse(UserDto.from(user)));
     }
 

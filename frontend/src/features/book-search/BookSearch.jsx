@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import styles from './BookSearch.module.css';
 import homeStyles from '../../pages/HomePage.module.css';
 import { useBookSearch } from './hooks/useBookSearch.jsx';
@@ -15,30 +15,12 @@ function BookSearch({ onBookAdded }) {
         results,
         error,
         hasMore,
-        loading,
+        isLoading,
+        isFetchingNextPage,
         searchBooks,
         loadMore,
         addBookToLibrary,
     } = useBookSearch();
-
-    const gridRef = useRef(null);
-    const [columns, setColumns] = useState(null);
-
-    useEffect(() => {
-        const grid = gridRef.current;
-        if (!grid) return;
-
-        const measure = () => {
-            const style = window.getComputedStyle(grid);
-            const cols = style.getPropertyValue('grid-template-columns').split(' ').length;
-            setColumns(cols);
-        };
-
-        measure();
-        const observer = new ResizeObserver(measure);
-        observer.observe(grid);
-        return () => observer.disconnect();
-    }, []);
 
     const handleAddBook = useCallback(async (book) => {
         try {
@@ -51,12 +33,7 @@ function BookSearch({ onBookAdded }) {
         }
     }, [addBookToLibrary, onBookAdded]);
 
-    const hasResults = results.length > 0 || loading;
-
-    // Trim results to fill complete rows only
-    const visibleResults = columns && results.length > 0
-        ? results.slice(0, Math.floor(results.length / columns) * columns)
-        : results;
+    const hasResults = results.length > 0 || isLoading;
 
     return (
         <div className={styles.searchContainer}>
@@ -69,25 +46,29 @@ function BookSearch({ onBookAdded }) {
 
             {error && <p className={styles.error}>{error}</p>}
 
-            <div className={styles.resultsGrid} ref={gridRef}>
-                {visibleResults.map((book, index) => (
+            <div className={styles.resultsGrid}>
+                {results.map((book, index) => (
                     <SearchResultCard
-                        key={book.isbn || index}
+                        key={book.isbn || `${book.title}-${index}`}
                         book={book}
                         onAdd={handleAddBook}
                     />
                 ))}
 
-                {loading && Array.from({ length: columns || 5 }).map((_, index) => (
+                {isLoading && Array.from({ length: 5 }).map((_, index) => (
                     <SearchResultSkeleton key={`skeleton-${index}`} />
                 ))}
             </div>
 
-            {visibleResults.length > 0 && hasMore && !loading && (
+            {results.length > 0 && hasMore && !isFetchingNextPage && (
                 <button onClick={loadMore} className={styles.loadMoreBtn}>{t('search.loadMore')}</button>
             )}
 
-            {!hasMore && visibleResults.length > 0 && <div className={styles.endMessage}>{t('search.endResults')}</div>}
+            {isFetchingNextPage && (
+                <button disabled className={styles.loadMoreBtn}>{t('search.loading')}</button>
+            )}
+
+            {!hasMore && results.length > 0 && <div className={styles.endMessage}>{t('search.endResults')}</div>}
         </div>
     );
 }

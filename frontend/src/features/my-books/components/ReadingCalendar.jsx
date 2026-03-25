@@ -33,30 +33,14 @@ const ReadingCalendar = ({ sessions }) => {
     // Logic: Sum of (endPage - startPage) for sessions ending on that day.
 
     const dailyPages = useMemo(() => {
-        // Filter out bad data
-        const validSessions = sessions.filter(s => s.endTime && s.endPage !== null);
-        const sortedSessions = [...validSessions].sort((a, b) => new Date(a.endTime) - new Date(b.endTime));
         const map = {};
 
-        sortedSessions.forEach((session, index) => {
-            const dayKey = new Date(session.endTime).toDateString();
-            let pagesInSession = 0;
-
-            // Best effort calculation
-            if (index > 0) {
-                const prev = sortedSessions[index - 1];
-                if (session.endPage >= prev.endPage) {
-                    pagesInSession = session.endPage - prev.endPage;
-                } else {
-                    pagesInSession = 0;
-                }
-            } else {
-                pagesInSession = session.endPage;
-            }
-
-            if (!map[dayKey]) map[dayKey] = 0;
-            map[dayKey] += pagesInSession;
-        });
+        sessions
+            .filter(s => s.endTime && s.pagesRead > 0)
+            .forEach(session => {
+                const dayKey = new Date(session.endTime).toDateString();
+                map[dayKey] = (map[dayKey] || 0) + session.pagesRead;
+            });
 
         return map;
     }, [sessions]);
@@ -97,7 +81,7 @@ const ReadingCalendar = ({ sessions }) => {
 
             days.push(
                 hasActivity ? (
-                    <Tooltip key={day} label={`${pages} ${t('bookStats.pages', 'Seiten')}`} hasArrow bg="teal.600" color="white">
+                    <Tooltip key={day} label={`${pages} ${t('bookStats.pages')}`} hasArrow bg="teal.600" color="white">
                         <Box
                             textAlign="center"
                             p={2}
@@ -201,7 +185,7 @@ const ReadingCalendar = ({ sessions }) => {
 
                     <Box mt={6} textAlign="center">
                         <Text fontSize="xs" color="gray.500">
-                            {t('bookStats.calendarHint', 'Tippe auf ein Datum für Details')}
+                            {t('bookStats.calendarHint')}
                         </Text>
                     </Box>
                 </PopoverBody>

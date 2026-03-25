@@ -12,10 +12,10 @@ vi.mock('../../../api/apiClient', () => ({
 describe('sessionsApi', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('getActive should GET with cache-bust param', async () => {
+    it('getActive should GET active session', async () => {
         apiClient.get.mockResolvedValue(null);
         await sessionsApi.getActive();
-        expect(apiClient.get).toHaveBeenCalledWith(expect.stringMatching(/^\/api\/sessions\/active\?_t=\d+$/));
+        expect(apiClient.get).toHaveBeenCalledWith('/api/sessions/active');
     });
 
     it('getByBookId should GET by bookId', async () => {

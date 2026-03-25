@@ -7,5 +7,6 @@ import jakarta.validation.constraints.NotNull;
 public record SetGoalRequest(
                 @NotNull(message = "Type must not be null") ReadingGoalType type,
 
+                @NotNull(message = "Pages are required")
                 @Min(value = 1, message = "Pages must be at least 1") Integer pages) {
 }
