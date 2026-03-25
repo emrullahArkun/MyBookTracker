@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import SearchResultCard from './SearchResultCard';
 import * as AnimationContextModule from '../../../context/AnimationContext';
@@ -43,7 +43,9 @@ describe('SearchResultCard', () => {
         renderCard();
         const card = screen.getByRole('button');
 
-        fireEvent.click(card);
+        await act(async () => {
+            fireEvent.click(card);
+        });
 
         expect(mockFlyBook).toHaveBeenCalled();
         expect(mockOnAdd).toHaveBeenCalledWith(mockBook);
@@ -53,7 +55,9 @@ describe('SearchResultCard', () => {
         renderCard();
         const card = screen.getByRole('button');
 
-        fireEvent.keyDown(card, { key: 'Enter' });
+        await act(async () => {
+            fireEvent.keyDown(card, { key: 'Enter' });
+        });
         expect(mockOnAdd).toHaveBeenCalled();
     });
 
@@ -62,7 +66,9 @@ describe('SearchResultCard', () => {
         renderCard();
         const card = screen.getByRole('button');
 
-        fireEvent.keyDown(card, { key: ' ' });
+        await act(async () => {
+            fireEvent.keyDown(card, { key: ' ' });
+        });
         expect(mockOnAdd).toHaveBeenCalled();
     });
 
@@ -85,12 +91,18 @@ describe('SearchResultCard', () => {
         renderCard();
         const card = screen.getByRole('button');
 
-        fireEvent.click(card);
+        await act(async () => {
+            fireEvent.click(card);
+        });
         expect(mockOnAdd).toHaveBeenCalledTimes(1);
 
-        fireEvent.click(card);
+        await act(async () => {
+            fireEvent.click(card);
+        });
         expect(mockOnAdd).toHaveBeenCalledTimes(1);
 
-        resolveAdd();
+        await act(async () => {
+            resolveAdd();
+        });
     });
 });

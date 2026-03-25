@@ -1,20 +1,21 @@
 package com.example.readflow.discovery;
 
 import com.example.readflow.auth.User;
-import com.example.readflow.books.BookRepository;
 import com.example.readflow.discovery.dto.DiscoveryResponse;
 import com.example.readflow.discovery.dto.RecommendedBookDto;
 import com.example.readflow.discovery.dto.SearchResultDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 @Service
 @RequiredArgsConstructor
@@ -22,39 +23,37 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class DiscoveryService {
 
-    private final SearchHistoryService searchHistoryService;
-    private final BookRepository bookRepository;
-    private final OpenLibraryClient openLibraryClient;
+    private final DiscoveryUserDataService userDataService;
+    private final DiscoveryRecommendationService recommendationService;
+    private final ExecutorService ioExecutor;
 
     public Set<String> getOwnedIsbns(User user) {
-        return new HashSet<>(bookRepository.findAllIsbnsByUser(user));
+        return userDataService.getOwnedIsbns(user);
     }
 
-    public List<String> getTopAuthors(User user, int limit) {
-        return bookRepository.findTopAuthorsByUser(user, PageRequest.of(0, limit));
+    List<String> getTopAuthors(User user, int limit) {
+        return userDataService.getTopAuthors(user, limit);
     }
 
-    public List<String> getTopCategories(User user, int limit) {
-        return bookRepository.findTopCategoriesByUser(user, PageRequest.of(0, limit));
+    List<String> getTopCategories(User user, int limit) {
+        return userDataService.getTopCategories(user, limit);
     }
 
-    public List<RecommendedBookDto> getRecommendationsByAuthor(String author, Set<String> ownedIsbns, int maxResults) {
-        return filterOwnedBooks(openLibraryClient.getBooksByAuthor(author, maxResults), ownedIsbns);
+    List<RecommendedBookDto> getRecommendationsByAuthor(String author, Set<String> ownedIsbns, int maxResults) {
+        return recommendationService.getRecommendationsByAuthor(author, ownedIsbns, maxResults);
     }
 
-    public List<RecommendedBookDto> getRecommendationsByCategory(String category, Set<String> ownedIsbns,
+    List<RecommendedBookDto> getRecommendationsByCategory(String category, Set<String> ownedIsbns,
             int maxResults) {
-        return filterOwnedBooks(openLibraryClient.getBooksByCategory(category, maxResults), ownedIsbns);
+        return recommendationService.getRecommendationsByCategory(category, ownedIsbns, maxResults);
     }
 
-    public List<RecommendedBookDto> getRecommendationsByQuery(String query, Set<String> ownedIsbns, int maxResults) {
-        return filterOwnedBooks(openLibraryClient.getBooksByQuery(query, maxResults), ownedIsbns);
+    List<RecommendedBookDto> getRecommendationsByQuery(String query, Set<String> ownedIsbns, int maxResults) {
+        return recommendationService.getRecommendationsByQuery(query, ownedIsbns, maxResults);
     }
 
     public SearchResultDto searchBooks(String query, Set<String> ownedIsbns, int startIndex, int maxResults) {
-        SearchResultDto result = openLibraryClient.searchBooks(query, startIndex, maxResults);
-        List<RecommendedBookDto> filtered = filterOwnedBooks(result.items(), ownedIsbns);
-        return new SearchResultDto(filtered, result.totalItems());
+        return recommendationService.searchBooks(query, ownedIsbns, startIndex, maxResults);
     }
 
     private static final int DEFAULT_LIMIT = 5;
@@ -83,7 +82,7 @@ public class DiscoveryService {
     }
 
     public DiscoveryResponse.SearchSection getSearchSection(User user, Set<String> ownedIsbns) {
-        List<String> recentSearches = searchHistoryService.getRecentSearches(user, DEFAULT_LIMIT);
+        List<String> recentSearches = userDataService.getRecentSearches(user, DEFAULT_LIMIT);
         String selected = pickRandomOrNull(recentSearches);
         List<RecommendedBookDto> books = selected == null
                 ? Collections.emptyList()
@@ -92,49 +91,38 @@ public class DiscoveryService {
     }
 
     public DiscoveryResponse getDiscoveryData(User user) {
-        // Alle DB-Aufrufe synchron im Haupt-Thread (Hibernate-Session ist Thread-gebunden)
-        Set<String> ownedIsbns = getOwnedIsbns(user);
-        List<String> topAuthors = getTopAuthors(user, 3);
-        String selectedAuthor = pickRandomOrNull(topAuthors);
-        List<String> topCategories = getTopCategories(user, 3);
-        String selectedCategory = pickRandomOrNull(topCategories);
-        List<String> recentSearches = searchHistoryService.getRecentSearches(user, DEFAULT_LIMIT);
-        String selectedSearch = pickRandomOrNull(recentSearches);
+        DiscoverySnapshot snapshot = userDataService.getSnapshot(user, 3, DEFAULT_LIMIT);
+        String selectedAuthor = pickRandomOrNull(snapshot.topAuthors());
+        String selectedCategory = pickRandomOrNull(snapshot.topCategories());
+        String selectedSearch = pickRandomOrNull(snapshot.recentSearches());
 
-        // Nur die langsamen externen API-Aufrufe parallelisieren
-        CompletableFuture<List<RecommendedBookDto>> authorBooksFuture = CompletableFuture.supplyAsync(() ->
-                selectedAuthor == null ? Collections.<RecommendedBookDto>emptyList()
-                        : getRecommendationsByAuthor(selectedAuthor, ownedIsbns, MAX_RESULTS))
-                .exceptionally(e -> {
-                    log.error("Failed to fetch author recommendations for {}: {}", selectedAuthor, e.getMessage());
-                    return Collections.emptyList();
-                });
-        CompletableFuture<List<RecommendedBookDto>> categoryBooksFuture = CompletableFuture.supplyAsync(() ->
-                selectedCategory == null ? Collections.<RecommendedBookDto>emptyList()
-                        : getRecommendationsByCategory(selectedCategory, ownedIsbns, MAX_RESULTS))
-                .exceptionally(e -> {
-                    log.error("Failed to fetch category recommendations for {}: {}", selectedCategory, e.getMessage());
-                    return Collections.emptyList();
-                });
-        CompletableFuture<List<RecommendedBookDto>> searchBooksFuture = CompletableFuture.supplyAsync(() ->
-                selectedSearch == null ? Collections.<RecommendedBookDto>emptyList()
-                        : getRecommendationsByQuery(selectedSearch, ownedIsbns, MAX_RESULTS))
-                .exceptionally(e -> {
-                    log.error("Failed to fetch search recommendations for {}: {}", selectedSearch, e.getMessage());
-                    return Collections.emptyList();
-                });
+        CompletableFuture<List<RecommendedBookDto>> authorBooksFuture = fetchRecommendationsAsync(
+                "author", selectedAuthor,
+                () -> getRecommendationsByAuthor(selectedAuthor, snapshot.ownedIsbns(), MAX_RESULTS));
+        CompletableFuture<List<RecommendedBookDto>> categoryBooksFuture = fetchRecommendationsAsync(
+                "category", selectedCategory,
+                () -> getRecommendationsByCategory(selectedCategory, snapshot.ownedIsbns(), MAX_RESULTS));
+        CompletableFuture<List<RecommendedBookDto>> searchBooksFuture = fetchRecommendationsAsync(
+                "search", selectedSearch,
+                () -> getRecommendationsByQuery(selectedSearch, snapshot.ownedIsbns(), MAX_RESULTS));
 
         CompletableFuture.allOf(authorBooksFuture, categoryBooksFuture, searchBooksFuture).join();
 
         return new DiscoveryResponse(
-                new DiscoveryResponse.AuthorSection(topAuthors, authorBooksFuture.join()),
-                new DiscoveryResponse.CategorySection(topCategories, categoryBooksFuture.join()),
-                new DiscoveryResponse.SearchSection(recentSearches, searchBooksFuture.join()));
+                new DiscoveryResponse.AuthorSection(snapshot.topAuthors(), authorBooksFuture.join()),
+                new DiscoveryResponse.CategorySection(snapshot.topCategories(), categoryBooksFuture.join()),
+                new DiscoveryResponse.SearchSection(snapshot.recentSearches(), searchBooksFuture.join()));
     }
 
-    private List<RecommendedBookDto> filterOwnedBooks(List<RecommendedBookDto> books, Set<String> ownedIsbns) {
-        return books.stream()
-                .filter(book -> book.isbn() == null || !ownedIsbns.contains(book.isbn()))
-                .collect(Collectors.toList());
+    private CompletableFuture<List<RecommendedBookDto>> fetchRecommendationsAsync(
+            String source,
+            String seed,
+            Supplier<List<RecommendedBookDto>> supplier) {
+        return CompletableFuture.supplyAsync(() -> seed == null ? Collections.<RecommendedBookDto>emptyList() : supplier.get(),
+                        ioExecutor)
+                .exceptionally(e -> {
+                    log.error("Failed to fetch {} recommendations for {}: {}", source, seed, e.getMessage());
+                    return Collections.emptyList();
+                });
     }
 }

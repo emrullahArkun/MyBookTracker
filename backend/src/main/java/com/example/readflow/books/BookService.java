@@ -6,12 +6,16 @@ import com.example.readflow.shared.exception.DuplicateResourceException;
 import com.example.readflow.shared.exception.ResourceNotFoundException;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +27,8 @@ public class BookService {
 
     private final BookRepository bookRepository;
     private final BookMapper bookMapper;
+    private final Clock clock;
+    private final ApplicationEventPublisher eventPublisher;
 
     public Page<Book> findAllByUser(User user, Pageable pageable) {
         return bookRepository.findByUserOrderByCompletedAsc(user, pageable);
@@ -52,25 +58,33 @@ public class BookService {
     @Transactional
     public Book createBook(CreateBookRequest request, User user) {
         if (existsByIsbnAndUser(request.isbn(), user)) {
-            throw new DuplicateResourceException(
-                    "Book with ISBN " + request.isbn() + " already exists in your collection.");
+            throw duplicateIsbnException(request.isbn());
         }
 
         Book book = bookMapper.toEntity(request);
         book.setUser(user);
+        applyDefaults(book);
 
-        return bookRepository.save(book);
+        try {
+            Book savedBook = bookRepository.saveAndFlush(book);
+            publishCollectionChanged(user);
+            return savedBook;
+        } catch (DataIntegrityViolationException e) {
+            throw duplicateIsbnException(request.isbn());
+        }
     }
 
     @Transactional
     public void deleteByIdAndUser(@NotNull Long id, User user) {
         Book book = getBookByIdOrThrow(id, user);
         bookRepository.delete(book);
+        publishCollectionChanged(user);
     }
 
     @Transactional
     public void deleteAllByUser(User user) {
         bookRepository.deleteByUser(user);
+        publishCollectionChanged(user);
     }
 
     @Transactional
@@ -94,5 +108,26 @@ public class BookService {
         book.setReadingGoalType(type);
         book.setReadingGoalPages(pages);
         return book;
+    }
+
+    private void applyDefaults(Book book) {
+        if (book.getCurrentPage() == null) {
+            book.setCurrentPage(0);
+        }
+        if (book.getStartDate() == null) {
+            book.setStartDate(LocalDate.now(clock));
+        }
+        if (book.getCompleted() == null) {
+            book.setCompleted(false);
+        }
+    }
+
+    private DuplicateResourceException duplicateIsbnException(String isbn) {
+        return new DuplicateResourceException("Book with ISBN " + isbn + " already exists in your collection.");
+    }
+
+    // Observer pattern: publish a domain event so side effects stay decoupled from write operations.
+    private void publishCollectionChanged(User user) {
+        eventPublisher.publishEvent(new BookCollectionChangedEvent(user.getId()));
     }
 }

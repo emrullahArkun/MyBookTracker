@@ -12,6 +12,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.context.request.WebRequest;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 
@@ -20,12 +24,15 @@ import static org.mockito.Mockito.*;
 
 class GlobalExceptionHandlerTest {
 
+    private static final Instant FIXED_NOW = Instant.parse("2026-03-25T12:00:00Z");
+    private static final LocalDateTime FIXED_TIME = LocalDateTime.ofInstant(FIXED_NOW, ZoneOffset.UTC);
+
     private GlobalExceptionHandler handler;
     private WebRequest webRequest;
 
     @BeforeEach
     void setUp() {
-        handler = new GlobalExceptionHandler();
+        handler = new GlobalExceptionHandler(Clock.fixed(FIXED_NOW, ZoneOffset.UTC));
         webRequest = mock(WebRequest.class);
         when(webRequest.getDescription(false)).thenReturn("uri=/api/test");
     }
@@ -40,6 +47,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(404, response.getBody().status());
         assertEquals("Book not found", response.getBody().message());
         assertEquals("/api/test", response.getBody().path());
+        assertEquals(FIXED_TIME, response.getBody().timestamp());
     }
 
     @Test
@@ -92,6 +100,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(400, body.status());
         assertTrue(body.message().contains("title: must not be blank"));
         assertTrue(body.message().contains("isbn: must not be blank"));
+        assertEquals(FIXED_TIME, body.timestamp());
     }
 
     @Test
@@ -116,6 +125,7 @@ class GlobalExceptionHandlerTest {
         assertEquals(405, body.status());
         assertEquals("Method Not Allowed", body.error());
         assertEquals("/api/test", body.path());
+        assertEquals(FIXED_TIME, body.timestamp());
     }
 
     @Test
@@ -127,5 +137,6 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertEquals(500, response.getBody().status());
         assertEquals("An unexpected error occurred", response.getBody().message());
+        assertEquals(FIXED_TIME, response.getBody().timestamp());
     }
 }

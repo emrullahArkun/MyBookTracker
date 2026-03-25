@@ -95,6 +95,21 @@ class JwtAuthenticationIntegrationTest {
     }
 
     @Test
+    void missingJwtCookie_ShouldReturn401_ForAuthSession() throws Exception {
+        mockMvc.perform(get("/api/auth/session"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void validJwtCookie_ShouldAllowAccess_ToAuthSession() throws Exception {
+        String token = jwtTokenService.createToken(testUser);
+
+        mockMvc.perform(get("/api/auth/session")
+                .cookie(new Cookie("jwt", token)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void tamperedJwtCookie_ShouldReturn401() throws Exception {
         String token = jwtTokenService.createToken(testUser);
         String tampered = token.substring(0, token.length() - 5) + "XXXXX";

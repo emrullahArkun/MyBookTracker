@@ -1,49 +1,77 @@
 import { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../features/auth/api/authApi';
 
 export const AuthContext = createContext(null);
 
+const AUTH_STORAGE_KEY = 'user';
+
+const clearStoredUser = () => {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+};
+
+const readStoredUser = () => {
+    const storedUser = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!storedUser) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(storedUser);
+    } catch {
+        clearStoredUser();
+        return null;
+    }
+};
+
 export const AuthProvider = ({ children }) => {
+    const queryClient = useQueryClient();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const isAuthenticated = !!user;
 
     const login = useCallback((userData) => {
+        queryClient.clear();
         setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-    }, []);
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
+    }, [queryClient]);
 
     const logout = useCallback(async () => {
+        queryClient.clear();
         setUser(null);
-        localStorage.removeItem('user');
+        clearStoredUser();
         try {
             await authApi.logout();
         } catch {
             // Cookie will expire anyway
         }
-    }, []);
+    }, [queryClient]);
 
     useEffect(() => {
         const handleUnauthorized = () => {
+            queryClient.clear();
             setUser(null);
-            localStorage.removeItem('user');
+            clearStoredUser();
         };
 
         window.addEventListener('auth:unauthorized', handleUnauthorized);
 
         const initAuth = async () => {
-            const storedUser = localStorage.getItem('user');
+            const storedUser = readStoredUser();
 
             if (storedUser) {
                 try {
-                    const res = await authApi.getSession();
-                    if (!res) {
+                    const session = await authApi.getSession();
+                    const sessionUser = session?.user;
+                    if (!sessionUser) {
                         throw new Error("Session invalid");
                     }
-                    setUser(JSON.parse(storedUser));
+                    setUser(sessionUser);
+                    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(sessionUser));
                 } catch {
-                    localStorage.removeItem('user');
+                    queryClient.clear();
+                    clearStoredUser();
                     setUser(null);
                 }
             }
@@ -54,7 +82,7 @@ export const AuthProvider = ({ children }) => {
         return () => {
             window.removeEventListener('auth:unauthorized', handleUnauthorized);
         };
-    }, []);
+    }, [queryClient]);
 
     const value = useMemo(() => ({
         user,
@@ -62,8 +90,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading,
-        // Keep token as alias for isAuthenticated for backward compatibility with useQuery enabled checks
-        token: isAuthenticated,
+        // Keep token as alias for older hooks, but make it user-bound for query keys.
+        token: user?.email ?? null,
     }), [user, isAuthenticated, login, logout, loading]);
 
     return (

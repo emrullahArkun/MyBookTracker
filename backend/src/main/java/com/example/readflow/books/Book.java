@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,9 +105,6 @@ public class Book {
     public void prePersist() {
         if (currentPage == null) {
             currentPage = 0;
-        }
-        if (startDate == null) {
-            startDate = LocalDate.now(ZoneOffset.UTC);
         }
         if (completed == null) {
             completed = false;

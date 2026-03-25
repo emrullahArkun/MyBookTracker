@@ -11,30 +11,34 @@ import com.example.readflow.stats.dto.GenreStatDto;
 import com.example.readflow.stats.dto.StatsOverviewDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StatsService {
 
     private final BookRepository bookRepository;
     private final ReadingSessionRepository sessionRepository;
     private final StreakService streakService;
+    private final Clock clock;
 
     public StatsOverviewDto getOverview(User user) {
         long totalBooks = bookRepository.countByUser(user);
         long completedBooks = bookRepository.countByUserAndCompletedTrue(user);
         long totalPagesRead = sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED);
 
-        LocalDate since = LocalDate.now(ZoneOffset.UTC).minusYears(1);
+        Instant since = LocalDate.now(clock).minusYears(1).atStartOfDay(clock.getZone()).toInstant();
         List<ReadingSession> sessions = sessionRepository.findCompletedSessionsSince(user, since, SessionStatus.COMPLETED);
 
         long totalReadingMinutes = calculateTotalMinutes(sessions);
-        Map<LocalDate, Integer> dailyPagesMap = getDailyPagesMap(sessions);
+        Map<LocalDate, Integer> dailyPagesMap = SessionAnalyzer.getDailyPagesMap(sessions);
         List<DailyActivityDto> dailyActivity = dailyPagesMap.entrySet().stream()
                 .map(e -> new DailyActivityDto(e.getKey(), e.getValue()))
                 .toList();
@@ -59,17 +63,6 @@ public class StatsService {
             }
         }
         return totalMs / 60_000;
-    }
-
-    private Map<LocalDate, Integer> getDailyPagesMap(List<ReadingSession> sessions) {
-        Map<LocalDate, Integer> dayMap = new TreeMap<>();
-        for (ReadingSession s : sessions) {
-            if (s.getEndTime() != null && s.getPagesRead() != null && s.getPagesRead() > 0) {
-                LocalDate day = s.getEndTime().atZone(ZoneOffset.UTC).toLocalDate();
-                dayMap.merge(day, s.getPagesRead(), Integer::sum);
-            }
-        }
-        return dayMap;
     }
 
     private List<GenreStatDto> buildGenreDistribution(User user) {

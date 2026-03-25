@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Date;
 
@@ -19,9 +20,11 @@ public class JwtTokenService {
 
     private final JWSSigner signer;
     private final long ttlSeconds;
+    private final Clock clock;
 
     public JwtTokenService(@Value("${app.jwt.secret}") String secret,
-            @Value("${app.jwt.ttl-seconds}") long ttlSeconds) {
+            @Value("${app.jwt.ttl-seconds}") long ttlSeconds,
+            Clock clock) {
         if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
             throw new IllegalStateException("JWT secret must be at least 32 bytes long for HS256");
         }
@@ -31,11 +34,12 @@ public class JwtTokenService {
             throw new IllegalStateException("Failed to initialize JWT signer", e);
         }
         this.ttlSeconds = ttlSeconds;
+        this.clock = clock;
     }
 
     public String createToken(User user) {
         try {
-            Instant now = Instant.now();
+            Instant now = Instant.now(clock);
             JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                     .subject(user.getEmail())
                     .claim("userId", user.getId())

@@ -5,7 +5,11 @@ import { AnimationProvider, useAnimation } from './AnimationContext';
 // Mock framer-motion to avoid animation side-effects in tests
 vi.mock('framer-motion', () => ({
     motion: {
-        img: (props) => <img {...props} />,
+        img: (props) => {
+            const domProps = { ...props };
+            delete domProps.onAnimationComplete;
+            return <img {...domProps} />;
+        },
     },
     AnimatePresence: ({ children }) => <>{children}</>,
 }));
@@ -83,12 +87,8 @@ describe('AnimationContext', () => {
             return null;
         };
 
-        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
         expect(() => render(<BadComponent />)).toThrow(
             'useAnimation must be used within an AnimationProvider'
         );
-
-        errorSpy.mockRestore();
     });
 });

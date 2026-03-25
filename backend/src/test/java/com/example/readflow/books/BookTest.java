@@ -21,7 +21,7 @@ class BookTest {
         book.prePersist();
 
         assertEquals(0, book.getCurrentPage());
-        assertEquals(LocalDate.now(), book.getStartDate());
+        assertNull(book.getStartDate());
         assertFalse(book.getCompleted());
     }
 

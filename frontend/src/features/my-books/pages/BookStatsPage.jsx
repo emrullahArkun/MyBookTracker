@@ -1,6 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../app/routes';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     Box,
@@ -8,22 +6,13 @@ import {
     GridItem,
     SimpleGrid,
     useDisclosure,
-    useToast,
     Spinner,
     Flex,
     VStack,
-    Text,
-    Modal,
-    ModalOverlay,
-    ModalContent,
-    ModalBody,
-    Button,
-    Icon
 } from '@chakra-ui/react';
-import { FaBookReader } from 'react-icons/fa';
-import { booksApi } from '../../books/api';
 import { useBookStats } from '../hooks/useBookStats';
 import { useBookStatsCalculations } from '../hooks/useBookStatsCalculations';
+import { useBookGoalEditor } from '../hooks/useBookGoalEditor';
 
 import { useThemeTokens } from '../../../shared/hooks/useThemeTokens';
 import { FaBookOpen, FaChartLine, FaClock } from 'react-icons/fa';
@@ -32,54 +21,44 @@ import StatsCard from '../components/StatsCard';
 import BookGoalModal from '../components/BookGoalModal';
 import BookStatsSidebar from '../components/BookStatsSidebar';
 import BookStatsCharts from '../components/BookStatsCharts';
+import NoSessionsModal from '../components/NoSessionsModal';
+import PageErrorState from '../../../shared/components/PageErrorState';
 
 const BookStatsPage = () => {
     const { t } = useTranslation();
     const { id } = useParams();
-    const navigate = useNavigate();
 
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const toast = useToast();
-
-    // Custom Hook for Data
-    const { book, sessions, loading, refetch } = useBookStats(id);
-
-    // Custom Hook for Calculations
+    const { book, sessions, loading, error, refetch } = useBookStats(id);
     const { stats, goalProgress } = useBookStatsCalculations(book, sessions);
-
-    // Goal State
-    const [goalType, setGoalType] = useState('WEEKLY');
-    const [goalPages, setGoalPages] = useState('');
-    const [isSavingGoal, setIsSavingGoal] = useState(false);
-
-    useEffect(() => {
-        if (book?.readingGoalType) setGoalType(book.readingGoalType);
-        if (book?.readingGoalPages) setGoalPages(book.readingGoalPages);
-    }, [book]);
-
-    const handleSaveGoal = async () => {
-        setIsSavingGoal(true);
-        try {
-            await booksApi.updateGoal(id, goalType, parseInt(goalPages, 10));
-            toast({ title: t('bookStats.goal.modal.success'), status: 'success', duration: 3000 });
-            refetch();
-            onClose();
-        } catch (error) {
-            toast({ title: t('bookStats.goal.modal.error'), status: 'error', duration: 3000 });
-        } finally {
-            setIsSavingGoal(false);
-        }
-    };
+    const {
+        goalType,
+        setGoalType,
+        goalPages,
+        setGoalPages,
+        isSavingGoal,
+        handleSaveGoal,
+    } = useBookGoalEditor({ book, bookId: id, refetch, onClose });
 
     const { bgColor, cardBg, textColor, subTextColor, brandColor } = useThemeTokens();
 
-    const hasSessions = sessions && sessions.length > 0;
+    const hasSessions = sessions.length > 0;
 
     if (loading) return (
         <Flex justify="center" align="center" h="100vh" bg={bgColor}>
             <Spinner size="xl" color={brandColor} thickness="4px" />
         </Flex>
     );
+
+    if (error) {
+        return (
+            <PageErrorState
+                title={t('myBooks.error', { message: error.message || error })}
+                onRetry={refetch}
+                retryLabel={t('discovery.retry')}
+            />
+        );
+    }
 
     if (!book) return <Box textAlign="center" py={20} color={textColor}>{t('bookStats.notFound')}</Box>;
 
@@ -156,45 +135,7 @@ const BookStatsPage = () => {
                 </Grid>
             </Box>
 
-            {/* No Sessions Modal */}
-            <Modal isOpen={!hasSessions && !loading && !!book} onClose={() => navigate(ROUTES.MY_BOOKS)} isCentered>
-                <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(4px)" />
-                <ModalContent bg="gray.900" border="1px solid" borderColor="whiteAlpha.100" borderRadius="2xl" mx={4}>
-                    <ModalBody py={10} px={8} textAlign="center">
-                        <Flex justify="center" mb={5}>
-                            <Flex w={16} h={16} borderRadius="full" bg="whiteAlpha.100" align="center" justify="center">
-                                <Icon as={FaBookReader} boxSize={7} color="teal.200" />
-                            </Flex>
-                        </Flex>
-                        <Text fontSize="lg" fontWeight="700" color="white" mb={2}>
-                            {t('bookStats.noSessions.title')}
-                        </Text>
-                        <Text fontSize="sm" color="gray.400" mb={6}>
-                            {t('bookStats.noSessions.desc')}
-                        </Text>
-                        <Flex direction="column" gap={3} align="center">
-                            <Button
-                                colorScheme="teal"
-                                size="lg"
-                                borderRadius="xl"
-                                px={10}
-                                onClick={() => navigate(`/books/${id}/session`)}
-                            >
-                                {t('bookStats.noSessions.button')}
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                color="gray.400"
-                                size="sm"
-                                onClick={() => navigate(ROUTES.MY_BOOKS)}
-                                _hover={{ color: 'white' }}
-                            >
-                                {t('common.back')}
-                            </Button>
-                        </Flex>
-                    </ModalBody>
-                </ModalContent>
-            </Modal>
+            <NoSessionsModal isOpen={!hasSessions && !!book} bookId={id} />
 
             {/* Set Goal Modal */}
             <BookGoalModal

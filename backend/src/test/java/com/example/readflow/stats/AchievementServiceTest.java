@@ -1,37 +1,35 @@
 package com.example.readflow.stats;
 
 import com.example.readflow.auth.User;
-import com.example.readflow.books.BookRepository;
+import com.example.readflow.books.Book;
 import com.example.readflow.sessions.ReadingSession;
-import com.example.readflow.sessions.ReadingSessionRepository;
-import com.example.readflow.sessions.StreakService;
-import com.example.readflow.sessions.SessionStatus;
 import com.example.readflow.stats.dto.AchievementDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AchievementServiceTest {
 
-    @Mock private BookRepository bookRepository;
-    @Mock private ReadingSessionRepository sessionRepository;
-    @Mock private StreakService streakService;
-    @InjectMocks private AchievementService achievementService;
+    @Mock
+    private AchievementContextFactory contextFactory;
+
+    private AchievementService achievementService;
 
     private User user;
 
@@ -39,257 +37,169 @@ class AchievementServiceTest {
     void setUp() {
         user = new User();
         user.setId(1L);
-    }
-
-    private ReadingSession buildSession(LocalDate date, int pagesRead, int startHour) {
-        ReadingSession s = new ReadingSession();
-        s.setUser(user);
-        s.setStatus(SessionStatus.COMPLETED);
-        Instant start = date.atTime(startHour, 0).atZone(ZoneOffset.UTC).toInstant();
-        s.setStartTime(start);
-        s.setEndTime(start.plusSeconds(3600)); // 1 hour later
-        s.setPagesRead(pagesRead);
-        s.setPausedMillis(0L);
-        return s;
+        achievementService = new AchievementService(contextFactory, List.of(
+                new SpeedReaderAchievementChecker(),
+                new FirstSessionAchievementChecker(),
+                new MonthStreakAchievementChecker(),
+                new WeekStreakAchievementChecker(),
+                new NightOwlAchievementChecker(),
+                new EarlyBirdAchievementChecker(),
+                new MarathonAchievementChecker(),
+                new PageTurnerAchievementChecker(),
+                new LibraryBuilderAchievementChecker(),
+                new BookwormAchievementChecker()));
     }
 
     @Test
     void getAchievements_ShouldReturnAllTen() {
-        when(bookRepository.countByUser(user)).thenReturn(0L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(Collections.emptyList());
+        when(contextFactory.build(user, ZoneOffset.UTC)).thenReturn(context());
 
         List<AchievementDto> result = achievementService.getAchievements(user);
+
         assertEquals(10, result.size());
         assertTrue(result.stream().noneMatch(AchievementDto::unlocked));
     }
 
     @Test
     void getAchievements_ShouldUnlockFirstSession() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(30L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(1, 1));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(buildSession(LocalDate.now(), 30, 10)));
+        when(contextFactory.build(user, ZoneOffset.UTC)).thenReturn(context(0, 0, 0, 1, 0, 0, ZoneOffset.UTC, List.of()));
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto firstSession = result.stream()
-                .filter(a -> a.id() == AchievementType.FIRST_SESSION).findFirst().orElseThrow();
+        AchievementDto firstSession = getAchievement(achievementService.getAchievements(user), AchievementType.FIRST_SESSION);
+
         assertTrue(firstSession.unlocked());
+        assertEquals("1 sessions", firstSession.unlockedDetail());
     }
 
     @Test
-    void getAchievements_ShouldUnlockBookworm() {
-        when(bookRepository.countByUser(user)).thenReturn(5L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(5L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(1500L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(20L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(3, 8));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(buildSession(LocalDate.now(), 50, 10)));
+    void getAchievements_ShouldUnlockThresholdAchievements() {
+        when(contextFactory.build(user, ZoneOffset.UTC)).thenReturn(context(10, 5, 1000, 5, 120, 30, ZoneOffset.UTC, List.of()));
 
         List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto bookworm = result.stream()
-                .filter(a -> a.id() == AchievementType.BOOKWORM).findFirst().orElseThrow();
-        assertTrue(bookworm.unlocked());
+
+        assertTrue(getAchievement(result, AchievementType.BOOKWORM).unlocked());
+        assertTrue(getAchievement(result, AchievementType.LIBRARY_BUILDER).unlocked());
+        assertTrue(getAchievement(result, AchievementType.PAGE_TURNER).unlocked());
+        assertTrue(getAchievement(result, AchievementType.MARATHON).unlocked());
+        assertTrue(getAchievement(result, AchievementType.WEEK_STREAK).unlocked());
+        assertTrue(getAchievement(result, AchievementType.MONTH_STREAK).unlocked());
     }
 
     @Test
-    void getAchievements_ShouldUnlockMarathon() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(120L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(2L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(1, 1));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(
-                        buildSession(LocalDate.now(), 60, 10),
-                        buildSession(LocalDate.now(), 60, 14)));
+    void getAchievements_ShouldUseResolvedTimezoneForContextBuild() {
+        when(contextFactory.build(user, ZoneId.of("Europe/Berlin")))
+                .thenReturn(context(0, 0, 0, 0, 0, 0, ZoneId.of("Europe/Berlin"), List.of()));
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto marathon = result.stream()
-                .filter(a -> a.id() == AchievementType.MARATHON).findFirst().orElseThrow();
-        assertTrue(marathon.unlocked());
+        achievementService.getAchievements(user, "Europe/Berlin");
+
+        verify(contextFactory).build(user, ZoneId.of("Europe/Berlin"));
     }
 
     @Test
-    void getAchievements_ShouldDetectEarlyBird() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(buildSession(LocalDate.now(), 10, 6)));
+    void getAchievements_ShouldDetectEarlyBirdInUserTimezone() {
+        ReadingSession session = buildSession(Instant.parse("2026-03-25T04:00:00Z"), Instant.parse("2026-03-25T05:00:00Z"), null);
+        when(contextFactory.build(user, ZoneId.of("Europe/Berlin")))
+                .thenReturn(context(1, 0, 10, 1, 10, 0, ZoneId.of("Europe/Berlin"), List.of(session)));
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto earlyBird = result.stream()
-                .filter(a -> a.id() == AchievementType.EARLY_BIRD).findFirst().orElseThrow();
+        AchievementDto earlyBird = getAchievement(
+                achievementService.getAchievements(user, "Europe/Berlin"),
+                AchievementType.EARLY_BIRD);
+
         assertTrue(earlyBird.unlocked());
     }
 
     @Test
-    void getAchievements_ShouldDetectNightOwl() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(buildSession(LocalDate.now(), 10, 23)));
-
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto nightOwl = result.stream()
-                .filter(a -> a.id() == AchievementType.NIGHT_OWL).findFirst().orElseThrow();
-        assertTrue(nightOwl.unlocked());
-    }
-
-    @Test
     void getAchievements_ShouldDetectNightOwlAfterMidnight() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(buildSession(LocalDate.now(), 10, 1)));
+        ReadingSession session = buildSession(Instant.parse("2026-03-25T01:00:00Z"), Instant.parse("2026-03-25T02:00:00Z"), null);
+        when(contextFactory.build(user, ZoneOffset.UTC))
+                .thenReturn(context(1, 0, 10, 1, 10, 0, ZoneOffset.UTC, List.of(session)));
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto nightOwl = result.stream()
-                .filter(a -> a.id() == AchievementType.NIGHT_OWL).findFirst().orElseThrow();
+        AchievementDto nightOwl = getAchievement(achievementService.getAchievements(user), AchievementType.NIGHT_OWL);
+
         assertTrue(nightOwl.unlocked());
-    }
-
-    @Test
-    void getAchievements_ShouldUnlockWeekStreak() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(100L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(7L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(7, 7));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(Collections.emptyList());
-
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto weekStreak = result.stream()
-                .filter(a -> a.id() == AchievementType.WEEK_STREAK).findFirst().orElseThrow();
-        assertTrue(weekStreak.unlocked());
     }
 
     @Test
     void getAchievements_ShouldUnlockSpeedReader() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(1L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(200L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(5L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        ReadingSession fastSession = buildSession(LocalDate.now(), 200, 10);
-        com.example.readflow.books.Book b = new com.example.readflow.books.Book();
-        b.setCompleted(true);
-        b.setStartDate(LocalDate.now().minusDays(2));
-        b.setPageCount(200);
-        fastSession.setBook(b);
+        Book book = new Book();
+        book.setCompleted(true);
+        book.setStartDate(LocalDate.of(2026, 3, 23));
+        book.setPageCount(200);
 
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(fastSession));
+        ReadingSession session = buildSession(
+                Instant.parse("2026-03-25T10:00:00Z"),
+                Instant.parse("2026-03-25T11:00:00Z"),
+                book);
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto speed = result.stream()
-                .filter(a -> a.id() == AchievementType.SPEED_READER).findFirst().orElseThrow();
-        assertTrue(speed.unlocked());
+        when(contextFactory.build(user, ZoneOffset.UTC))
+                .thenReturn(context(1, 1, 200, 5, 50, 0, ZoneOffset.UTC, List.of(session)));
+
+        AchievementDto speedReader = getAchievement(achievementService.getAchievements(user), AchievementType.SPEED_READER);
+
+        assertTrue(speedReader.unlocked());
     }
 
     @Test
-    void getAchievements_ShouldNotUnlockSpeedReader_WhenNoFastBook() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(50L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(2L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(Collections.emptyList());
+    void getAchievements_ShouldIgnoreInvalidSpeedReaderSessions() {
+        ReadingSession session = buildSession(
+                Instant.parse("2026-03-25T10:00:00Z"),
+                Instant.parse("2026-03-25T11:00:00Z"),
+                null);
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto speed = result.stream()
-                .filter(a -> a.id() == AchievementType.SPEED_READER).findFirst().orElseThrow();
-        assertFalse(speed.unlocked());
-    }
+        when(contextFactory.build(user, ZoneOffset.UTC))
+                .thenReturn(context(1, 0, 10, 1, 10, 0, ZoneOffset.UTC, List.of(session)));
 
-    @Test
-    void getAchievements_ShouldUnlockLibraryBuilder() {
-        when(bookRepository.countByUser(user)).thenReturn(10L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(Collections.emptyList());
+        AchievementDto speedReader = getAchievement(achievementService.getAchievements(user), AchievementType.SPEED_READER);
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto lib = result.stream()
-                .filter(a -> a.id() == AchievementType.LIBRARY_BUILDER).findFirst().orElseThrow();
-        assertTrue(lib.unlocked());
-    }
-
-    @Test
-    void getAchievements_ShouldUnlockPageTurner() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(1000L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(Collections.emptyList());
-
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto pt = result.stream()
-                .filter(a -> a.id() == AchievementType.PAGE_TURNER).findFirst().orElseThrow();
-        assertTrue(pt.unlocked());
-    }
-
-    @Test
-    void getAchievements_ShouldUnlockMonthStreak() {
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(100L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(30L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(30, 30));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(Collections.emptyList());
-
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto monthStreak = result.stream()
-                .filter(a -> a.id() == AchievementType.MONTH_STREAK).findFirst().orElseThrow();
-        assertTrue(monthStreak.unlocked());
+        assertFalse(speedReader.unlocked());
     }
 
     @Test
     void getAchievements_ShouldHandleSessionWithNullStartTime() {
-        ReadingSession noStart = new ReadingSession();
-        noStart.setUser(user);
-        noStart.setStatus(SessionStatus.COMPLETED);
-        noStart.setStartTime(null);
-        noStart.setEndTime(Instant.now());
-        noStart.setPagesRead(10);
-        noStart.setPausedMillis(0L);
+        ReadingSession session = buildSession(null, Instant.parse("2026-03-25T11:00:00Z"), null);
+        when(contextFactory.build(user, ZoneOffset.UTC))
+                .thenReturn(context(1, 0, 10, 1, 10, 0, ZoneOffset.UTC, List.of(session)));
 
-        when(bookRepository.countByUser(user)).thenReturn(1L);
-        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
-        when(sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED)).thenReturn(1L);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakService.StreakInfo(0, 0));
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
-                .thenReturn(List.of(noStart));
+        AchievementDto earlyBird = getAchievement(achievementService.getAchievements(user), AchievementType.EARLY_BIRD);
 
-        List<AchievementDto> result = achievementService.getAchievements(user);
-        AchievementDto earlyBird = result.stream()
-                .filter(a -> a.id() == AchievementType.EARLY_BIRD).findFirst().orElseThrow();
         assertFalse(earlyBird.unlocked());
+    }
+
+    private AchievementDto getAchievement(List<AchievementDto> achievements, AchievementType type) {
+        return achievements.stream()
+                .filter(achievement -> achievement.id() == type)
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private AchievementContext context() {
+        return context(0, 0, 0, 0, 0, 0, ZoneOffset.UTC, List.of());
+    }
+
+    private AchievementContext context(
+            long totalBooks,
+            long completedBooks,
+            long totalPages,
+            long totalSessions,
+            int maxDailyPages,
+            int bestStreak,
+            ZoneId zoneId,
+            List<ReadingSession> sessions) {
+        return new AchievementContext(
+                totalBooks,
+                completedBooks,
+                totalPages,
+                totalSessions,
+                maxDailyPages,
+                bestStreak,
+                zoneId,
+                sessions);
+    }
+
+    private ReadingSession buildSession(Instant startTime, Instant endTime, Book book) {
+        ReadingSession session = new ReadingSession();
+        session.setStartTime(startTime);
+        session.setEndTime(endTime);
+        session.setBook(book);
+        return session;
     }
 }

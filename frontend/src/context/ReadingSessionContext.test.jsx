@@ -449,13 +449,10 @@ describe('ReadingSessionContext', () => {
     // --- useReadingSessionContext outside provider ---
 
     it('should throw when used outside provider', () => {
-        // Suppress expected console.error from React when throwing during render
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
         const Bad = () => { useReadingSessionContext(); return null; };
         expect(() => render(<Bad />)).toThrow(
             'useReadingSessionContext must be used within a ReadingSessionProvider'
         );
-        consoleSpy.mockRestore();
     });
 
     // --- refreshSession error handling ---

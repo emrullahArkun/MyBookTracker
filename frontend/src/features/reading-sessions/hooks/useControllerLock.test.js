@@ -14,7 +14,9 @@ describe('useControllerLock', () => {
     });
 
     afterEach(() => {
-        vi.runOnlyPendingTimers();
+        act(() => {
+            vi.runOnlyPendingTimers();
+        });
         vi.useRealTimers();
         vi.restoreAllMocks();
     });

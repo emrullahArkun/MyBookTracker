@@ -56,7 +56,11 @@ vi.mock('../../ui/TextField', () => ({
 }));
 
 vi.mock('../../ui/Button', () => ({
-    Button: ({ children, ...props }) => <button {...props}>{children}</button>,
+    Button: ({ children, ...props }) => {
+        const buttonProps = { ...props };
+        delete buttonProps.isLoading;
+        return <button {...buttonProps}>{children}</button>;
+    },
 }));
 
 import { authApi } from './api/authApi';

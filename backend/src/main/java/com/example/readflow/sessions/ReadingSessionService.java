@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ public class ReadingSessionService {
 
     private final ReadingSessionRepository sessionRepository;
     private final BookRepository bookRepository;
+    private final Clock clock;
 
     @Transactional
     public ReadingSession startSession(User user, Long bookId) {
@@ -30,17 +32,18 @@ public class ReadingSessionService {
             ReadingSession existing = existingOpt.get();
             if (existing.getBook().getId().equals(bookId)) {
                 if (existing.getStatus() == SessionStatus.PAUSED) {
-                    existing.resume(Instant.now());
+                    existing.resume(Instant.now(clock));
                 }
                 return existing;
             }
-            existing.finish(Instant.now(), null);
         }
 
         Book book = bookRepository.findByIdAndUser(bookId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found or access denied"));
 
-        return sessionRepository.save(ReadingSession.startNew(user, book, Instant.now()));
+        existingOpt.ifPresent(existing -> existing.finish(Instant.now(clock), null));
+
+        return sessionRepository.save(ReadingSession.startNew(user, book, Instant.now(clock)));
     }
 
     @Transactional
@@ -49,14 +52,14 @@ public class ReadingSessionService {
                 List.of(SessionStatus.ACTIVE, SessionStatus.PAUSED))
                 .orElseThrow(() -> new ResourceNotFoundException("No active reading session found"));
 
-        Instant safeEndTime = endTime != null ? endTime : Instant.now();
+        Instant safeEndTime = endTime != null ? endTime : Instant.now(clock);
         session.finish(safeEndTime, endPage);
 
         if (endPage != null) {
             session.getBook().updateProgress(endPage);
         }
 
-        return sessionRepository.save(session);
+        return session;
     }
 
     public Optional<ReadingSession> getActiveSession(User user) {
@@ -70,8 +73,8 @@ public class ReadingSessionService {
                 List.of(SessionStatus.ACTIVE))
                 .orElseThrow(() -> new IllegalSessionStateException("No active session found to pause"));
 
-        session.pause(Instant.now());
-        return sessionRepository.save(session);
+        session.pause(Instant.now(clock));
+        return session;
     }
 
     @Transactional
@@ -80,8 +83,8 @@ public class ReadingSessionService {
                 List.of(SessionStatus.PAUSED))
                 .orElseThrow(() -> new IllegalSessionStateException("No paused session found to resume"));
 
-        session.resume(Instant.now());
-        return sessionRepository.save(session);
+        session.resume(Instant.now(clock));
+        return session;
     }
 
     @Transactional
@@ -94,7 +97,7 @@ public class ReadingSessionService {
                 .orElseThrow(() -> new IllegalSessionStateException("No active session found"));
 
         session.addExcludedTime(millis);
-        return sessionRepository.save(session);
+        return session;
     }
 
     public List<ReadingSession> getSessionsByBook(User user, Long bookId) {

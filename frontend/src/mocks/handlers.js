@@ -76,6 +76,12 @@ export const handlers = [
     http.delete('/api/books/:id', () => {
         return new HttpResponse(null, { status: 204 });
     }),
+
+    // Mock DELETE /api/books
+    http.delete('/api/books', () => {
+        return new HttpResponse(null, { status: 204 });
+    }),
+
     // Mock POST /api/sessions/active/pause
     http.post('/api/sessions/active/pause', () => {
         return HttpResponse.json({

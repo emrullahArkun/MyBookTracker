@@ -17,7 +17,7 @@ export const useBookStats = (bookId) => {
         error: bookError,
         refetch: refetchBook
     } = useQuery({
-        queryKey: ['book', bookId],
+        queryKey: ['book', token, bookId],
         queryFn: () => booksApi.getById(bookId),
         enabled: !!token && !!bookId
     });
@@ -29,7 +29,7 @@ export const useBookStats = (bookId) => {
         error: sessionsError,
         refetch: refetchSessions
     } = useQuery({
-        queryKey: ['bookSessions', bookId],
+        queryKey: ['bookSessions', token, bookId],
         queryFn: () => sessionsApi.getByBookId(bookId),
         enabled: !!token && !!bookId
     });
@@ -38,9 +38,8 @@ export const useBookStats = (bookId) => {
     const loading = bookLoading || sessionsLoading;
     const error = bookError || sessionsError;
 
-    const refetch = () => {
-        refetchBook();
-        refetchSessions();
+    const refetch = async () => {
+        await Promise.all([refetchBook(), refetchSessions()]);
     };
 
     return { book, sessions, loading, error, refetch };

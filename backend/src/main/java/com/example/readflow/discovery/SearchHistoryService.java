@@ -6,9 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +19,7 @@ public class SearchHistoryService {
     private static final int DEDUPLICATION_MINUTES = 5;
 
     private final SearchHistoryRepository searchHistoryRepository;
+    private final Clock clock;
 
     @Transactional
     public void logSearch(String query, User user) {
@@ -28,7 +29,7 @@ public class SearchHistoryService {
 
         String trimmedQuery = query.trim();
 
-        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(DEDUPLICATION_MINUTES);
+        LocalDateTime cutoff = LocalDateTime.now(clock).minusMinutes(DEDUPLICATION_MINUTES);
         if (searchHistoryRepository.existsByUserAndQueryAndTimestampAfter(user, trimmedQuery, cutoff)) {
             log.debug("Skipping duplicate search log for query: {}", trimmedQuery);
             return;
@@ -41,6 +42,7 @@ public class SearchHistoryService {
         SearchHistory history = SearchHistory.builder()
                 .query(trimmedQuery)
                 .user(user)
+                .timestamp(LocalDateTime.now(clock))
                 .build();
         searchHistoryRepository.save(history);
     }
@@ -49,6 +51,6 @@ public class SearchHistoryService {
         return searchHistoryRepository.findDistinctQueriesByUserOrderByTimestampDesc(user)
                 .stream()
                 .limit(limit)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

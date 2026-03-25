@@ -92,7 +92,7 @@ class StatsControllerTest {
                 new AchievementDto(AchievementType.FIRST_SESSION, true, "1 sessions"),
                 new AchievementDto(AchievementType.BOOKWORM, false, "0/5"));
 
-        when(achievementService.getAchievements(any())).thenReturn(achievements);
+        when(achievementService.getAchievements(any(), eq((String) null))).thenReturn(achievements);
 
         mockMvc.perform(get("/api/stats/achievements"))
                 .andExpect(status().isOk())
@@ -103,8 +103,20 @@ class StatsControllerTest {
     }
 
     @Test
+    void getAchievements_ShouldUseTimezoneHeader() throws Exception {
+        when(achievementService.getAchievements(any(), eq("Europe/Berlin")))
+                .thenReturn(List.of(new AchievementDto(AchievementType.EARLY_BIRD, true, null)));
+
+        mockMvc.perform(get("/api/stats/achievements")
+                .header("X-Timezone", "Europe/Berlin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("EARLY_BIRD"))
+                .andExpect(jsonPath("$[0].unlocked").value(true));
+    }
+
+    @Test
     void getStreak_ShouldReturnStreakData() throws Exception {
-        when(streakService.calculateStreaks(any(), eq(java.time.ZoneOffset.UTC)))
+        when(streakService.calculateStreaks(any(), eq((String) null)))
                 .thenReturn(new StreakService.StreakInfo(5, 12));
 
         mockMvc.perform(get("/api/stats/streak"))
@@ -115,7 +127,7 @@ class StatsControllerTest {
 
     @Test
     void getStreak_ShouldUseTimezoneHeader() throws Exception {
-        when(streakService.calculateStreaks(any(), eq(java.time.ZoneId.of("Europe/Berlin"))))
+        when(streakService.calculateStreaks(any(), eq("Europe/Berlin")))
                 .thenReturn(new StreakService.StreakInfo(3, 7));
 
         mockMvc.perform(get("/api/stats/streak")
@@ -127,7 +139,7 @@ class StatsControllerTest {
 
     @Test
     void getStreak_ShouldFallbackToUtc_WhenInvalidTimezone() throws Exception {
-        when(streakService.calculateStreaks(any(), eq(java.time.ZoneOffset.UTC)))
+        when(streakService.calculateStreaks(any(), eq("Invalid/Zone")))
                 .thenReturn(new StreakService.StreakInfo(1, 1));
 
         mockMvc.perform(get("/api/stats/streak")

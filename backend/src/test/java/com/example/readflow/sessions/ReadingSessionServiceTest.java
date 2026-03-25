@@ -11,8 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +30,8 @@ class ReadingSessionServiceTest {
     private ReadingSessionRepository sessionRepository;
     @Mock
     private BookRepository bookRepository;
+    @Spy
+    private Clock clock = Clock.systemUTC();
     @InjectMocks
     private ReadingSessionService sessionService;
 
@@ -113,6 +117,24 @@ class ReadingSessionServiceTest {
         assertThrows(ResourceNotFoundException.class, () -> sessionService.startSession(user, 10L));
     }
 
+    @Test
+    void startSession_ShouldKeepExistingSessionActive_WhenNewBookNotFound() {
+        Book otherBook = new Book();
+        otherBook.setId(20L);
+
+        ReadingSession existing = new ReadingSession();
+        existing.setBook(otherBook);
+        existing.setStatus(SessionStatus.ACTIVE);
+
+        when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
+                .thenReturn(Optional.of(existing));
+        when(bookRepository.findByIdAndUser(10L, user)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> sessionService.startSession(user, 10L));
+        assertEquals(SessionStatus.ACTIVE, existing.getStatus());
+        verify(sessionRepository, never()).save(any(ReadingSession.class));
+    }
+
     // --- stopSession ---
 
     @Test
@@ -122,7 +144,6 @@ class ReadingSessionServiceTest {
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), null);
         assertEquals(SessionStatus.COMPLETED, result.getStatus());
@@ -135,7 +156,6 @@ class ReadingSessionServiceTest {
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), 50);
         assertEquals(50, result.getPagesRead());
@@ -151,7 +171,6 @@ class ReadingSessionServiceTest {
         session.setPausedMillis(5000L);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), null);
         assertTrue(result.getPausedMillis() > 5000L);
@@ -164,7 +183,6 @@ class ReadingSessionServiceTest {
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, null, null);
         assertNotNull(result.getEndTime());
@@ -188,7 +206,6 @@ class ReadingSessionServiceTest {
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), 50);
         assertEquals(0, result.getPagesRead()); // Clamped to 0
@@ -203,7 +220,6 @@ class ReadingSessionServiceTest {
         session.setPausedMillis(5000L);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), null);
         assertEquals(5000L, result.getPausedMillis()); // Unchanged
@@ -218,7 +234,6 @@ class ReadingSessionServiceTest {
         session.setPausedMillis(null); // null pausedMillis
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), null);
         assertNotNull(result.getPausedMillis());
@@ -233,7 +248,6 @@ class ReadingSessionServiceTest {
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.stopSession(user, Instant.now(), 30);
         assertEquals(30, result.getPagesRead()); // 30 - 0
@@ -247,7 +261,6 @@ class ReadingSessionServiceTest {
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user),
                 eq(List.of(SessionStatus.ACTIVE)))).thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.pauseSession(user);
         assertEquals(SessionStatus.PAUSED, result.getStatus());
@@ -272,7 +285,6 @@ class ReadingSessionServiceTest {
         session.setPausedMillis(0L);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user),
                 eq(List.of(SessionStatus.PAUSED)))).thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.resumeSession(user);
         assertEquals(SessionStatus.ACTIVE, result.getStatus());
@@ -287,7 +299,6 @@ class ReadingSessionServiceTest {
         session.setPausedAt(null); // Edge case
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user),
                 eq(List.of(SessionStatus.PAUSED)))).thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.resumeSession(user);
         assertEquals(SessionStatus.ACTIVE, result.getStatus());
@@ -301,7 +312,6 @@ class ReadingSessionServiceTest {
         session.setPausedMillis(null); // null pausedMillis
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user),
                 eq(List.of(SessionStatus.PAUSED)))).thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.resumeSession(user);
         assertNotNull(result.getPausedMillis());
@@ -324,7 +334,6 @@ class ReadingSessionServiceTest {
         session.setPausedMillis(1000L);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user),
                 eq(List.of(SessionStatus.ACTIVE)))).thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.excludeTime(user, 500L);
         assertEquals(1500L, result.getPausedMillis());
@@ -336,7 +345,6 @@ class ReadingSessionServiceTest {
         session.setPausedMillis(null);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user),
                 eq(List.of(SessionStatus.ACTIVE)))).thenReturn(Optional.of(session));
-        when(sessionRepository.save(any(ReadingSession.class))).thenAnswer(i -> i.getArgument(0));
 
         ReadingSession result = sessionService.excludeTime(user, 500L);
         assertEquals(500L, result.getPausedMillis());

@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/sessions")
@@ -77,7 +76,7 @@ public class ReadingSessionController {
         List<ReadingSessionDto> sessions = sessionService.getSessionsByBook(user, bookId)
                 .stream()
                 .map(sessionMapper::toDto)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(sessions);
     }
 

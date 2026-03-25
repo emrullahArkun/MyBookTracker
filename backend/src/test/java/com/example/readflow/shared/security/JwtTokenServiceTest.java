@@ -8,17 +8,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class JwtTokenServiceTest {
 
     private static final String SECRET = "my-super-secret-key-that-is-long-enough-for-hs256!";
+    private static final Instant FIXED_NOW = Instant.parse("2026-03-25T12:00:00Z");
     private JwtTokenService jwtTokenService;
+    private Clock clock;
 
     @BeforeEach
     void setUp() {
-        jwtTokenService = new JwtTokenService(SECRET, 3600L);
+        clock = Clock.fixed(FIXED_NOW, ZoneOffset.UTC);
+        jwtTokenService = new JwtTokenService(SECRET, 3600L, clock);
     }
 
     @Test
@@ -35,9 +42,8 @@ class JwtTokenServiceTest {
 
         assertEquals("test@example.com", claims.getSubject());
         assertEquals("USER", claims.getStringClaim("role"));
-        assertNotNull(claims.getIssueTime());
-        assertNotNull(claims.getExpirationTime());
-        assertTrue(claims.getExpirationTime().after(claims.getIssueTime()));
+        assertEquals(Date.from(FIXED_NOW), claims.getIssueTime());
+        assertEquals(Date.from(FIXED_NOW.plusSeconds(3600L)), claims.getExpirationTime());
     }
 
     @Test
@@ -53,6 +59,6 @@ class JwtTokenServiceTest {
 
     @Test
     void constructor_ShouldThrow_WhenSecretTooShort() {
-        assertThrows(IllegalStateException.class, () -> new JwtTokenService("short", 3600L));
+        assertThrows(IllegalStateException.class, () -> new JwtTokenService("short", 3600L, clock));
     }
 }

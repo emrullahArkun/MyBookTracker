@@ -10,13 +10,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class SearchHistoryTest {
 
     @Test
-    void builder_ShouldSetDefaultTimestamp_WhenNotProvided() {
+    void builder_ShouldLeaveTimestampUnset_WhenNotProvided() {
         SearchHistory history = SearchHistory.builder()
                 .query("test")
                 .user(new User())
                 .build();
 
-        assertNotNull(history.getTimestamp());
+        assertNull(history.getTimestamp());
     }
 
     @Test

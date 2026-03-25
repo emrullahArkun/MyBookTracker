@@ -14,11 +14,11 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
-public class OpenLibraryClient {
+// Adapter pattern: translates the Open Library API into the provider interface used by the discovery layer.
+public class OpenLibraryClient implements BookDiscoveryProvider {
 
     private static final String SEARCH_URL = "https://openlibrary.org/search.json";
     private static final String FIELDS = "key,title,author_name,cover_i,isbn,subject,first_publish_year,number_of_pages_median";
@@ -35,6 +35,7 @@ public class OpenLibraryClient {
     }
 
     @Cacheable(value = "openLibraryBooks", key = "'author:' + #author + ':' + #maxResults")
+    @Override
     public List<RecommendedBookDto> getBooksByAuthor(String author, int maxResults) {
         String url = SEARCH_URL + "?author=" + encodeParam(author)
                 + "&fields=" + FIELDS + "&limit=" + maxResults;
@@ -42,6 +43,7 @@ public class OpenLibraryClient {
     }
 
     @Cacheable(value = "openLibraryBooks", key = "'category:' + #category + ':' + #maxResults")
+    @Override
     public List<RecommendedBookDto> getBooksByCategory(String category, int maxResults) {
         String url = SEARCH_URL + "?subject=" + encodeParam(category)
                 + "&fields=" + FIELDS + "&limit=" + maxResults;
@@ -49,6 +51,7 @@ public class OpenLibraryClient {
     }
 
     @Cacheable(value = "openLibraryBooks", key = "'query:' + #query + ':' + #maxResults")
+    @Override
     public List<RecommendedBookDto> getBooksByQuery(String query, int maxResults) {
         String url = SEARCH_URL + "?q=" + encodeParam(query)
                 + "&fields=" + FIELDS + "&limit=" + maxResults;
@@ -56,6 +59,7 @@ public class OpenLibraryClient {
     }
 
     @Cacheable(value = "openLibrarySearch", key = "#query + ':' + #offset + ':' + #limit")
+    @Override
     public SearchResultDto searchBooks(String query, int offset, int limit) {
         String url = SEARCH_URL + "?q=" + encodeParam(query)
                 + "&fields=" + FIELDS + "&offset=" + offset + "&limit=" + limit;
@@ -72,7 +76,7 @@ public class OpenLibraryClient {
             return response.docs().stream()
                     .filter(doc -> doc.coverI() != null)
                     .map(this::mapToDto)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (RestClientException e) {
             log.error("Failed to fetch books from Open Library: {}", e.getMessage());
             return Collections.emptyList();
@@ -95,7 +99,7 @@ public class OpenLibraryClient {
             List<RecommendedBookDto> books = response.docs().stream()
                     .filter(doc -> doc.coverI() != null)
                     .map(this::mapToDto)
-                    .collect(Collectors.toList());
+                    .toList();
 
             return new SearchResultDto(books, numFound);
         } catch (RestClientException e) {

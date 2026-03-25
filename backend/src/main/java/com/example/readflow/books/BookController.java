@@ -36,11 +36,7 @@ public class BookController {
         Page<Book> bookPage = bookService.findAllByUser(user, pageable);
         Map<Long, Integer> progressMap = progressCalculator.calculateProgressBatch(bookPage.getContent());
 
-        Page<BookDto> dtoPage = bookPage.map(book -> {
-            BookDto dto = bookMapper.toDto(book);
-            Integer progress = progressMap.get(book.getId());
-            return progress != null ? BookDto.copyWithProgress(dto, progress) : dto;
-        });
+        Page<BookDto> dtoPage = bookPage.map(book -> toDtoWithProgress(book, progressMap.get(book.getId())));
 
         return ResponseEntity.ok(dtoPage);
     }
@@ -56,11 +52,7 @@ public class BookController {
         Map<Long, Integer> progressMap = progressCalculator.calculateProgressBatch(books);
 
         List<BookDto> dtos = books.stream()
-                .map(book -> {
-                    BookDto dto = bookMapper.toDto(book);
-                    Integer progress = progressMap.get(book.getId());
-                    return progress != null ? BookDto.copyWithProgress(dto, progress) : dto;
-                })
+                .map(book -> toDtoWithProgress(book, progressMap.get(book.getId())))
                 .toList();
 
         return ResponseEntity.ok(dtos);
@@ -69,9 +61,7 @@ public class BookController {
     @GetMapping("/{id}")
     public ResponseEntity<BookDto> getBookById(@PathVariable Long id, @CurrentUser User user) {
         Book book = bookService.getBookByIdOrThrow(id, user);
-        BookDto dto = bookMapper.toDto(book);
-        Integer progress = progressCalculator.calculateProgress(book);
-        return ResponseEntity.ok(progress != null ? BookDto.copyWithProgress(dto, progress) : dto);
+        return ResponseEntity.ok(toDtoWithProgress(book));
     }
 
     @PostMapping
@@ -86,7 +76,7 @@ public class BookController {
                 .buildAndExpand(savedBook.getId())
                 .toUri();
 
-        return ResponseEntity.created(location).body(bookMapper.toDto(savedBook));
+        return ResponseEntity.created(location).body(toDtoWithProgress(savedBook));
     }
 
     @PatchMapping("/{id}/progress")
@@ -95,7 +85,7 @@ public class BookController {
             @RequestBody @Valid UpdateProgressRequest request,
             @CurrentUser User user) {
         Book updatedBook = bookService.updateBookProgress(id, request.currentPage(), user);
-        return ResponseEntity.ok(bookMapper.toDto(updatedBook));
+        return ResponseEntity.ok(toDtoWithProgress(updatedBook));
     }
 
     @PatchMapping("/{id}/status")
@@ -104,7 +94,7 @@ public class BookController {
             @RequestBody @Valid UpdateStatusRequest request,
             @CurrentUser User user) {
         Book updatedBook = bookService.updateBookStatus(id, request.completed(), user);
-        return ResponseEntity.ok(bookMapper.toDto(updatedBook));
+        return ResponseEntity.ok(toDtoWithProgress(updatedBook));
     }
 
     @PatchMapping("/{id}/goal")
@@ -113,7 +103,7 @@ public class BookController {
             @RequestBody @Valid SetGoalRequest request,
             @CurrentUser User user) {
         Book updatedBook = bookService.updateReadingGoal(id, request.type(), request.pages(), user);
-        return ResponseEntity.ok(bookMapper.toDto(updatedBook));
+        return ResponseEntity.ok(toDtoWithProgress(updatedBook));
     }
 
     @DeleteMapping("/{id}")
@@ -126,5 +116,14 @@ public class BookController {
     public ResponseEntity<Void> deleteAllBooks(@CurrentUser User user) {
         bookService.deleteAllByUser(user);
         return ResponseEntity.noContent().build();
+    }
+
+    private BookDto toDtoWithProgress(Book book) {
+        return toDtoWithProgress(book, progressCalculator.calculateProgress(book));
+    }
+
+    private BookDto toDtoWithProgress(Book book, Integer progress) {
+        BookDto dto = bookMapper.toDto(book);
+        return progress != null ? BookDto.copyWithProgress(dto, progress) : dto;
     }
 }

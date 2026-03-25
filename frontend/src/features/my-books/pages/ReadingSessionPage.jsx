@@ -14,7 +14,6 @@ import { useThemeTokens } from '../../../shared/hooks/useThemeTokens';
 
 import SessionBookSidebar from '../components/SessionBookSidebar';
 import SessionTimerCard from '../components/SessionTimerCard';
-import SessionNotesCard from '../components/SessionNotesCard';
 
 const ReadingSessionPage = () => {
     const { t } = useTranslation();
@@ -23,8 +22,6 @@ const ReadingSessionPage = () => {
     const {
         book,
         fetchingBook,
-        note,
-        setNote,
         sessionLoading,
         formattedTime,
         isPaused,
@@ -84,12 +81,6 @@ const ReadingSessionPage = () => {
                                 resumeSession={resumeSession}
                                 pauseSession={pauseSession}
                                 handleStopClick={handleStopClick}
-                            />
-
-                            <SessionNotesCard
-                                note={note}
-                                setNote={setNote}
-                                cardBg={cardBg}
                             />
                         </VStack>
                     </GridItem>

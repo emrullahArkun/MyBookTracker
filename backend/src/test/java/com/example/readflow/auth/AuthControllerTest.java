@@ -38,7 +38,6 @@ class AuthControllerTest {
     private AuthController authController;
 
     private MockMvc mockMvc;
-    private MockMvc mockMvcNoAuth;
     private ObjectMapper objectMapper;
 
     @BeforeEach
@@ -65,26 +64,8 @@ class AuthControllerTest {
             }
         };
 
-        // Resolver that returns null (unauthenticated)
-        HandlerMethodArgumentResolver noAuthResolver = new HandlerMethodArgumentResolver() {
-            @Override
-            public boolean supportsParameter(MethodParameter parameter) {
-                return parameter.getParameterAnnotation(CurrentUser.class) != null
-                        && parameter.getParameterType().equals(User.class);
-            }
-
-            @Override
-            public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
-                    NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
-                return null;
-            }
-        };
-
         mockMvc = MockMvcBuilders.standaloneSetup(authController)
                 .setCustomArgumentResolvers(authResolver)
-                .build();
-        mockMvcNoAuth = MockMvcBuilders.standaloneSetup(authController)
-                .setCustomArgumentResolvers(noAuthResolver)
                 .build();
         objectMapper = new ObjectMapper();
     }
@@ -139,11 +120,5 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.email").value("test@example.com"))
                 .andExpect(jsonPath("$.user.role").value("USER"));
-    }
-
-    @Test
-    void getSession_ShouldReturn401_WhenNotAuthenticated() throws Exception {
-        mockMvcNoAuth.perform(get("/api/auth/session"))
-                .andExpect(status().isUnauthorized());
     }
 }

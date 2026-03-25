@@ -21,10 +21,10 @@ const formatTime = (minutes) => {
 const StatsOverviewPage = () => {
     const { t } = useTranslation();
     const { cardBg, textColor } = useThemeTokens();
-    const { token } = useAuth();
+    const { token, user } = useAuth();
 
     const { data: stats, isLoading: loading, isError, refetch } = useQuery({
-        queryKey: ['stats', 'overview'],
+        queryKey: ['stats', user?.email, 'overview'],
         queryFn: () => statsApi.getOverview(),
         enabled: !!token,
     });

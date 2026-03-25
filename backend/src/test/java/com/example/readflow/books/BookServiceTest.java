@@ -9,12 +9,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 
@@ -29,6 +33,10 @@ class BookServiceTest {
     private BookRepository bookRepository;
     @Mock
     private BookMapper bookMapper;
+    @Spy
+    private Clock clock = Clock.systemUTC();
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
     @InjectMocks
     private BookService bookService;
 
@@ -73,16 +81,32 @@ class BookServiceTest {
         book.setAuthor("author");
         when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
         when(bookMapper.toEntity(request)).thenReturn(book);
-        when(bookRepository.save(any(Book.class))).thenAnswer(i -> i.getArgument(0));
+        when(bookRepository.saveAndFlush(any(Book.class))).thenAnswer(i -> i.getArgument(0));
 
         Book result = bookService.createBook(request, user);
         assertEquals(user, result.getUser());
+        assertEquals(0, result.getCurrentPage());
+        assertNotNull(result.getStartDate());
+        assertFalse(result.getCompleted());
+        verify(eventPublisher).publishEvent(new BookCollectionChangedEvent(user.getId()));
     }
 
     @Test
     void createBook_ShouldThrow_WhenDuplicateIsbn() {
         CreateBookRequest request = new CreateBookRequest("isbn", "title", "author", 2023, "url", 100, List.of("cat"));
         when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(true);
+
+        assertThrows(DuplicateResourceException.class, () -> bookService.createBook(request, user));
+    }
+
+    @Test
+    void createBook_ShouldTranslateConstraintViolation_WhenDuplicateRaceOccurs() {
+        CreateBookRequest request = new CreateBookRequest("isbn", "title", "author", 2023, "url", 100, List.of("cat"));
+        Book book = new Book();
+        when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
+        when(bookMapper.toEntity(request)).thenReturn(book);
+        when(bookRepository.saveAndFlush(any(Book.class)))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         assertThrows(DuplicateResourceException.class, () -> bookService.createBook(request, user));
     }
@@ -96,6 +120,7 @@ class BookServiceTest {
         bookService.deleteByIdAndUser(1L, user);
 
         verify(bookRepository).delete(book);
+        verify(eventPublisher).publishEvent(new BookCollectionChangedEvent(user.getId()));
     }
 
     @Test
@@ -108,6 +133,7 @@ class BookServiceTest {
     void deleteAllByUser_ShouldDeleteAll() {
         bookService.deleteAllByUser(user);
         verify(bookRepository).deleteByUser(user);
+        verify(eventPublisher).publishEvent(new BookCollectionChangedEvent(user.getId()));
     }
 
     @Test

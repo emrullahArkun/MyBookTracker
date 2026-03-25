@@ -1,5 +1,6 @@
 import { render, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './AuthContext';
 
 // Mock authApi
@@ -20,9 +21,24 @@ const TestConsumer = ({ onRender }) => {
 };
 
 describe('AuthContext', () => {
+    let queryClient;
+
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
+        queryClient = new QueryClient({
+            defaultOptions: {
+                queries: { retry: false },
+                mutations: { retry: false },
+            },
+        });
     });
+
+    const wrapper = ({ children }) => (
+        <QueryClientProvider client={queryClient}>
+            <AuthProvider>{children}</AuthProvider>
+        </QueryClientProvider>
+    );
 
     it('should provide default values: user=null, isAuthenticated=false, loading=true initially', async () => {
         authApi.getSession.mockResolvedValue(null);
@@ -30,9 +46,8 @@ describe('AuthContext', () => {
 
         await act(async () => {
             render(
-                <AuthProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
-                </AuthProvider>
+                <TestConsumer onRender={(ctx) => { captured = ctx; }} />,
+                { wrapper }
             );
         });
 
@@ -43,21 +58,21 @@ describe('AuthContext', () => {
 
     it('should restore session from localStorage when user exists and cookie session is valid', async () => {
         localStorage.setItem('user', JSON.stringify({ email: 'test@test.com' }));
-        authApi.getSession.mockResolvedValue({ valid: true });
+        authApi.getSession.mockResolvedValue({ user: { email: 'server@test.com' } });
 
         let captured;
         await act(async () => {
             render(
-                <AuthProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
-                </AuthProvider>
+                <TestConsumer onRender={(ctx) => { captured = ctx; }} />,
+                { wrapper }
             );
         });
 
         await waitFor(() => {
-            expect(captured.user).toEqual({ email: 'test@test.com' });
+            expect(captured.user).toEqual({ email: 'server@test.com' });
             expect(captured.isAuthenticated).toBe(true);
             expect(captured.loading).toBe(false);
+            expect(captured.token).toBe('server@test.com');
         });
     });
 
@@ -68,9 +83,8 @@ describe('AuthContext', () => {
         let captured;
         await act(async () => {
             render(
-                <AuthProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
-                </AuthProvider>
+                <TestConsumer onRender={(ctx) => { captured = ctx; }} />,
+                { wrapper }
             );
         });
 
@@ -87,9 +101,8 @@ describe('AuthContext', () => {
         let captured;
         await act(async () => {
             render(
-                <AuthProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
-                </AuthProvider>
+                <TestConsumer onRender={(ctx) => { captured = ctx; }} />,
+                { wrapper }
             );
         });
 
@@ -105,9 +118,8 @@ describe('AuthContext', () => {
 
         await act(async () => {
             render(
-                <AuthProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
-                </AuthProvider>
+                <TestConsumer onRender={(ctx) => { captured = ctx; }} />,
+                { wrapper }
             );
         });
 
@@ -122,15 +134,14 @@ describe('AuthContext', () => {
 
     it('logout should clear user and call logout API', async () => {
         localStorage.setItem('user', JSON.stringify({ email: 'x@x.com' }));
-        authApi.getSession.mockResolvedValue({ valid: true });
+        authApi.getSession.mockResolvedValue({ user: { email: 'x@x.com' } });
         authApi.logout.mockResolvedValue(null);
 
         let captured;
         await act(async () => {
             render(
-                <AuthProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
-                </AuthProvider>
+                <TestConsumer onRender={(ctx) => { captured = ctx; }} />,
+                { wrapper }
             );
         });
 
@@ -145,14 +156,13 @@ describe('AuthContext', () => {
 
     it('should logout on auth:unauthorized event', async () => {
         localStorage.setItem('user', JSON.stringify({ email: 'x@x.com' }));
-        authApi.getSession.mockResolvedValue({ valid: true });
+        authApi.getSession.mockResolvedValue({ user: { email: 'x@x.com' } });
 
         let captured;
         await act(async () => {
             render(
-                <AuthProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
-                </AuthProvider>
+                <TestConsumer onRender={(ctx) => { captured = ctx; }} />,
+                { wrapper }
             );
         });
 

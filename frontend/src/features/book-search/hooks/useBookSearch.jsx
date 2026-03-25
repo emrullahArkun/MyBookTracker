@@ -10,7 +10,7 @@ const MIN_QUERY_LENGTH = 3;
 export const useBookSearch = () => {
     const [query, setQuery] = useState('');
     const [searchTerm, setSearchTerm] = useState(''); // Only updates on Enter/button click
-    const { token } = useAuth();
+    const { token, user } = useAuth();
 
     // Track last logged query to prevent duplicates
     const lastLoggedQuery = useRef('');
@@ -41,7 +41,7 @@ export const useBookSearch = () => {
         isFetchingNextPage,
         isLoading
     } = useInfiniteQuery({
-        queryKey: ['books', searchTerm],
+        queryKey: ['books', user?.email, searchTerm],
         queryFn: async ({ pageParam = 0 }) => {
             if (!searchTerm.trim()) return { items: [], totalItems: 0 };
             return discoveryApi.search(searchTerm.trim(), pageParam, PAGE_SIZE);

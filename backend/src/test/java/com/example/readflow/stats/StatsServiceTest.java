@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -31,6 +33,7 @@ class StatsServiceTest {
     @Mock private BookRepository bookRepository;
     @Mock private ReadingSessionRepository sessionRepository;
     @Mock private StreakService streakService;
+    @Spy private Clock clock = Clock.systemUTC();
     @InjectMocks private StatsService statsService;
 
     private User user;

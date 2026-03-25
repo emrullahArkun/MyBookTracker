@@ -59,9 +59,6 @@ public class AuthController {
 
     @GetMapping("/session")
     public ResponseEntity<SessionResponse> getSession(@CurrentUser User user) {
-        if (user == null) {
-            return ResponseEntity.status(401).build();
-        }
         return ResponseEntity.ok(new SessionResponse(UserDto.from(user)));
     }
 

@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -24,19 +23,6 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
     @Query("DELETE FROM ReadingSession s WHERE s.user = :user AND s.book = :book")
     void deleteByUserAndBook(@Param("user") User user, @Param("book") Book book);
 
-    @Query("SELECT DISTINCT CAST(s.endTime AS LocalDate) FROM ReadingSession s " +
-           "WHERE s.user = :user AND s.status = :status AND s.endTime IS NOT NULL " +
-           "AND CAST(s.endTime AS LocalDate) >= :since " +
-           "ORDER BY CAST(s.endTime AS LocalDate) DESC")
-    List<LocalDate> findDistinctReadingDays(@Param("user") User user, @Param("since") LocalDate since,
-            @Param("status") SessionStatus status);
-
-    @Query("SELECT DISTINCT CAST(s.endTime AS LocalDate) FROM ReadingSession s " +
-           "WHERE s.user = :user AND s.status = :status AND s.endTime IS NOT NULL " +
-           "ORDER BY CAST(s.endTime AS LocalDate) DESC")
-    List<LocalDate> findAllDistinctReadingDays(@Param("user") User user,
-            @Param("status") SessionStatus status);
-
     @Query("SELECT s.endTime FROM ReadingSession s " +
            "WHERE s.user = :user AND s.status = :status AND s.endTime IS NOT NULL")
     List<Instant> findAllCompletedEndTimes(@Param("user") User user,
@@ -48,8 +34,8 @@ public interface ReadingSessionRepository extends JpaRepository<ReadingSession, 
 
     @Query("SELECT s FROM ReadingSession s " +
            "WHERE s.user = :user AND s.status = :status AND s.endTime IS NOT NULL " +
-           "AND CAST(s.endTime AS LocalDate) >= :since")
-    List<ReadingSession> findCompletedSessionsSince(@Param("user") User user, @Param("since") LocalDate since,
+           "AND s.endTime >= :since")
+    List<ReadingSession> findCompletedSessionsSince(@Param("user") User user, @Param("since") Instant since,
             @Param("status") SessionStatus status);
 
     @Query("SELECT COUNT(s) FROM ReadingSession s " +

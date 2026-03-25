@@ -18,8 +18,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
         Page<Book> findByUserOrderByCompletedAsc(User user, Pageable pageable);
 
-        void deleteByIdAndUser(Long id, User user);
-
         void deleteByUser(User user);
 
         Optional<Book> findByIdAndUser(Long id, User user);

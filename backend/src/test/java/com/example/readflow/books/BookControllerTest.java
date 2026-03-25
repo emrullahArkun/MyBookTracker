@@ -208,6 +208,7 @@ class BookControllerTest {
                 Book book = new Book();
                 book.setId(1L);
                 when(bookService.createBook(any(), any())).thenReturn(book);
+                when(progressCalculator.calculateProgress(book)).thenReturn(30);
                 when(bookMapper.toDto(book)).thenReturn(
                                 new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null, false, null,
                                                 null, null, null));
@@ -216,7 +217,8 @@ class BookControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
-                                .andExpect(header().exists("Location"));
+                                .andExpect(header().exists("Location"))
+                                .andExpect(jsonPath("$.readingGoalProgress").value(30));
         }
 
         @Test
@@ -224,6 +226,7 @@ class BookControllerTest {
                 UpdateProgressRequest request = new UpdateProgressRequest(50);
                 Book book = new Book();
                 when(bookService.updateBookProgress(eq(1L), eq(50), any())).thenReturn(book);
+                when(progressCalculator.calculateProgress(book)).thenReturn(55);
                 when(bookMapper.toDto(book))
                                 .thenReturn(new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 50, null,
                                                 false, null, null, null, null));
@@ -231,7 +234,8 @@ class BookControllerTest {
                 mockMvc.perform(patch("/api/books/1/progress")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.readingGoalProgress").value(55));
         }
 
         @Test
@@ -239,6 +243,7 @@ class BookControllerTest {
                 UpdateStatusRequest request = new UpdateStatusRequest(true);
                 Book book = new Book();
                 when(bookService.updateBookStatus(eq(1L), eq(true), any())).thenReturn(book);
+                when(progressCalculator.calculateProgress(book)).thenReturn(65);
                 when(bookMapper.toDto(book)).thenReturn(
                                 new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null, true, null,
                                                 null, null, null));
@@ -246,7 +251,8 @@ class BookControllerTest {
                 mockMvc.perform(patch("/api/books/1/status")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.readingGoalProgress").value(65));
         }
 
         @Test
@@ -255,6 +261,7 @@ class BookControllerTest {
                 Book book = new Book();
                 when(bookService.updateReadingGoal(eq(1L), eq(ReadingGoalType.WEEKLY), eq(100), any()))
                                 .thenReturn(book);
+                when(progressCalculator.calculateProgress(book)).thenReturn(75);
                 when(bookMapper.toDto(book))
                                 .thenReturn(new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null,
                                                 false, ReadingGoalType.WEEKLY, 100, null, null));
@@ -262,7 +269,8 @@ class BookControllerTest {
                 mockMvc.perform(patch("/api/books/1/goal")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.readingGoalProgress").value(75));
         }
 
         @Test

@@ -83,10 +83,10 @@ const AchievementCard = ({ achievement, cardBg, textColor }) => {
 const AchievementsPage = () => {
     const { t } = useTranslation();
     const { cardBg, textColor } = useThemeTokens();
-    const { token } = useAuth();
+    const { token, user } = useAuth();
 
     const { data: achievements = [], isLoading: loading } = useQuery({
-        queryKey: ['stats', 'achievements'],
+        queryKey: ['stats', user?.email, 'achievements'],
         queryFn: () => statsApi.getAchievements(),
         enabled: !!token,
     });

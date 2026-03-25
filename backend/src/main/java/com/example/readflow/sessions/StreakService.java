@@ -1,13 +1,13 @@
 package com.example.readflow.sessions;
 
 import com.example.readflow.auth.User;
+import com.example.readflow.shared.time.ZoneIdResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 
@@ -21,7 +21,11 @@ public class StreakService {
     public record StreakInfo(int current, int longest) {}
 
     public StreakInfo calculateStreaks(User user) {
-        return calculateStreaks(user, ZoneOffset.UTC);
+        return calculateStreaks(user, ZoneIdResolver.resolveOrUtc(null));
+    }
+
+    public StreakInfo calculateStreaks(User user, String timezone) {
+        return calculateStreaks(user, ZoneIdResolver.resolveOrUtc(timezone));
     }
 
     public StreakInfo calculateStreaks(User user, ZoneId zoneId) {

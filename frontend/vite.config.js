@@ -20,11 +20,7 @@ export default defineConfig({
     exclude: ['node_modules', 'e2e/**'],
     execArgv: ['--no-experimental-webstorage'],
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        maxForks: 2,
-      },
-    },
+    maxWorkers: 2,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
