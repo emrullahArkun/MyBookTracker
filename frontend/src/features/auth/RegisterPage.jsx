@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { ROUTES } from '../../app/routes';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@chakra-ui/react';
 import { MdEmail, MdLock, MdAppRegistration } from 'react-icons/md';
@@ -62,7 +63,7 @@ function RegisterPage() {
                 isClosable: true,
                 position: "top-right",
             });
-            navigate('/login');
+            navigate(ROUTES.LOGIN);
         } catch (err) {
             toast({
                 title: t('auth.errorTitle'),
@@ -134,7 +135,7 @@ function RegisterPage() {
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
                         {t('auth.register.loginLink')}{' '}
                     </span>
-                    <RouterLink to="/login" style={linkStyle}>
+                    <RouterLink to={ROUTES.LOGIN} style={linkStyle}>
                         {t('auth.login.button')}
                     </RouterLink>
                 </div>

@@ -24,7 +24,7 @@ import static org.mockito.Mockito.*;
 class DiscoveryServiceTest {
 
     @Mock
-    private SearchHistoryRepository searchHistoryRepository;
+    private SearchHistoryService searchHistoryService;
     @Mock
     private BookRepository bookRepository;
     @Mock
@@ -38,50 +38,6 @@ class DiscoveryServiceTest {
     void setUp() {
         user = new User();
         user.setId(1L);
-    }
-
-    // --- logSearch ---
-
-    @Test
-    void logSearch_ShouldSave_WhenQueryValid() {
-        when(searchHistoryRepository.existsByUserAndQueryAndTimestampAfter(eq(user), eq("test"), any()))
-                .thenReturn(false);
-        when(searchHistoryRepository.countByUser(user)).thenReturn(0L);
-
-        discoveryService.logSearch("test", user);
-        verify(searchHistoryRepository).save(any());
-    }
-
-    @Test
-    void logSearch_ShouldSkip_WhenQueryNull() {
-        discoveryService.logSearch(null, user);
-        verify(searchHistoryRepository, never()).save(any());
-    }
-
-    @Test
-    void logSearch_ShouldSkip_WhenQueryEmpty() {
-        discoveryService.logSearch("   ", user);
-        verify(searchHistoryRepository, never()).save(any());
-    }
-
-    @Test
-    void logSearch_ShouldSkip_WhenDuplicate() {
-        when(searchHistoryRepository.existsByUserAndQueryAndTimestampAfter(eq(user), eq("test"), any()))
-                .thenReturn(true);
-
-        discoveryService.logSearch("test", user);
-        verify(searchHistoryRepository, never()).save(any());
-    }
-
-    @Test
-    void logSearch_ShouldDeleteOldest_WhenOverLimit() {
-        when(searchHistoryRepository.existsByUserAndQueryAndTimestampAfter(eq(user), eq("test"), any()))
-                .thenReturn(false);
-        when(searchHistoryRepository.countByUser(user)).thenReturn(50L);
-
-        discoveryService.logSearch("test", user);
-        verify(searchHistoryRepository).deleteOldestByUserId(user.getId());
-        verify(searchHistoryRepository).save(any());
     }
 
     // --- getTopAuthors ---
@@ -106,17 +62,6 @@ class DiscoveryServiceTest {
         List<String> result = discoveryService.getTopCategories(user, 2);
         assertEquals(2, result.size());
         assertEquals("Thriller", result.get(0));
-    }
-
-    // --- getRecentSearches ---
-
-    @Test
-    void getRecentSearches_ShouldReturnLimitedList() {
-        when(searchHistoryRepository.findDistinctQueriesByUserOrderByTimestampDesc(user))
-                .thenReturn(List.of("q1", "q2", "q3"));
-
-        List<String> result = discoveryService.getRecentSearches(user, 2);
-        assertEquals(2, result.size());
     }
 
     // --- recommendations ---
@@ -229,7 +174,7 @@ class DiscoveryServiceTest {
 
     @Test
     void getSearchSection_ShouldReturnEmpty_WhenNoSearches() {
-        when(searchHistoryRepository.findDistinctQueriesByUserOrderByTimestampDesc(user)).thenReturn(List.of());
+        when(searchHistoryService.getRecentSearches(eq(user), anyInt())).thenReturn(List.of());
 
         var result = discoveryService.getSearchSection(user, Set.of());
         assertTrue(result.queries().isEmpty());
@@ -238,7 +183,7 @@ class DiscoveryServiceTest {
 
     @Test
     void getSearchSection_ShouldReturnBooks_WhenSearchesExist() {
-        when(searchHistoryRepository.findDistinctQueriesByUserOrderByTimestampDesc(user)).thenReturn(List.of("query1"));
+        when(searchHistoryService.getRecentSearches(eq(user), anyInt())).thenReturn(List.of("query1"));
         RecommendedBookDto book = new RecommendedBookDto("Book1", null, null, null, null, null, null);
         when(openLibraryClient.getBooksByQuery("query1", 10)).thenReturn(List.of(book));
 
@@ -252,7 +197,7 @@ class DiscoveryServiceTest {
         when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of());
         when(bookRepository.findTopAuthorsByUser(eq(user), any())).thenReturn(List.of());
         when(bookRepository.findTopCategoriesByUser(eq(user), any())).thenReturn(List.of());
-        when(searchHistoryRepository.findDistinctQueriesByUserOrderByTimestampDesc(user)).thenReturn(List.of());
+        when(searchHistoryService.getRecentSearches(eq(user), anyInt())).thenReturn(List.of());
 
         var result = discoveryService.getDiscoveryData(user);
         assertTrue(result.byAuthor().authors().isEmpty());
@@ -268,7 +213,7 @@ class DiscoveryServiceTest {
         when(bookRepository.findAllIsbnsByUser(user)).thenReturn(List.of());
         when(bookRepository.findTopAuthorsByUser(eq(user), any())).thenReturn(List.of("Author1"));
         when(bookRepository.findTopCategoriesByUser(eq(user), any())).thenReturn(List.of("Cat1"));
-        when(searchHistoryRepository.findDistinctQueriesByUserOrderByTimestampDesc(user)).thenReturn(List.of("query1"));
+        when(searchHistoryService.getRecentSearches(eq(user), anyInt())).thenReturn(List.of("query1"));
 
         RecommendedBookDto book = new RecommendedBookDto("Book1", null, null, null, null, null, null);
         when(openLibraryClient.getBooksByAuthor("Author1", 10)).thenReturn(List.of(book));

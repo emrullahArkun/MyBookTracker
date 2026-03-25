@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import styles from './BookSearch.module.css';
-import homeStyles from '../../pages/HomePage.module.css';
 import { useBookSearch } from './hooks/useBookSearch.jsx';
 import SearchForm from './components/SearchForm';
 import SearchResultCard from './components/SearchResultCard';
@@ -37,7 +36,7 @@ function BookSearch({ onBookAdded }) {
 
     return (
         <div className={styles.searchContainer}>
-            <div className={`${homeStyles.heroSection} ${hasResults ? homeStyles.compact : homeStyles.centered}`}>
+            <div className={`${styles.heroSection} ${hasResults ? styles.compact : styles.centered}`}>
                 <div className={`${styles.titleWrapper} ${hasResults ? styles.titleHidden : ''}`}>
                     <TypewriterTitle />
                 </div>

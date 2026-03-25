@@ -136,7 +136,7 @@ const GoalsPage = () => {
 
     const { data: streak = { currentStreak: 0, longestStreak: 0 }, isLoading: streakLoading } = useQuery({
         queryKey: ['goals', 'streak'],
-        queryFn: () => apiClient.get('/api/sessions/streak'),
+        queryFn: () => apiClient.get('/api/stats/streak'),
         enabled: !!token,
     });
 

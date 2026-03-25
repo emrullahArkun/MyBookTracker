@@ -2,9 +2,9 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import { useAuth } from './AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { sessionsApi } from '../features/reading-sessions/api/sessionsApi';
-import { useControllerLock } from '../shared/hooks/useControllerLock';
-import { useSessionTimer } from '../shared/hooks/useSessionTimer';
-import { useSessionBroadcast } from '../shared/hooks/useSessionBroadcast';
+import { useControllerLock } from '../features/reading-sessions/hooks/useControllerLock';
+import { useSessionTimer } from '../features/reading-sessions/hooks/useSessionTimer';
+import { useSessionBroadcast } from '../features/reading-sessions/hooks/useSessionBroadcast';
 
 const ReadingSessionContext = createContext(null);
 

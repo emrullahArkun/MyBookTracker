@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
 public class ReadingSessionController {
 
     private final ReadingSessionService sessionService;
-    private final StreakService streakService;
     private final ReadingSessionMapper sessionMapper;
 
     @PostMapping("/start")
@@ -83,20 +81,4 @@ public class ReadingSessionController {
         return ResponseEntity.ok(sessions);
     }
 
-    @GetMapping("/streak")
-    public ResponseEntity<Map<String, Integer>> getStreak(
-            @CurrentUser User user,
-            @RequestHeader(value = "X-Timezone", required = false) String timezone) {
-        java.time.ZoneId zoneId;
-        try {
-            zoneId = timezone != null ? java.time.ZoneId.of(timezone) : java.time.ZoneOffset.UTC;
-        } catch (java.time.DateTimeException e) {
-            zoneId = java.time.ZoneOffset.UTC;
-        }
-        StreakService.StreakInfo streakInfo = streakService.calculateStreaks(user, zoneId);
-        return ResponseEntity.ok(Map.of(
-                "currentStreak", streakInfo.current(),
-                "longestStreak", streakInfo.longest()
-        ));
-    }
 }

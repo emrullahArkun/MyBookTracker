@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ROUTES } from '../../app/routes';
 import AuthGateLoader from './AuthGateLoader';
 
 const PublicRoute = ({ children }) => {
@@ -10,7 +11,7 @@ const PublicRoute = ({ children }) => {
     }
 
     if (user) {
-        return <Navigate to="/" replace />;
+        return <Navigate to={ROUTES.HOME} replace />;
     }
 
     return children;

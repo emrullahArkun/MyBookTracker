@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../app/routes';
 import { useTranslation } from 'react-i18next';
 import {
     Box,
@@ -156,7 +157,7 @@ const BookStatsPage = () => {
             </Box>
 
             {/* No Sessions Modal */}
-            <Modal isOpen={!hasSessions && !loading && !!book} onClose={() => navigate('/my-books')} isCentered>
+            <Modal isOpen={!hasSessions && !loading && !!book} onClose={() => navigate(ROUTES.MY_BOOKS)} isCentered>
                 <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(4px)" />
                 <ModalContent bg="gray.900" border="1px solid" borderColor="whiteAlpha.100" borderRadius="2xl" mx={4}>
                     <ModalBody py={10} px={8} textAlign="center">
@@ -185,7 +186,7 @@ const BookStatsPage = () => {
                                 variant="ghost"
                                 color="gray.400"
                                 size="sm"
-                                onClick={() => navigate('/my-books')}
+                                onClick={() => navigate(ROUTES.MY_BOOKS)}
                                 _hover={{ color: 'white' }}
                             >
                                 {t('common.back')}

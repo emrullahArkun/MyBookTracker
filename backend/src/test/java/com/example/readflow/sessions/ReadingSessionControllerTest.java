@@ -42,9 +42,6 @@ class ReadingSessionControllerTest {
     private ReadingSessionService sessionService;
 
     @Mock
-    private StreakService streakService;
-
-    @Mock
     private ReadingSessionMapper sessionMapper;
 
     @InjectMocks
@@ -189,38 +186,4 @@ class ReadingSessionControllerTest {
                 .andExpect(jsonPath("$[0].id").value(10));
     }
 
-    @Test
-    void getStreak_ShouldReturnStreakData() throws Exception {
-        when(streakService.calculateStreaks(eq(user), eq(java.time.ZoneOffset.UTC)))
-                .thenReturn(new StreakService.StreakInfo(5, 12));
-
-        mockMvc.perform(get("/api/sessions/streak"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.currentStreak").value(5))
-                .andExpect(jsonPath("$.longestStreak").value(12));
-    }
-
-    @Test
-    void getStreak_ShouldUseTimezoneHeader() throws Exception {
-        when(streakService.calculateStreaks(eq(user), eq(java.time.ZoneId.of("Europe/Berlin"))))
-                .thenReturn(new StreakService.StreakInfo(3, 7));
-
-        mockMvc.perform(get("/api/sessions/streak")
-                .header("X-Timezone", "Europe/Berlin"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.currentStreak").value(3))
-                .andExpect(jsonPath("$.longestStreak").value(7));
-    }
-
-    @Test
-    void getStreak_ShouldFallbackToUtc_WhenInvalidTimezone() throws Exception {
-        when(streakService.calculateStreaks(eq(user), eq(java.time.ZoneOffset.UTC)))
-                .thenReturn(new StreakService.StreakInfo(1, 1));
-
-        mockMvc.perform(get("/api/sessions/streak")
-                .header("X-Timezone", "Invalid/Zone"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.currentStreak").value(1))
-                .andExpect(jsonPath("$.longestStreak").value(1));
-    }
 }

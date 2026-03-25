@@ -18,13 +18,13 @@ vi.mock('../features/reading-sessions/api/sessionsApi', () => ({
     },
 }));
 
-vi.mock('../shared/hooks/useControllerLock', () => ({
+vi.mock('../features/reading-sessions/hooks/useControllerLock', () => ({
     useControllerLock: vi.fn(),
 }));
 
 import { useAuth } from './AuthContext';
 import { sessionsApi } from '../features/reading-sessions/api/sessionsApi';
-import { useControllerLock } from '../shared/hooks/useControllerLock';
+import { useControllerLock } from '../features/reading-sessions/hooks/useControllerLock';
 
 // Helper
 const TestConsumer = ({ onRender }) => {

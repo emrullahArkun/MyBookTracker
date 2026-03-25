@@ -6,6 +6,7 @@ import ConfirmDialog from '../../shared/components/ConfirmDialog';
 
 import MyBookCard from './components/MyBookCard';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../app/routes';
 import {
     Flex,
     Button,
@@ -120,7 +121,7 @@ function MyBooks() {
                             size="sm"
                             colorScheme="teal"
                             variant="outline"
-                            onClick={() => navigate('/search')}
+                            onClick={() => navigate(ROUTES.SEARCH)}
                         >
                             {t('search.button')}
                         </Button>

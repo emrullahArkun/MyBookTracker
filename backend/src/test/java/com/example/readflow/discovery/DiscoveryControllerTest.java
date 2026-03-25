@@ -35,6 +35,9 @@ class DiscoveryControllerTest {
         @Mock
         private DiscoveryService discoveryService;
 
+        @Mock
+        private SearchHistoryService searchHistoryService;
+
         @InjectMocks
         private DiscoveryController discoveryController;
 
@@ -67,7 +70,7 @@ class DiscoveryControllerTest {
                                 .content("{\"query\": \"test\"}"))
                                 .andExpect(status().isNoContent());
 
-                verify(discoveryService).logSearch(anyString(), any());
+                verify(searchHistoryService).logSearch(anyString(), any());
         }
 
         @Test

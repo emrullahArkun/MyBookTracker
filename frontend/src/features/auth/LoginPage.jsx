@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
+import { ROUTES } from '../../app/routes';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '@chakra-ui/react'; // Keeping toast for now as per plan
@@ -99,7 +100,7 @@ function LoginPage() {
                     <span className={styles.footerText}>
                         {t('auth.register.link')}{' '}
                     </span>
-                    <RouterLink to="/register" className={styles.registerLink}>
+                    <RouterLink to={ROUTES.REGISTER} className={styles.registerLink}>
                         {t('auth.register.button')}
                     </RouterLink>
                 </div>

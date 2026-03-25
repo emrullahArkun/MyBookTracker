@@ -1,6 +1,7 @@
 package com.example.readflow.stats;
 
 import com.example.readflow.auth.User;
+import com.example.readflow.sessions.StreakService;
 import com.example.readflow.stats.dto.AchievementDto;
 import com.example.readflow.stats.dto.DailyActivityDto;
 import com.example.readflow.stats.dto.GenreStatDto;
@@ -23,6 +24,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,6 +35,12 @@ class StatsControllerTest {
 
     @Mock
     private StatsService statsService;
+
+    @Mock
+    private AchievementService achievementService;
+
+    @Mock
+    private StreakService streakService;
 
     @InjectMocks
     private StatsController statsController;
@@ -84,7 +92,7 @@ class StatsControllerTest {
                 new AchievementDto(AchievementType.FIRST_SESSION, true, "1 sessions"),
                 new AchievementDto(AchievementType.BOOKWORM, false, "0/5"));
 
-        when(statsService.getAchievements(any())).thenReturn(achievements);
+        when(achievementService.getAchievements(any())).thenReturn(achievements);
 
         mockMvc.perform(get("/api/stats/achievements"))
                 .andExpect(status().isOk())
@@ -92,5 +100,40 @@ class StatsControllerTest {
                 .andExpect(jsonPath("$[0].id").value("FIRST_SESSION"))
                 .andExpect(jsonPath("$[0].unlocked").value(true))
                 .andExpect(jsonPath("$[1].unlocked").value(false));
+    }
+
+    @Test
+    void getStreak_ShouldReturnStreakData() throws Exception {
+        when(streakService.calculateStreaks(any(), eq(java.time.ZoneOffset.UTC)))
+                .thenReturn(new StreakService.StreakInfo(5, 12));
+
+        mockMvc.perform(get("/api/stats/streak"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentStreak").value(5))
+                .andExpect(jsonPath("$.longestStreak").value(12));
+    }
+
+    @Test
+    void getStreak_ShouldUseTimezoneHeader() throws Exception {
+        when(streakService.calculateStreaks(any(), eq(java.time.ZoneId.of("Europe/Berlin"))))
+                .thenReturn(new StreakService.StreakInfo(3, 7));
+
+        mockMvc.perform(get("/api/stats/streak")
+                .header("X-Timezone", "Europe/Berlin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentStreak").value(3))
+                .andExpect(jsonPath("$.longestStreak").value(7));
+    }
+
+    @Test
+    void getStreak_ShouldFallbackToUtc_WhenInvalidTimezone() throws Exception {
+        when(streakService.calculateStreaks(any(), eq(java.time.ZoneOffset.UTC)))
+                .thenReturn(new StreakService.StreakInfo(1, 1));
+
+        mockMvc.perform(get("/api/stats/streak")
+                .header("X-Timezone", "Invalid/Zone"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentStreak").value(1))
+                .andExpect(jsonPath("$.longestStreak").value(1));
     }
 }

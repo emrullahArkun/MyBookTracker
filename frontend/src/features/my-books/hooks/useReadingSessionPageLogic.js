@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../../app/routes';
 import { useAuth } from '../../../context/AuthContext';
 import { useReadingSessionContext } from '../../../context/ReadingSessionContext';
 import { booksApi } from '../../books/api';
@@ -69,7 +70,7 @@ export const useReadingSessionPageLogic = (bookId) => {
                 duration: 5000,
                 isClosable: true
             });
-            navigate('/my-books');
+            navigate(ROUTES.MY_BOOKS);
         }
     }, [activeSession, book, navigate, t, toast]);
 
@@ -83,7 +84,7 @@ export const useReadingSessionPageLogic = (bookId) => {
                 duration: 5000,
                 isClosable: true
             });
-            navigate('/my-books');
+            navigate(ROUTES.MY_BOOKS);
         }
     }, [activeSession, wasActive, hasStopped, navigate, t, toast]);
 
@@ -151,7 +152,7 @@ export const useReadingSessionPageLogic = (bookId) => {
             // Signal to UI to show confirmation
             return true; // Indicates we need confirmation
         } else {
-            navigate('/my-books');
+            navigate(ROUTES.MY_BOOKS);
             return false;
         }
     };
@@ -194,7 +195,7 @@ export const useReadingSessionPageLogic = (bookId) => {
                 duration: 5000,
                 isClosable: true
             });
-            navigate('/my-books');
+            navigate(ROUTES.MY_BOOKS);
         } else {
             setHasStopped(false);
             setShowStopConfirm(false);

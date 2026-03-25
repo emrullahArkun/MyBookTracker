@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 
 import { useAnimation } from '../../context/AnimationContext';
 import { useReadingSessionContext } from '../../context/ReadingSessionContext';
+import { ROUTES } from '../../app/routes';
 import LanguageSwitcher from './LanguageSwitcher';
 import './Navbar.css';
 
@@ -58,27 +59,28 @@ function Navbar() {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate(ROUTES.LOGIN);
     };
 
     const isActive = (path) => {
-        if (path === '/') return location.pathname === '/' || location.pathname === '/discovery';
+        if (path === ROUTES.DISCOVERY) return location.pathname === ROUTES.DISCOVERY;
+        if (path === ROUTES.SEARCH) return location.pathname === ROUTES.SEARCH || location.pathname === ROUTES.HOME;
         return location.pathname === path;
     };
 
     const navItems = [
-        { to: '/discovery', label: t('navbar.discovery') },
-        { to: '/search', label: t('navbar.search') },
-        { to: '/my-books', label: t('navbar.myBooks'), ref: registerTarget },
-        { to: '/stats', label: t('navbar.overview') },
-        { to: '/goals', label: t('navbar.goals') },
-        { to: '/achievements', label: t('navbar.achievements') },
+        { to: ROUTES.DISCOVERY, label: t('navbar.discovery') },
+        { to: ROUTES.SEARCH, label: t('navbar.search') },
+        { to: ROUTES.MY_BOOKS, label: t('navbar.myBooks'), ref: registerTarget },
+        { to: ROUTES.STATS, label: t('navbar.overview') },
+        { to: ROUTES.GOALS, label: t('navbar.goals') },
+        { to: ROUTES.ACHIEVEMENTS, label: t('navbar.achievements') },
     ];
 
     return (
         <nav className="navbar">
             <div className="navbar-brand">
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Link to={ROUTES.HOME} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <FaBook /> {t('navbar.brand')}
                 </Link>
             </div>
@@ -149,7 +151,7 @@ function Navbar() {
                         </button>
                     </>
                 ) : (
-                    <Link to="/login" className="navbar-item">
+                    <Link to={ROUTES.LOGIN} className="navbar-item">
                         <FaSignInAlt /> {t('navbar.login')}
                     </Link>
                 )}

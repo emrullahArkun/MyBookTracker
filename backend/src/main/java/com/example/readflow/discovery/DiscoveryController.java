@@ -16,6 +16,7 @@ import java.util.Set;
 public class DiscoveryController {
 
     private final DiscoveryService discoveryService;
+    private final SearchHistoryService searchHistoryService;
 
     @GetMapping("/search")
     public ResponseEntity<SearchResultDto> searchBooks(
@@ -30,7 +31,7 @@ public class DiscoveryController {
 
     @PostMapping("/search-log")
     public ResponseEntity<Void> logSearch(@jakarta.validation.Valid @RequestBody com.example.readflow.discovery.dto.LogSearchRequest request, @CurrentUser User user) {
-        discoveryService.logSearch(request.query(), user);
+        searchHistoryService.logSearch(request.query(), user);
         return ResponseEntity.noContent().build();
     }
 

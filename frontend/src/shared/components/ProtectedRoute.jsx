@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { ROUTES } from '../../app/routes';
 import { ReadingSessionProvider } from '../../context/ReadingSessionContext';
 import AuthGateLoader from './AuthGateLoader';
 
@@ -12,11 +13,11 @@ const ProtectedRoute = ({ requireAdmin }) => {
     }
 
     if (!user) {
-        return <Navigate to="/login" replace state={{ from: location }} />;
+        return <Navigate to={ROUTES.LOGIN} replace state={{ from: location }} />;
     }
 
     if (requireAdmin && user.role !== 'ADMIN') {
-        return <Navigate to="/" replace />;
+        return <Navigate to={ROUTES.HOME} replace />;
     }
 
     return (
