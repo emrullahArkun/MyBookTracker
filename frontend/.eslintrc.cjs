@@ -16,6 +16,27 @@ module.exports = {
   plugins: ['react-refresh'],
   overrides: [
     {
+      files: ['**/*.{ts,tsx}'],
+      parser: '@typescript-eslint/parser',
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      plugins: ['@typescript-eslint'],
+      extends: ['plugin:@typescript-eslint/recommended'],
+      rules: {
+        'no-undef': 'off',
+        'no-unused-vars': 'off',
+        '@typescript-eslint/no-unused-vars': ['warn', {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        }],
+      },
+    },
+    {
       files: ['src/shared/**/*.{js,jsx}'],
       rules: {
         'no-restricted-imports': ['error', {

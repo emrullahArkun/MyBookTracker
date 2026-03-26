@@ -9,17 +9,15 @@ function LibraryPagination({
     onNextPage,
 }) {
     const { t } = useTranslation();
-
-    if (totalPages <= 1) {
-        return null;
-    }
+    const totalPageCount = Math.max(totalPages, 1);
+    const currentPage = Math.min(page + 1, totalPageCount);
 
     return (
-        <Flex justify="center" align="center" mt={10} gap={4}>
+        <Flex justify="center" align="center" gap={4} minW="140px">
             <IconButton
                 icon={<FaChevronLeft />}
                 onClick={onPreviousPage}
-                isDisabled={page === 0}
+                isDisabled={page === 0 || totalPages <= 1}
                 color="white"
                 variant="ghost"
                 fontSize="lg"
@@ -27,12 +25,12 @@ function LibraryPagination({
                 _hover={{ bg: 'whiteAlpha.100' }}
             />
             <Text color="gray.500" fontSize="sm">
-                {page + 1} / {totalPages}
+                {currentPage} / {totalPageCount}
             </Text>
             <IconButton
                 icon={<FaChevronRight />}
                 onClick={onNextPage}
-                isDisabled={page >= totalPages - 1}
+                isDisabled={page >= totalPages - 1 || totalPages <= 1}
                 color="white"
                 variant="ghost"
                 fontSize="lg"

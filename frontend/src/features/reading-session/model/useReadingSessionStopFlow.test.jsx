@@ -48,6 +48,18 @@ describe('useReadingSessionStopFlow', () => {
         expect(resumeSession).not.toHaveBeenCalled();
     });
 
+    it('ignores stop clicks while another session action is busy', () => {
+        const pauseSession = vi.fn();
+        const { result } = createHook({ pauseSession, isBusy: true });
+
+        act(() => {
+            result.current.handleStopClick();
+        });
+
+        expect(pauseSession).not.toHaveBeenCalled();
+        expect(result.current.showStopConfirm).toBe(false);
+    });
+
     it('ignores invalid end pages when confirming stop', async () => {
         const stopSession = vi.fn();
         const setHasStopped = vi.fn();
@@ -99,6 +111,23 @@ describe('useReadingSessionStopFlow', () => {
             status: 'warning',
             title: 'readingSession.alerts.pageExceeds:200',
         }));
+    });
+
+    it('does nothing when confirm stop runs without a loaded book', async () => {
+        const stopSession = vi.fn();
+        const setHasStopped = vi.fn();
+        const { result } = createHook({
+            book: null,
+            stopSession,
+            setHasStopped,
+        });
+
+        await act(async () => {
+            await result.current.handleConfirmStop();
+        });
+
+        expect(stopSession).not.toHaveBeenCalled();
+        expect(setHasStopped).not.toHaveBeenCalled();
     });
 
     it('stops the session, navigates away, and shows a success toast on success', async () => {

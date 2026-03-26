@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import { createRef } from 'react';
 import { describe, it, expect } from 'vitest';
 import BookCover from './BookCover';
 
@@ -186,5 +187,38 @@ describe('BookCover', () => {
         });
 
         expect(screen.queryByText('Cached Book')).toBeNull();
+    });
+
+    it('updates the image source when the book cover URL changes', () => {
+        const { rerender } = render(<BookCover book={{
+            title: 'Updated Book',
+            coverUrl: 'https://covers.openlibrary.org/b/id/11111-M.jpg',
+        }}
+        />);
+
+        let img = screen.getByRole('img');
+        expect(img.src).toBe('https://covers.openlibrary.org/b/id/11111-M.jpg');
+
+        rerender(<BookCover book={{
+            title: 'Updated Book',
+            coverUrl: 'https://covers.openlibrary.org/b/id/22222-M.jpg',
+        }}
+        />);
+
+        img = screen.getByRole('img');
+        expect(img.src).toBe('https://covers.openlibrary.org/b/id/22222-M.jpg');
+    });
+
+    it('supports forwarded object refs', () => {
+        const ref = createRef();
+        render(<BookCover
+            ref={ref}
+            book={{
+                title: 'Forward Ref Book',
+                coverUrl: 'https://covers.openlibrary.org/b/id/33333-M.jpg',
+            }}
+        />);
+
+        expect(ref.current).toBe(screen.getByRole('img'));
     });
 });

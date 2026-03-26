@@ -110,6 +110,9 @@ describe('MyBooks Component', () => {
         expect(await screen.findByText('No books in your library yet.')).toBeInTheDocument();
         expect(await screen.findByText('Go to search to add books!')).toBeInTheDocument();
         expect(screen.queryByText('Delete All')).not.toBeInTheDocument();
+        expect(screen.getByText('1 / 1')).toBeInTheDocument();
+        expect(screen.getByLabelText(/Previous Page/i)).toBeDisabled();
+        expect(screen.getByLabelText(/Next Page/i)).toBeDisabled();
     });
 
     it('navigates to search when clicking the search button in empty state', async () => {
@@ -280,6 +283,25 @@ describe('MyBooks Component', () => {
             await waitFor(() => {
                 expect(screen.getByLabelText(/Previous Page/i)).toBeDisabled();
             });
+        });
+
+        it('keeps the pagination visible even when there is only one page', async () => {
+            server.use(
+                http.get('/api/books', () => {
+                    return HttpResponse.json({
+                        content: [{ id: 1, title: 'B1' }],
+                        totalElements: 1,
+                        totalPages: 1,
+                        number: 0
+                    });
+                })
+            );
+
+            render(<LibraryPage />, { wrapper: createTestWrapper() });
+
+            await screen.findByText('1 / 1');
+            expect(screen.getByLabelText(/Previous Page/i)).toBeDisabled();
+            expect(screen.getByLabelText(/Next Page/i)).toBeDisabled();
         });
     });
 });

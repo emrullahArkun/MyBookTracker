@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import styles from './SearchPage.module.css';
-import { useBookSearch } from '../model/useBookSearch.jsx';
+import { useBookSearch } from '../model/useBookSearch';
 import SearchForm from '../ui/SearchForm';
 import SearchResultCard from '../ui/SearchResultCard';
 import SearchResultSkeleton from '../ui/SearchResultSkeleton';
@@ -22,14 +22,11 @@ function SearchPage({ onBookAdded }) {
     } = useBookSearch();
 
     const handleAddBook = useCallback(async (book) => {
-        try {
-            const success = await addBookToLibrary(book);
-            if (success && onBookAdded) {
-                onBookAdded();
-            }
-        } catch (error) {
-            // Error is handled by global onError toast in useBookSearch
+        const addedBook = await addBookToLibrary(book);
+        if (addedBook && onBookAdded) {
+            onBookAdded();
         }
+        return addedBook;
     }, [addBookToLibrary, onBookAdded]);
 
     const hasResults = results.length > 0 || isLoading;

@@ -31,4 +31,11 @@ describe('authApi', () => {
         expect(apiClient.get).toHaveBeenCalledWith('/api/auth/session');
         expect(result).toEqual({ valid: true });
     });
+
+    it('logout should POST to the logout endpoint', async () => {
+        apiClient.post.mockResolvedValue(null);
+        const result = await authApi.logout();
+        expect(apiClient.post).toHaveBeenCalledWith('/api/auth/logout');
+        expect(result).toBeNull();
+    });
 });
