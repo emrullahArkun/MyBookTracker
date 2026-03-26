@@ -4,6 +4,7 @@ import com.example.readflow.auth.domain.User;
 import com.example.readflow.discovery.domain.DiscoveryBook;
 import com.example.readflow.discovery.domain.DiscoverySnapshot;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ class DiscoverySectionsService {
     private final ExecutorService ioExecutor;
     private final long recommendationTimeoutMillis;
 
+    @Autowired
     DiscoverySectionsService(
             DiscoveryUserDataService userDataService,
             DiscoveryRecommendationService recommendationService,
