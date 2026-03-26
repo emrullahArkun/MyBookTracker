@@ -11,9 +11,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -214,5 +217,37 @@ class DiscoveryServiceTest {
         assertEquals(1, result.byCategory().books().size());
         assertEquals(List.of("query1"), result.bySearch().queries());
         assertEquals(1, result.bySearch().books().size());
+    }
+
+    @Test
+    void getDiscoveryData_ShouldReturnEmptyBooks_WhenRecommendationTimesOut() {
+        when(userDataService.getSnapshot(user, 3, 5))
+                .thenReturn(new DiscoverySnapshot(Set.of(), List.of("Author1"), List.of(), List.of()));
+        when(recommendationService.getRecommendationsByAuthor("Author1", Set.of(), 10))
+                .thenAnswer(invocation -> {
+                    Thread.sleep(100);
+                    return List.of(new DiscoveryBook("Slow Book", null, null, null, null, null, null));
+                });
+
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            DiscoverySectionsService timeoutSectionsService = new DiscoverySectionsService(
+                    userDataService,
+                    recommendationService,
+                    executor,
+                    10L);
+            DiscoveryService timeoutDiscoveryService = new DiscoveryService(
+                    userDataService,
+                    recommendationService,
+                    timeoutSectionsService);
+
+            var result = assertTimeoutPreemptively(
+                    Duration.ofMillis(250),
+                    () -> timeoutDiscoveryService.getDiscoveryData(user));
+
+            assertEquals(List.of("Author1"), result.byAuthor().authors());
+            assertTrue(result.byAuthor().books().isEmpty());
+            assertTrue(result.byCategory().books().isEmpty());
+            assertTrue(result.bySearch().books().isEmpty());
+        }
     }
 }

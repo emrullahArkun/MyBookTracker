@@ -28,6 +28,7 @@ const MyBookCard = ({
             _hover={{ transform: 'translateY(-4px)' }}
             w="100%"
             role="group"
+            tabIndex={0}
         >
             {/* Checkbox - visible on hover or when selected */}
             <Box

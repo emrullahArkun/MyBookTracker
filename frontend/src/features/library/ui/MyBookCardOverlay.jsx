@@ -27,6 +27,7 @@ function MyBookCardOverlay({ bookId }) {
             visibility="hidden"
             pointerEvents="none"
             _groupHover={{ opacity: 1, visibility: 'visible', pointerEvents: 'auto' }}
+            _groupFocusWithin={{ opacity: 1, visibility: 'visible', pointerEvents: 'auto' }}
             transition="all 0.25s ease"
             direction="column"
             justify="space-between"

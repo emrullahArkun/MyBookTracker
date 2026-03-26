@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import MyBookCard from './MyBookCard';
 import { MemoryRouter } from 'react-router-dom';
@@ -78,8 +78,10 @@ describe('MyBookCard', () => {
             },
         });
 
-        expect(screen.getAllByText('Inner Title').length).toBeGreaterThanOrEqual(1);
-        expect(screen.queryByText('Outer Title')).toBeNull();
+        const card = screen.getByRole('group');
+        expect(within(card).getByTestId('book-cover')).toHaveTextContent('Inner Title');
+        expect(within(card).getByText('Inner Title', { selector: 'p' })).toBeInTheDocument();
+        expect(within(card).queryByText('Outer Title', { selector: 'p' })).toBeNull();
     });
 
     it('triggers onToggleSelect when checkbox is clicked', () => {

@@ -3,7 +3,6 @@ package com.example.readflow.discovery.application;
 import com.example.readflow.auth.domain.User;
 import com.example.readflow.discovery.domain.DiscoveryBook;
 import com.example.readflow.discovery.domain.DiscoverySnapshot;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,20 +12,40 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
 class DiscoverySectionsService {
 
     private static final int DEFAULT_LIMIT = 5;
     private static final int MAX_RESULTS = 10;
+    private static final long DEFAULT_RECOMMENDATION_TIMEOUT_MILLIS = 1500L;
 
     private final DiscoveryUserDataService userDataService;
     private final DiscoveryRecommendationService recommendationService;
     private final ExecutorService ioExecutor;
+    private final long recommendationTimeoutMillis;
+
+    DiscoverySectionsService(
+            DiscoveryUserDataService userDataService,
+            DiscoveryRecommendationService recommendationService,
+            ExecutorService ioExecutor) {
+        this(userDataService, recommendationService, ioExecutor, DEFAULT_RECOMMENDATION_TIMEOUT_MILLIS);
+    }
+
+    DiscoverySectionsService(
+            DiscoveryUserDataService userDataService,
+            DiscoveryRecommendationService recommendationService,
+            ExecutorService ioExecutor,
+            long recommendationTimeoutMillis) {
+        this.userDataService = userDataService;
+        this.recommendationService = recommendationService;
+        this.ioExecutor = ioExecutor;
+        this.recommendationTimeoutMillis = recommendationTimeoutMillis;
+    }
 
     public AuthorRecommendations getAuthorSection(User user) {
         List<String> topAuthors = userDataService.getTopAuthors(user, 3);
@@ -92,6 +111,7 @@ class DiscoverySectionsService {
             Supplier<List<DiscoveryBook>> supplier) {
         return CompletableFuture.supplyAsync(() -> seed == null ? Collections.<DiscoveryBook>emptyList() : supplier.get(),
                         ioExecutor)
+                .completeOnTimeout(Collections.emptyList(), recommendationTimeoutMillis, TimeUnit.MILLISECONDS)
                 .exceptionally(error -> {
                     log.error("Failed to fetch {} recommendations", source, error);
                     return Collections.emptyList();
