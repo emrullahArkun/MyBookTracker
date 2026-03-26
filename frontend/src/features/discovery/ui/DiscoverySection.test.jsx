@@ -6,6 +6,7 @@ import * as AnimationProviderModule from '../../../app/providers/AnimationProvid
 
 const mockMutateAsync = vi.fn();
 const mockFlyBook = vi.fn();
+const mockBookCover = vi.fn();
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: (key) => key }),
@@ -18,7 +19,10 @@ vi.mock('../model/useAddDiscoveryBook.jsx', () => ({
 }));
 
 vi.mock('../../../shared/ui/BookCover', () => ({
-    default: forwardRef(({ book }, ref) => <div ref={ref}>{book.title}</div>),
+    default: forwardRef((props, ref) => {
+        mockBookCover(props);
+        return <div ref={ref}>{props.book.title}</div>;
+    }),
 }));
 
 describe('DiscoverySection', () => {
@@ -34,6 +38,7 @@ describe('DiscoverySection', () => {
         vi.spyOn(AnimationProviderModule, 'useAnimation').mockReturnValue({
             flyBook: mockFlyBook,
         });
+        mockMutateAsync.mockResolvedValue(undefined);
     });
 
     const renderSection = () => render(
@@ -56,5 +61,68 @@ describe('DiscoverySection', () => {
 
         expect(mockMutateAsync).toHaveBeenCalledWith(book);
         expect(mockFlyBook).not.toHaveBeenCalled();
+    });
+
+    it('triggers the fly animation after a successful add', async () => {
+        renderSection();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button'));
+        });
+
+        expect(mockMutateAsync).toHaveBeenCalledWith(book);
+        expect(mockFlyBook).toHaveBeenCalledTimes(1);
+        expect(mockFlyBook.mock.calls[0][1]).toBe('http://test.com/cover.jpg');
+    });
+
+    it('supports keyboard add on Enter and ignores unrelated keys', async () => {
+        renderSection();
+        const card = screen.getByRole('button');
+
+        await act(async () => {
+            fireEvent.keyDown(card, { key: 'Enter' });
+        });
+        expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+
+        fireEvent.keyDown(card, { key: 'Escape' });
+        expect(mockMutateAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders the empty state and default icon fallback when no books exist', () => {
+        render(
+            <DiscoverySection
+                title="Fallback"
+                iconType="unknown"
+                books={[]}
+                emptyMessage="No recommendations yet"
+            />
+        );
+
+        expect(screen.getByText('Fallback')).toBeInTheDocument();
+        expect(screen.getByText('No recommendations yet')).toBeInTheDocument();
+    });
+
+    it('renders the unknown author fallback and omits imageLinks when no cover exists', () => {
+        render(
+            <DiscoverySection
+                title="By search"
+                subtitle="query"
+                iconType="search"
+                books={[{
+                    title: 'No Cover Book',
+                    authors: null,
+                    isbn: '111',
+                    coverUrl: '',
+                }]}
+                emptyMessage="No books"
+            />
+        );
+
+        expect(screen.getByText('discovery.unknownAuthor')).toBeInTheDocument();
+        expect(mockBookCover).toHaveBeenCalledWith(expect.objectContaining({
+            book: expect.objectContaining({
+                imageLinks: undefined,
+            }),
+        }));
     });
 });

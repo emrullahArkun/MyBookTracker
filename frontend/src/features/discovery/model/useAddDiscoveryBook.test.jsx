@@ -3,16 +3,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddDiscoveryBook } from './useAddDiscoveryBook';
 
+let mockAuthState = {
+    token: 'test-token',
+    user: { email: 'reader@example.com' },
+};
+
 const mockToast = vi.fn();
 const mockClose = vi.fn();
 const mockCreate = vi.fn();
 const mockBuildLibraryBookPayload = vi.fn((book) => ({ isbn: book.isbn, title: book.title }));
 
 vi.mock('../../auth/model', () => ({
-    useAuth: () => ({
-        token: 'test-token',
-        user: { email: 'reader@example.com' },
-    }),
+    useAuth: () => mockAuthState,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -56,6 +58,10 @@ describe('useAddDiscoveryBook', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         queryClient = createQueryClient();
+        mockAuthState = {
+            token: 'test-token',
+            user: { email: 'reader@example.com' },
+        };
         mockCreate.mockResolvedValue({ id: 99 });
     });
 
@@ -105,5 +111,51 @@ describe('useAddDiscoveryBook', () => {
         expect(mockBuildLibraryBookPayload).toHaveBeenCalledWith({ isbn: 'remove-me', title: 'Remove Me' });
         expect(mockClose).toHaveBeenCalledWith('add-book-toast');
         expect(mockToast).toHaveBeenCalled();
+    });
+
+    it('handles a successful add even when no discovery cache is present', async () => {
+        const { result } = renderHook(() => useAddDiscoveryBook(), { wrapper });
+
+        await act(async () => {
+            await result.current.mutateAsync({ isbn: 'new-book', title: 'New Book' });
+        });
+
+        expect(queryClient.getQueryData(['discovery', 'reader@example.com'])).toBeUndefined();
+        expect(mockCreate).toHaveBeenCalled();
+        expect(mockToast).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the duplicate toast when the add fails with status 409', async () => {
+        mockCreate.mockRejectedValue({ status: 409 });
+        const { result } = renderHook(() => useAddDiscoveryBook(), { wrapper });
+
+        await expect(result.current.mutateAsync({ isbn: 'dup', title: 'Duplicate' })).rejects.toEqual({ status: 409 });
+
+        expect(mockClose).toHaveBeenCalledWith('add-book-toast');
+        const toastConfig = mockToast.mock.calls[0][0];
+        const toastElement = toastConfig.render();
+        expect(toastElement.props.bgColor).toBe('#DD6B20');
+        expect(toastElement.props.children).toBe('search.toast.duplicate');
+    });
+
+    it('shows the generic failure toast when the add fails without a duplicate status', async () => {
+        mockCreate.mockRejectedValue({});
+        const { result } = renderHook(() => useAddDiscoveryBook(), { wrapper });
+
+        await expect(result.current.mutateAsync({ isbn: 'fail', title: 'Failure' })).rejects.toEqual({});
+
+        const toastElement = mockToast.mock.calls[0][0].render();
+        expect(toastElement.props.bgColor).toBe('#E53E3E');
+        expect(toastElement.props.children).toBe('search.toast.addFailed');
+    });
+
+    it('throws a login-required error when there is no auth token', async () => {
+        mockAuthState = { token: null, user: null };
+        const { result } = renderHook(() => useAddDiscoveryBook(), { wrapper });
+
+        await expect(result.current.mutateAsync({ isbn: 'locked', title: 'Locked' }))
+            .rejects.toThrow('search.toast.loginRequired');
+
+        expect(mockCreate).not.toHaveBeenCalled();
     });
 });
