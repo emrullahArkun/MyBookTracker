@@ -35,11 +35,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      - FRONTEND_ACCESS_MODE=${FRONTEND_ACCESS_MODE:-beta}
-      - FRONTEND_BASIC_AUTH_REALM=${FRONTEND_BASIC_AUTH_REALM:-ReadWick Beta}
     volumes:
-      - ./ops/nginx:/etc/nginx/ops:ro
       - ${SSL_CERT_DIR:-./ops/ssl}:/etc/nginx/ssl:ro
     depends_on:
       - app
