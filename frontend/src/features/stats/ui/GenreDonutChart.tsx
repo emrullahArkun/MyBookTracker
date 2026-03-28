@@ -61,8 +61,8 @@ const GenreDonutChart = ({ genreDistribution = [] }: GenreDonutChartProps) => {
     }
 
     return (
-        <Flex direction={{ base: 'column', md: 'row' }} align="center" gap={4} w="full">
-            <Box w="180px" h="180px" flexShrink={0}>
+        <Flex direction={{ base: 'column', md: 'row' }} align="center" gap={4} w="full" minW={0}>
+            <Box w="180px" h="180px" minW="180px" flexShrink={0}>
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
@@ -84,7 +84,7 @@ const GenreDonutChart = ({ genreDistribution = [] }: GenreDonutChartProps) => {
                 </ResponsiveContainer>
             </Box>
 
-            <VStack align="start" spacing={1} flex={1}>
+            <VStack align="start" spacing={1} flex={1} minW={0}>
                 {data.map((entry, i) => (
                     <Flex key={entry.name} align="center" gap={2}>
                         <Box w="10px" h="10px" borderRadius="2px" bg={COLORS[i % COLORS.length]} flexShrink={0} />

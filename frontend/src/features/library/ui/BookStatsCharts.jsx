@@ -60,7 +60,7 @@ const BookStatsCharts = ({
                 </Flex>
             </Flex>
 
-            <Box flex="1" minH="160px" w="full">
+            <Box flex="1" minH="160px" minW={0} w="full">
                 {stats.graphData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={stats.graphData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>

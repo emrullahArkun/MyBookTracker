@@ -44,7 +44,7 @@ describe('BookCover', () => {
         render(<BookCover book={book} />);
 
         const img = screen.getByRole('img');
-        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/9783161484100-M.jpg');
+        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/9783161484100-M.jpg?default=false');
     });
 
     it('falls back to title/author text if no image URL is possible', () => {
@@ -97,7 +97,7 @@ describe('BookCover', () => {
 
         // Tries ISBN-based URL
         img = screen.getByRole('img');
-        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/1234567890-M.jpg');
+        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/1234567890-M.jpg?default=false');
 
         act(() => {
             simulateImageError(img); // ISBN fallback fails
@@ -116,7 +116,7 @@ describe('BookCover', () => {
         render(<BookCover book={book} />);
 
         const img = screen.getByRole('img');
-        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/0987654321-M.jpg');
+        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/0987654321-M.jpg?default=false');
 
         act(() => {
             simulateImageLoad(img, 1, 1);
@@ -144,7 +144,7 @@ describe('BookCover', () => {
         };
         render(<BookCover book={book} />);
         const img = screen.getByRole('img');
-        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/9780123456789-M.jpg');
+        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/9780123456789-M.jpg?default=false');
     });
 
     it('falls back to ISBN_10 when ISBN_13 is not available', () => {
@@ -158,7 +158,7 @@ describe('BookCover', () => {
         render(<BookCover book={book} />);
 
         const img = screen.getByRole('img');
-        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/0123456789-M.jpg');
+        expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/0123456789-M.jpg?default=false');
     });
 
     it('shows the unknown title fallback when no title exists', () => {

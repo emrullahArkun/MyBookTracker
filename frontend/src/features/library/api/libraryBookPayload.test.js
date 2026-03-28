@@ -69,7 +69,7 @@ describe('buildLibraryBookPayload', () => {
             categories: [],
         });
 
-        expect(payload.coverUrl).toBe('https://covers.openlibrary.org/b/isbn/1234567890-M.jpg');
+        expect(payload.coverUrl).toBe('https://covers.openlibrary.org/b/isbn/1234567890-M.jpg?default=false');
         expect(payload.isbn).toBe('1234567890');
     });
 });
