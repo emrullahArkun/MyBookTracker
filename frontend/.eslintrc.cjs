@@ -37,7 +37,7 @@ module.exports = {
       },
     },
     {
-      files: ['src/shared/**/*.{js,jsx}'],
+      files: ['src/shared/**/*.{js,jsx,ts,tsx}'],
       rules: {
         'no-restricted-imports': ['error', {
           patterns: [
@@ -54,7 +54,7 @@ module.exports = {
       },
     },
     {
-      files: ['src/features/**/*.{js,jsx}'],
+      files: ['src/features/**/*.{js,jsx,ts,tsx}'],
       rules: {
         'no-restricted-imports': ['error', {
           patterns: [

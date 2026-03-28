@@ -3,11 +3,10 @@ import { motion } from 'framer-motion';
 import { FaCheckCircle } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../../app/router/routes';
 
 const MotionBox = motion(Box);
 
-const GoalCard = ({ book, index }) => {
+const GoalCard = ({ book, index, linkTo }) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
@@ -29,7 +28,7 @@ const GoalCard = ({ book, index }) => {
             p={5}
             cursor="pointer"
             _hover={{ bg: 'rgba(248, 236, 214, 0.06)', borderColor: 'rgba(217, 188, 146, 0.24)', transform: 'translateY(-1px)', transition: 'all 0.2s' }}
-            onClick={() => navigate(ROUTES.BOOK_STATS(book.id))}
+            onClick={() => linkTo && navigate(linkTo)}
         >
             <VStack align="start" spacing={3} w="full">
                 <HStack justify="space-between" w="full">

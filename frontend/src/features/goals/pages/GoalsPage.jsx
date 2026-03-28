@@ -9,10 +9,11 @@ import {
     Spinner,
 } from '@chakra-ui/react';
 import { FaBullseye, FaFire } from 'react-icons/fa';
-import GoalCard from '../ui/GoalCard';
+import GoalCard from '../../../shared/ui/GoalCard';
 import KpiBox from '../ui/KpiBox';
 import { useGoalsData } from '../model/useGoalsData';
 import PageErrorState from '../../../shared/ui/PageErrorState';
+import { ROUTES } from '../../../app/router/routes';
 
 const GoalsPage = () => {
     const { t } = useTranslation();
@@ -86,7 +87,7 @@ const GoalsPage = () => {
                     </Text>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5} mb={8}>
                         {activeBooks.map((book, index) => (
-                            <GoalCard key={book.id} book={book} index={index} />
+                            <GoalCard key={book.id} book={book} index={index} linkTo={ROUTES.BOOK_STATS(book.id)} />
                         ))}
                     </SimpleGrid>
                 </>
@@ -99,7 +100,7 @@ const GoalsPage = () => {
                     </Text>
                     <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5}>
                         {completedBooks.map((book, index) => (
-                            <GoalCard key={book.id} book={book} index={index} />
+                            <GoalCard key={book.id} book={book} index={index} linkTo={ROUTES.BOOK_STATS(book.id)} />
                         ))}
                     </SimpleGrid>
                 </>
