@@ -6,31 +6,7 @@ import { booksApi, buildLibraryBookPayload } from '../../library/api';
 import type { ApiError } from '../../../shared/types/http';
 import type { Book } from '../../../shared/types/books';
 import type { DiscoveryResponse, RecommendedBook } from '../../../shared/types/discovery';
-
-const TOAST_STYLE = {
-    containerStyle: { marginTop: '80px' },
-    position: 'top',
-    duration: 3000,
-} as const;
-
-type ToastMessageProps = {
-    bgColor: string;
-    children: string;
-};
-
-const ToastMessage = ({ bgColor, children }: ToastMessageProps) => (
-    <div style={{
-        backgroundColor: bgColor,
-        color: 'white',
-        padding: '12px 24px',
-        borderRadius: '8px',
-        fontWeight: '600',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        textAlign: 'center',
-    }}>
-        {children}
-    </div>
-);
+import { createAppToast } from '../../../shared/ui/AppToast';
 
 const removeBookFromDiscoverySection = <
     TSection extends { books?: RecommendedBook[] } | undefined
@@ -68,31 +44,24 @@ export const useAddDiscoveryBook = () => {
             queryClient.invalidateQueries({ queryKey: ['myBooks'] });
             queryClient.invalidateQueries({ queryKey: ['ownedIsbns', user?.email] });
             toast.close('add-book-toast');
-            toast({
+            toast(createAppToast({
                 id: 'add-book-toast',
-                ...TOAST_STYLE,
-                render: () => (
-                    <ToastMessage bgColor="#38A169">
-                        {t('search.toast.successTitle')}
-                    </ToastMessage>
-                ),
-            });
+                title: t('search.toast.successTitle'),
+                status: 'success',
+                duration: 3000,
+            }));
         },
         onError: (err) => {
             const isDuplicate = err.status === 409;
             const message = isDuplicate ? t('search.toast.duplicate') : (err.message || t('search.toast.addFailed'));
-            const bgColor = isDuplicate ? '#DD6B20' : '#E53E3E';
 
             toast.close('add-book-toast');
-            toast({
+            toast(createAppToast({
                 id: 'add-book-toast',
-                ...TOAST_STYLE,
-                render: () => (
-                    <ToastMessage bgColor={bgColor}>
-                        {message}
-                    </ToastMessage>
-                ),
-            });
+                title: message,
+                status: isDuplicate ? 'warning' : 'error',
+                duration: 3000,
+            }));
         },
     });
 };

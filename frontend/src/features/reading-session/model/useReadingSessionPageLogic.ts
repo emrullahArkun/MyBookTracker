@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +6,7 @@ import { useAuth } from '../../auth/model';
 import { useReadingSessionContext } from './ReadingSessionContext';
 import { useReadingSessionBook } from './useReadingSessionBook';
 import { useReadingSessionLifecycle } from './useReadingSessionLifecycle';
-import { useReadingSessionStopFlow } from './useReadingSessionStopFlow';
+import { useReadingSessionStopFlow, type SessionCompletionSummary } from './useReadingSessionStopFlow';
 
 export const useReadingSessionPageLogic = (bookIdParam?: string) => {
     const { t } = useTranslation();
@@ -33,8 +33,13 @@ export const useReadingSessionPageLogic = (bookIdParam?: string) => {
     } = useReadingSessionContext();
 
     const [hasStopped, setHasStopped] = useState(false);
+    const [completionSummary, setCompletionSummary] = useState<SessionCompletionSummary | null>(null);
 
     const { book, fetchingBook } = useReadingSessionBook({ bookId: normalizedBookId, token, toast, t });
+
+    const handleStopSuccess = useCallback((summary: SessionCompletionSummary) => {
+        setCompletionSummary(summary);
+    }, []);
 
     useReadingSessionLifecycle({
         activeSession,
@@ -62,10 +67,10 @@ export const useReadingSessionPageLogic = (bookIdParam?: string) => {
         pauseSession,
         resumeSession,
         stopSession,
-        navigate,
         toast,
         t,
         setHasStopped,
+        onStopSuccess: handleStopSuccess,
     });
 
     return {
@@ -86,6 +91,7 @@ export const useReadingSessionPageLogic = (bookIdParam?: string) => {
         setEndPage,
         handleStopClick,
         handleStopCancel,
-        handleConfirmStop
+        handleConfirmStop,
+        completionSummary,
     };
 };

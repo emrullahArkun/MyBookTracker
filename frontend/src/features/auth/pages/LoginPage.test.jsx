@@ -6,6 +6,8 @@ import LoginPage from './LoginPage';
 // Mock dependencies
 const mockLogin = vi.fn();
 const mockNavigate = vi.fn();
+const mockToast = vi.fn();
+let mockLocationState = null;
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -22,7 +24,7 @@ vi.mock('react-router-dom', async () => {
     return {
         ...actual,
         useNavigate: () => mockNavigate,
-        useLocation: () => ({ state: null }),
+        useLocation: () => ({ state: mockLocationState }),
     };
 });
 
@@ -32,7 +34,7 @@ vi.mock('../api/authApi', () => ({
 
 vi.mock('@chakra-ui/react', async () => {
     const actual = await vi.importActual('@chakra-ui/react');
-    return { ...actual, useToast: () => vi.fn() };
+    return { ...actual, useToast: () => mockToast };
 });
 
 // Simple stub for custom UI components
@@ -68,6 +70,7 @@ import { authApi } from '../api/authApi';
 describe('LoginPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockLocationState = null;
     });
 
     it('should render email and password fields', () => {
@@ -127,6 +130,46 @@ describe('LoginPage', () => {
         await waitFor(() => {
             expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
         });
+    });
+
+    it('redirects to the originally requested route after login', async () => {
+        mockLocationState = { from: { pathname: '/goals' } };
+        authApi.login.mockResolvedValue({ user: { email: 'a@b.com', role: 'USER' } });
+
+        render(
+            <MemoryRouter>
+                <LoginPage />
+            </MemoryRouter>
+        );
+
+        fireEvent.change(screen.getByLabelText('auth.email'), { target: { value: 'a@b.com' } });
+        fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'pass' } });
+        fireEvent.click(screen.getByText('auth.login.button'));
+
+        await waitFor(() => {
+            expect(mockNavigate).toHaveBeenCalledWith('/goals', { replace: true });
+        });
+    });
+
+    it('shows an error when the login response has no user', async () => {
+        authApi.login.mockResolvedValue({});
+
+        render(
+            <MemoryRouter>
+                <LoginPage />
+            </MemoryRouter>
+        );
+
+        fireEvent.change(screen.getByLabelText('auth.email'), { target: { value: 'a@b.com' } });
+        fireEvent.change(screen.getByLabelText('auth.password'), { target: { value: 'pass' } });
+        fireEvent.click(screen.getByText('auth.login.button'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Login response did not include a user')).toBeInTheDocument();
+        });
+
+        expect(mockLogin).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
     });
 
     it('should render register link', () => {

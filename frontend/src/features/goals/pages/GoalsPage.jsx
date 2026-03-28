@@ -37,8 +37,17 @@ const GoalsPage = () => {
     }
 
     return (
-        <Box px={{ base: 4, md: 10 }} py={8} maxW="1100px" mx="auto" minH="calc(100vh - 80px)">
-            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mb={8} maxW="640px">
+        <Box px={{ base: 4, md: 8 }} py={8} maxW="1100px" mx="auto" minH="calc(100vh - 80px)">
+            <Box mb={8}>
+                <Text fontSize="xs" fontWeight="600" color="gray.400" textTransform="uppercase" letterSpacing="wider" mb={2}>
+                    {t('navbar.goals')}
+                </Text>
+                <Text color="gray.300" maxW="56ch" lineHeight="1.7">
+                    {t('home.goalSectionHint')}
+                </Text>
+            </Box>
+
+            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mb={8}>
                 <KpiBox value={activeBooks.length} label={t('home.active')} valueColor="teal.200" />
                 <KpiBox value={completedBooks.length} label={t('bookStats.completed')} valueColor="green.300" />
                 <KpiBox

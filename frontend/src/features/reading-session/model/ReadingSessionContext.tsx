@@ -79,8 +79,10 @@ export const ReadingSessionProvider = ({ children }: ReadingSessionProviderProps
             broadcastUpdate();
             queryClient.invalidateQueries({ queryKey: ['myBooks'] });
             queryClient.invalidateQueries({ queryKey: ['book'] });
+            queryClient.invalidateQueries({ queryKey: ['bookSessions'] });
             queryClient.invalidateQueries({ queryKey: ['stats'] });
             queryClient.invalidateQueries({ queryKey: ['goals'] });
+            queryClient.invalidateQueries({ queryKey: ['home'] });
             return true;
         } catch {
             dispatch({ type: READING_SESSION_EVENTS.STOP_FAILED });

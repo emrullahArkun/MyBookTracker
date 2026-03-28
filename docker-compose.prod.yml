@@ -1,8 +1,6 @@
 services:
   app:
     build: ./backend # TODO: Replace with pre-built image from CI/CD pipeline (e.g. image: ghcr.io/emrullaharkun/chapterflow-backend:latest)
-    ports:
-      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -36,6 +34,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "80:80"
+    environment:
+      - FRONTEND_ACCESS_MODE=${FRONTEND_ACCESS_MODE:-beta}
+      - FRONTEND_BASIC_AUTH_REALM=${FRONTEND_BASIC_AUTH_REALM:-ChapterFlow Beta}
+    volumes:
+      - ./ops/nginx:/etc/nginx/ops:ro
     depends_on:
       - app
     restart: always

@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddDiscoveryBook } from './useAddDiscoveryBook';
@@ -133,9 +133,8 @@ describe('useAddDiscoveryBook', () => {
 
         expect(mockClose).toHaveBeenCalledWith('add-book-toast');
         const toastConfig = mockToast.mock.calls[0][0];
-        const toastElement = toastConfig.render();
-        expect(toastElement.props.bgColor).toBe('#DD6B20');
-        expect(toastElement.props.children).toBe('search.toast.duplicate');
+        render(toastConfig.render());
+        expect(screen.getByText('search.toast.duplicate')).toBeInTheDocument();
     });
 
     it('shows the generic failure toast when the add fails without a duplicate status', async () => {
@@ -144,9 +143,8 @@ describe('useAddDiscoveryBook', () => {
 
         await expect(result.current.mutateAsync({ isbn: 'fail', title: 'Failure' })).rejects.toEqual({});
 
-        const toastElement = mockToast.mock.calls[0][0].render();
-        expect(toastElement.props.bgColor).toBe('#E53E3E');
-        expect(toastElement.props.children).toBe('search.toast.addFailed');
+        render(mockToast.mock.calls[0][0].render());
+        expect(screen.getByText('search.toast.addFailed')).toBeInTheDocument();
     });
 
     it('throws a login-required error when there is no auth token', async () => {

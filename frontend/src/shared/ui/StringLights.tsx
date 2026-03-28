@@ -9,15 +9,15 @@ type Light = {
 };
 
 export const StringLights = () => {
-    const darkYellow = '#e0a800';
+    const warmGlow = ['#f3c785', '#ffdca1', '#e7aa63', '#f6d7a2', '#efbc74', '#ffd8a8'];
 
     const lights: Light[] = [
-        { left: '10%', top: '27%', delay: '0s', color: darkYellow },
-        { left: '25%', top: '56%', delay: '1s', color: darkYellow },
-        { left: '40%', top: '72%', delay: '0.5s', color: darkYellow },
-        { left: '55%', top: '74%', delay: '1.5s', color: darkYellow },
-        { left: '70%', top: '63%', delay: '0.2s', color: darkYellow },
-        { left: '85%', top: '38%', delay: '1.2s', color: darkYellow },
+        { left: '10%', top: '27%', delay: '0s', color: warmGlow[0] },
+        { left: '25%', top: '56%', delay: '1s', color: warmGlow[1] },
+        { left: '40%', top: '72%', delay: '0.5s', color: warmGlow[2] },
+        { left: '55%', top: '74%', delay: '1.5s', color: warmGlow[3] },
+        { left: '70%', top: '63%', delay: '0.2s', color: warmGlow[4] },
+        { left: '85%', top: '38%', delay: '1.2s', color: warmGlow[5] },
     ];
 
     return (

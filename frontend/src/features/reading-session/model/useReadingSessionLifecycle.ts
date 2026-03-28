@@ -4,6 +4,7 @@ import { ROUTES } from '../../../app/router/routes';
 import { READING_SESSION_PHASES } from './readingSessionMachine';
 import type { Book } from '../../../shared/types/books';
 import type { ReadingSession, ReadingSessionPhase } from '../../../shared/types/sessions';
+import { createAppToast } from '../../../shared/ui/AppToast';
 
 type TranslationValues = Record<string, string | number>;
 
@@ -42,12 +43,11 @@ export const useReadingSessionLifecycle = ({
 
     useEffect(() => {
         if (activeSession && book && activeSession.bookId !== book.id) {
-            toast({
+            toast(createAppToast({
                 title: t('readingSession.alerts.mismatch'),
                 status: 'warning',
                 duration: 5000,
-                isClosable: true,
-            });
+            }));
             navigate(ROUTES.MY_BOOKS);
         }
     }, [activeSession, book, navigate, t, toast]);
@@ -59,12 +59,11 @@ export const useReadingSessionLifecycle = ({
         }
 
         if (sessionPhase === READING_SESSION_PHASES.IDLE && hasSeenActiveSessionRef.current && !hasStopped) {
-            toast({
+            toast(createAppToast({
                 title: t('readingSession.alerts.endedRemote'),
                 status: 'info',
                 duration: 5000,
-                isClosable: true,
-            });
+            }));
             navigate(ROUTES.MY_BOOKS);
         }
     }, [activeSession, sessionPhase, hasStopped, navigate, t, toast]);
@@ -89,12 +88,11 @@ export const useReadingSessionLifecycle = ({
             .then((success) => {
                 if (!success) {
                     setStartFailed(true);
-                    toast({
+                    toast(createAppToast({
                         title: t('readingSession.alerts.startError'),
                         status: 'error',
                         duration: 5000,
-                        isClosable: true,
-                    });
+                    }));
                 }
             })
             .finally(() => {
@@ -117,13 +115,12 @@ export const useReadingSessionLifecycle = ({
             }
             event.preventDefault();
             window.history.pushState(null, '', window.location.href);
-            toast({
+            toast(createAppToast({
                 title: t('readingSession.alerts.exitWarning'),
                 status: 'warning',
                 duration: 3000,
-                isClosable: true,
                 position: 'top',
-            });
+            }));
         };
 
         if (activeSession) {

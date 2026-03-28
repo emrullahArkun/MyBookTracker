@@ -33,15 +33,21 @@ const MyBookCard = ({
         <Box
             position="relative"
             transition="transform 0.2s"
-            _hover={{ transform: 'translateY(-4px)' }}
+            _hover={{ transform: 'translateY(-2px)' }}
             w="100%"
             role="group"
             tabIndex={0}
+            p={2}
+            borderRadius="20px"
+            bg="linear-gradient(180deg, rgba(40, 30, 23, 0.92) 0%, rgba(24, 19, 16, 0.98) 100%)"
+            border="1px solid"
+            borderColor="rgba(217, 188, 146, 0.12)"
+            boxShadow="0 16px 28px rgba(8, 6, 4, 0.18)"
         >
             <Box
                 position="absolute"
-                top="6px"
-                right="6px"
+                top="12px"
+                right="12px"
                 zIndex="20"
                 opacity={isSelected ? 1 : 0}
                 _groupHover={{ opacity: 1 }}
@@ -51,9 +57,9 @@ const MyBookCard = ({
                     isChecked={isSelected}
                     onChange={() => onToggleSelect(book.id)}
                     size="lg"
-                    colorScheme="blue"
-                    bg="white"
-                    rounded="md"
+                    colorScheme="orange"
+                    bg="rgba(244, 234, 215, 0.92)"
+                    rounded="sm"
                     aria-label="Select book"
                 />
             </Box>
@@ -62,15 +68,15 @@ const MyBookCard = ({
                 h="280px"
                 position="relative"
                 overflow="hidden"
-                borderRadius="10px"
-                boxShadow="0 2px 8px rgba(0,0,0,0.3)"
+                borderRadius="12px"
+                boxShadow="0 10px 22px rgba(8, 6, 4, 0.28)"
             >
                 <BookCover
                     book={book}
                     w="100%"
                     h="100%"
                     objectFit="cover"
-                    borderRadius="10px"
+                    borderRadius="12px"
                 />
 
                 {book.completed && (
@@ -80,18 +86,18 @@ const MyBookCard = ({
                         left="0"
                         w="100%"
                         h="100%"
-                        bg="rgba(0, 0, 0, 0.4)"
-                        borderRadius="10px"
+                        bg="rgba(20, 15, 12, 0.54)"
+                        borderRadius="12px"
                         alignItems="flex-end"
                         pb="16px"
                     >
                         <Badge
-                            bg="white"
-                            color="black"
-                            fontSize="0.8rem"
+                            bg="rgba(244, 234, 215, 0.9)"
+                            color="#1d1612"
+                            fontSize="0.7rem"
                             px="3"
                             py="1"
-                            borderRadius="md"
+                            borderRadius="sm"
                         >
                             {t('bookCard.finished')}
                         </Badge>
@@ -103,8 +109,7 @@ const MyBookCard = ({
                         <Progress
                             value={progressPercent}
                             size="xs"
-                            colorScheme="green"
-                            bg="blackAlpha.500"
+                            bg="rgba(20, 15, 12, 0.44)"
                             borderRadius="0"
                         />
                     </Box>

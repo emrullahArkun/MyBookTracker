@@ -8,6 +8,20 @@ export type DailyActivity = {
     pagesRead: number;
 };
 
+export type ReadingTimeOfDay = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT' | 'UNKNOWN';
+
+export type ReadingSessionLength = 'SHORT' | 'MEDIUM' | 'LONG' | 'UNKNOWN';
+
+export type ReadingRhythm = {
+    enoughData: boolean;
+    preferredTimeOfDay: ReadingTimeOfDay;
+    preferredSessionLength: ReadingSessionLength;
+    activeDaysLast14: number;
+    sessionsLast14: number;
+    averagePagesPerSession: number;
+    averageMinutesPerSession: number;
+};
+
 export type StatsOverview = {
     totalBooks: number;
     completedBooks: number;
@@ -17,6 +31,7 @@ export type StatsOverview = {
     longestStreak: number;
     genreDistribution: GenreStat[];
     dailyActivity: DailyActivity[];
+    readingRhythm: ReadingRhythm | null;
 };
 
 export type Achievement = {

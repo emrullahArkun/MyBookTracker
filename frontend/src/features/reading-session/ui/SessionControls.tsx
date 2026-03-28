@@ -22,20 +22,18 @@ function SessionControls({
     const { t } = useTranslation();
 
     return (
-        <HStack spacing={4} pt={2}>
+        <HStack spacing={4} pt={2} flexWrap={{ base: 'wrap', md: 'nowrap' }} justify="center">
             {isPaused ? (
                 <Button
                     size="lg"
-                    colorScheme="teal"
-                    borderRadius="xl"
-                    w="150px"
+                    w={{ base: '100%', md: '160px' }}
                     h="56px"
                     leftIcon={<FaPlay />}
                     onClick={resumeSession}
                     isDisabled={!isController || isBusy}
                     isLoading={isBusy}
                     fontSize="md"
-                    _hover={{ transform: 'scale(1.03)' }}
+                    _hover={{ transform: 'translateY(-1px)' }}
                     transition="all 0.15s"
                 >
                     {t('readingSession.controls.resume')}
@@ -43,16 +41,16 @@ function SessionControls({
             ) : (
                 <Button
                     size="lg"
-                    colorScheme="orange"
-                    borderRadius="xl"
-                    w="150px"
+                    bg="#95a17f"
+                    color="#18120f"
+                    w={{ base: '100%', md: '160px' }}
                     h="56px"
                     leftIcon={<FaPause />}
                     onClick={pauseSession}
                     isDisabled={!isController || isBusy}
                     isLoading={isBusy}
                     fontSize="md"
-                    _hover={{ transform: 'scale(1.03)' }}
+                    _hover={{ transform: 'translateY(-1px)', bg: '#a9b695' }}
                     transition="all 0.15s"
                 >
                     {t('readingSession.controls.pause')}
@@ -62,16 +60,15 @@ function SessionControls({
             <Button
                 size="lg"
                 variant="outline"
-                borderRadius="xl"
-                w="150px"
+                w={{ base: '100%', md: '160px' }}
                 h="56px"
                 leftIcon={<FaStop />}
                 onClick={handleStopClick}
                 isDisabled={!isController || isBusy}
                 isLoading={isBusy}
-                color="red.300"
-                borderColor="whiteAlpha.200"
-                _hover={{ bg: 'whiteAlpha.100', borderColor: 'red.400' }}
+                color="#f2b09e"
+                borderColor="rgba(207, 109, 88, 0.3)"
+                _hover={{ bg: 'rgba(207, 109, 88, 0.08)', borderColor: 'rgba(207, 109, 88, 0.4)' }}
                 fontSize="md"
             >
                 {t('readingSession.controls.stop')}

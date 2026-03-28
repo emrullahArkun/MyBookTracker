@@ -7,6 +7,9 @@ import com.example.chapterflow.stats.application.GenreStat;
 import com.example.chapterflow.stats.application.StatsService;
 import com.example.chapterflow.stats.application.StatsOverview;
 import com.example.chapterflow.stats.application.StreakService;
+import com.example.chapterflow.stats.domain.activity.ReadingRhythm;
+import com.example.chapterflow.stats.domain.activity.ReadingSessionLength;
+import com.example.chapterflow.stats.domain.activity.ReadingTimeOfDay;
 import com.example.chapterflow.stats.domain.achievements.Achievement;
 import com.example.chapterflow.stats.domain.achievements.AchievementType;
 import com.example.chapterflow.stats.domain.streak.StreakInfo;
@@ -76,9 +79,10 @@ class StatsControllerTest {
         StatsOverview overview = new StatsOverview(
                 10, 3, 1500, 600, 5, 12,
                 List.of(new GenreStat("Thriller", 4)),
-                List.of(new DailyActivity(LocalDate.now(), 30)));
+                List.of(new DailyActivity(LocalDate.now(), 30)),
+                new ReadingRhythm(true, ReadingTimeOfDay.EVENING, ReadingSessionLength.SHORT, 4, 5, 18, 25));
 
-        when(statsService.getOverview(any())).thenReturn(overview);
+        when(statsService.getOverview(any(), eq((String) null))).thenReturn(overview);
 
         mockMvc.perform(get("/api/stats/overview"))
                 .andExpect(status().isOk())
@@ -87,7 +91,25 @@ class StatsControllerTest {
                 .andExpect(jsonPath("$.totalPagesRead").value(1500))
                 .andExpect(jsonPath("$.currentStreak").value(5))
                 .andExpect(jsonPath("$.genreDistribution[0].genre").value("Thriller"))
-                .andExpect(jsonPath("$.dailyActivity[0].pagesRead").value(30));
+                .andExpect(jsonPath("$.dailyActivity[0].pagesRead").value(30))
+                .andExpect(jsonPath("$.readingRhythm.preferredTimeOfDay").value("EVENING"))
+                .andExpect(jsonPath("$.readingRhythm.averagePagesPerSession").value(18));
+    }
+
+    @Test
+    void getOverview_ShouldUseTimezoneHeader() throws Exception {
+        StatsOverview overview = new StatsOverview(
+                1, 0, 20, 45, 1, 1,
+                List.of(),
+                List.of(),
+                new ReadingRhythm(false, ReadingTimeOfDay.UNKNOWN, ReadingSessionLength.UNKNOWN, 1, 2, 10, 15));
+
+        when(statsService.getOverview(any(), eq("Europe/Berlin"))).thenReturn(overview);
+
+        mockMvc.perform(get("/api/stats/overview")
+                        .header("X-Timezone", "Europe/Berlin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.readingRhythm.sessionsLast14").value(2));
     }
 
     @Test

@@ -108,7 +108,7 @@ const AchievementsPage = () => {
 
     if (loading) {
         return (
-            <Box px={{ base: 4, md: 10 }} py={8} maxW="900px" mx="auto">
+            <Box px={{ base: 4, md: 8 }} py={8} maxW="900px" mx="auto">
                 <Flex align="baseline" gap={3} mb={6}>
                     <Skeleton h={3} w="80px" startColor="whiteAlpha.100" endColor="whiteAlpha.200" borderRadius="md" />
                 </Flex>
@@ -132,7 +132,7 @@ const AchievementsPage = () => {
     const unlockedCount = safeAchievements.filter((achievement) => achievement.unlocked).length;
 
     return (
-        <Box px={{ base: 4, md: 10 }} py={8} maxW="900px" mx="auto">
+        <Box px={{ base: 4, md: 8 }} py={8} maxW="900px" mx="auto">
             <Flex align="baseline" gap={3} mb={6}>
                 <Text fontSize="xs" color="gray.400" fontWeight="600" textTransform="uppercase" letterSpacing="wider">
                     {t('stats.achievements.title')}

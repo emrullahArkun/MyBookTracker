@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthContext } from '../../auth/model/AuthContext';
-import { ReadingSessionProvider } from '../../reading-session/model/ReadingSessionContext';
 import LibraryPage from './LibraryPage';
 import { server } from '../../../mocks/server';
 import { http, HttpResponse } from 'msw';
@@ -12,11 +11,27 @@ import { http, HttpResponse } from 'msw';
 import '../../../app/i18n';
 
 const mockNavigate = vi.fn();
+const mockReadingSessionContext = vi.fn();
+const mockToast = vi.fn();
+
 vi.mock('react-router-dom', async () => {
     const actual = await vi.importActual('react-router-dom');
     return {
         ...actual,
         useNavigate: () => mockNavigate,
+    };
+});
+
+vi.mock('../../reading-session/model/ReadingSessionContext', () => ({
+    ReadingSessionProvider: ({ children }) => children,
+    useReadingSessionContext: () => mockReadingSessionContext(),
+}));
+
+vi.mock('@chakra-ui/react', async () => {
+    const actual = await vi.importActual('@chakra-ui/react');
+    return {
+        ...actual,
+        useToast: () => mockToast,
     };
 });
 
@@ -33,11 +48,9 @@ const createTestWrapper = () => {
     return ({ children }) => (
         <AuthContext.Provider value={{ token: 'fake-token', user: { email: 'test@example.com' } }}>
             <QueryClientProvider client={queryClient}>
-                <ReadingSessionProvider>
-                    <MemoryRouter>
-                        {children}
-                    </MemoryRouter>
-                </ReadingSessionProvider>
+                <MemoryRouter>
+                    {children}
+                </MemoryRouter>
             </QueryClientProvider>
         </AuthContext.Provider>
     );
@@ -46,6 +59,8 @@ const createTestWrapper = () => {
 describe('MyBooks Component', () => {
     beforeEach(() => {
         mockNavigate.mockClear();
+        mockToast.mockClear();
+        mockReadingSessionContext.mockReturnValue({ activeSession: null });
     });
 
     it('shows loading state initially', () => {
@@ -113,6 +128,99 @@ describe('MyBooks Component', () => {
         expect(screen.getByText('1 / 1')).toBeInTheDocument();
         expect(screen.getByLabelText(/Previous Page/i)).toBeDisabled();
         expect(screen.getByLabelText(/Next Page/i)).toBeDisabled();
+    });
+
+    it('groups books into current, next, and finished sections', async () => {
+        server.use(
+            http.get('/api/books', () => HttpResponse.json({
+                content: [
+                    { id: 1, title: 'Current Book', authorName: 'Author 1', currentPage: 45, pageCount: 300, completed: false, coverUrl: 'http://example.com/current.jpg', user: { id: 1 } },
+                    { id: 2, title: 'Next Book', authorName: 'Author 2', currentPage: 0, pageCount: 250, completed: false, readingGoalType: 'WEEKLY', coverUrl: 'http://example.com/next.jpg', user: { id: 1 } },
+                    { id: 3, title: 'Finished Book', authorName: 'Author 3', currentPage: 210, pageCount: 210, completed: true, coverUrl: 'http://example.com/finished.jpg', user: { id: 1 } },
+                ],
+                totalElements: 3,
+                totalPages: 1,
+                number: 0,
+            }))
+        );
+
+        render(<LibraryPage />, { wrapper: createTestWrapper() });
+
+        expect(await screen.findByText('Books already in motion should be the easiest ones to continue.')).toBeInTheDocument();
+        expect(screen.getByText('Books you can ease into next.')).toBeInTheDocument();
+        expect(screen.getByText('Completed books stay visible, but out of the way.')).toBeInTheDocument();
+        expect(screen.getByText('Books already in motion should be the easiest ones to continue.')).toBeInTheDocument();
+    });
+
+    it('prioritizes the active session book and uses the active-session hint', async () => {
+        mockReadingSessionContext.mockReturnValue({ activeSession: { bookId: 2 } });
+        server.use(
+            http.get('/api/books', () => HttpResponse.json({
+                content: [
+                    { id: 1, title: 'Later Current Book', authorName: 'Author 1', currentPage: 90, pageCount: 300, completed: false, coverUrl: 'http://example.com/later.jpg', user: { id: 1 } },
+                    { id: 2, title: 'Active Session Book', authorName: 'Author 2', currentPage: 20, pageCount: 200, completed: false, coverUrl: 'http://example.com/active.jpg', user: { id: 1 } },
+                ],
+                totalElements: 2,
+                totalPages: 1,
+                number: 0,
+            }))
+        );
+
+        render(<LibraryPage />, { wrapper: createTestWrapper() });
+
+        expect(await screen.findByText('Your active session stays at the front so you can jump back in quickly.')).toBeInTheDocument();
+
+        const currentReadCards = await screen.findAllByRole('img');
+        expect(currentReadCards[0]).toHaveAttribute('alt', 'Active Session Book');
+    });
+
+    it('hides sections that have no books', async () => {
+        server.use(
+            http.get('/api/books', () => HttpResponse.json({
+                content: [
+                    { id: 3, title: 'Finished Only', authorName: 'Author 3', currentPage: 210, pageCount: 210, completed: true, coverUrl: 'http://example.com/finished-only.jpg', user: { id: 1 } },
+                ],
+                totalElements: 1,
+                totalPages: 1,
+                number: 0,
+            }))
+        );
+
+        render(<LibraryPage />, { wrapper: createTestWrapper() });
+
+        expect(await screen.findByText('Completed books stay visible, but out of the way.')).toBeInTheDocument();
+        expect(screen.queryByText('Books already in motion should be the easiest ones to continue.')).not.toBeInTheDocument();
+        expect(screen.queryByText('Books you can ease into next.')).not.toBeInTheDocument();
+    });
+
+    it('shows a toast when deleting selected books fails', async () => {
+        server.use(
+            http.get('/api/books', () => HttpResponse.json({
+                content: [{ id: 1, title: 'Test Book 1', authorName: 'Author 1', coverUrl: 'http://example.com/cover1.jpg', readingProgress: 0, pageCount: 300, completed: false, user: { id: 1 } }],
+                totalElements: 1,
+                totalPages: 1,
+                number: 0
+            })),
+            http.delete('/api/books/1', () => new HttpResponse(null, { status: 500 }))
+        );
+
+        const user = userEvent.setup();
+        render(<LibraryPage />, { wrapper: createTestWrapper() });
+
+        const book1Cover = await screen.findByAltText('Test Book 1');
+        const checkbox = within(book1Cover.closest('div[role="group"]')).getByRole('checkbox');
+        await user.click(checkbox);
+
+        await user.click(await screen.findByText(/Delete \(1\)/i));
+        const dialog = screen.getByRole('alertdialog');
+        await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+
+        await waitFor(() => {
+            expect(mockToast).toHaveBeenCalledTimes(1);
+        });
+
+        render(mockToast.mock.calls[0][0].render());
+        expect(screen.getByText(/Error:/i)).toBeInTheDocument();
     });
 
     it('navigates to search when clicking the search button in empty state', async () => {

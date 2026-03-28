@@ -1,6 +1,15 @@
+import type { ReactNode } from 'react';
 import { Box, Text } from '@chakra-ui/react';
 
-const KpiBox = ({ value, label, valueColor, borderColor = 'whiteAlpha.100', children }) => (
+type KpiBoxProps = {
+    value?: string | number;
+    label: string;
+    valueColor?: string;
+    borderColor?: string;
+    children?: ReactNode;
+};
+
+const KpiBox = ({ value, label, valueColor, borderColor = 'whiteAlpha.100', children }: KpiBoxProps) => (
     <Box
         bg="whiteAlpha.100"
         borderRadius="xl"

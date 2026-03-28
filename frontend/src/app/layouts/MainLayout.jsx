@@ -1,26 +1,28 @@
-import { Outlet, useMatch, useNavigate } from 'react-router-dom';
-import { Box, Flex, useToast } from '@chakra-ui/react';
+import { Outlet, useLocation, useMatch, useNavigate } from 'react-router-dom';
+import { Box, Flex } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import Navbar from '../navigation/Navbar';
 import { useReadingSessionContext } from '../../features/reading-session/model/ReadingSessionContext';
+import { ROUTES } from '../router/routes';
 
-const MainLayout = ({ fullWidth = false }) => {
+const MotionBox = motion(Box);
+
+const MainLayout = () => {
     const { t } = useTranslation();
     const isSessionPage = useMatch('/books/:id/session');
-
-    const toast = useToast();
-
-    const handleOverlayClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toast({
-            title: t('readingSession.alerts.exitWarning'),
-            status: 'warning',
-            duration: 3000,
-            isClosable: true,
-            position: 'top'
-        });
-    };
+    const location = useLocation();
+    const isGoalsPage = useMatch(ROUTES.GOALS);
+    const isLibraryPage = useMatch(ROUTES.MY_BOOKS);
+    const isStatsOverviewPage = useMatch(ROUTES.STATS);
+    const isBookStatsPage = useMatch(ROUTES.BOOK_STATS(':id'));
+    const isFullWidthRoute = Boolean(
+        isGoalsPage
+        || isLibraryPage
+        || isStatsOverviewPage
+        || isBookStatsPage
+        || isSessionPage
+    );
 
     const { activeSession } = useReadingSessionContext();
     const navigate = useNavigate();
@@ -31,59 +33,119 @@ const MainLayout = ({ fullWidth = false }) => {
     return (
         <Box
             minH="100vh"
-            bg="var(--accent-800)"
-            backgroundImage="repeating-linear-gradient(to right, transparent, transparent 39px, rgba(0, 0, 0, 0.1) 40px, rgba(0, 0, 0, 0.1) 41px)"
+            position="relative"
+            overflow="hidden"
+            bg="#17110d"
         >
+            <Box position="fixed" inset={0} pointerEvents="none" zIndex={0}>
+                <Box
+                    position="absolute"
+                    inset={0}
+                    bg="linear-gradient(180deg, #1f1712 0%, #17110d 46%, #130f0c 100%)"
+                />
+                <Box
+                    position="absolute"
+                    inset={0}
+                    opacity={0.22}
+                    bgImage="linear-gradient(90deg, rgba(246, 239, 223, 0.015) 1px, transparent 1px), linear-gradient(180deg, rgba(246, 239, 223, 0.018) 1px, transparent 1px)"
+                    bgSize="80px 80px, 80px 80px"
+                />
+                <Box
+                    position="absolute"
+                    inset={0}
+                    opacity={0.12}
+                    bg="linear-gradient(180deg, rgba(246, 239, 223, 0.03) 0%, transparent 26%), radial-gradient(circle at top left, rgba(197, 154, 92, 0.14) 0%, rgba(197, 154, 92, 0) 34%)"
+                />
+                <Box
+                    position="absolute"
+                    top={0}
+                    left={{ base: '18px', md: '36px' }}
+                    bottom={0}
+                    w="1px"
+                    bg="linear-gradient(180deg, rgba(217, 188, 146, 0.26) 0%, rgba(217, 188, 146, 0.03) 32%, rgba(217, 188, 146, 0.08) 100%)"
+                />
+                <Box
+                    position="absolute"
+                    top="-10rem"
+                    right="-8rem"
+                    w="28rem"
+                    h="28rem"
+                    borderRadius="full"
+                    bg="radial-gradient(circle, rgba(99, 87, 61, 0.18) 0%, rgba(99, 87, 61, 0) 72%)"
+                />
+                <Box
+                    position="absolute"
+                    bottom="-8rem"
+                    left="-6rem"
+                    w="24rem"
+                    h="24rem"
+                    borderRadius="full"
+                    bg="radial-gradient(circle, rgba(197, 154, 92, 0.08) 0%, rgba(197, 154, 92, 0) 74%)"
+                />
+            </Box>
+
             <Box position="relative">
                 {showSessionAlert && (
                     <Box
                         position="fixed"
-                        top="20px"
-                        left={0}
-                        right={0}
-                        mx="auto"
+                        top={{ base: '90px', md: '102px' }}
+                        right={{ base: '20px', md: '32px' }}
                         zIndex="toast"
-                        width="fit-content"
+                        width={{ base: 'calc(100% - 40px)', md: 'auto' }}
                     >
                         <Flex
                             as="button"
-                            bg="teal.500"
-                            color="white"
-                            px={6}
+                            bg="linear-gradient(180deg, rgba(39, 29, 22, 0.96) 0%, rgba(27, 21, 17, 0.98) 100%)"
+                            color="#f4ead7"
+                            px={{ base: 4, md: 5 }}
                             py={3}
-                            borderRadius="full"
-                            boxShadow="lg"
+                            borderRadius="lg"
+                            border="1px solid"
+                            borderColor="rgba(217, 188, 146, 0.18)"
+                            boxShadow="0 18px 34px rgba(8, 6, 4, 0.24)"
                             align="center"
                             gap={3}
                             cursor="pointer"
-                            transition="transform 0.2s"
-                            _hover={{ transform: 'scale(1.05)' }}
+                            transition="transform 0.2s, border-color 0.2s"
+                            _hover={{ transform: 'translateY(-1px)', borderColor: 'rgba(217, 188, 146, 0.3)' }}
                             onClick={() => navigate(`/books/${activeSession.bookId}/session`)}
                         >
-                            <Box as="span" fontWeight="bold">⚠️ {t('session.returnToSession')}</Box>
+                            <Box
+                                w="11px"
+                                h="11px"
+                                borderRadius="sm"
+                                bg="#c59a5c"
+                                flexShrink={0}
+                            />
+                            <Box textAlign="left">
+                                <Box as="span" display="block" fontSize="xs" textTransform="uppercase" letterSpacing="0.14em" color="rgba(217, 204, 182, 0.56)">
+                                    {t('session.kicker')}
+                                </Box>
+                                <Box as="span" display="block" fontWeight="600">
+                                    {t('session.returnToSession')}
+                                </Box>
+                                <Box as="span" display="block" fontSize="sm" color="rgba(217, 204, 182, 0.74)">
+                                    {t('session.returnHint')}
+                                </Box>
+                            </Box>
                         </Flex>
                     </Box>
                 )}
-                <Navbar />
-                {isSessionPage && (
-                    <Box
-                        position="fixed"
-                        top={0}
-                        left={0}
-                        right={0}
-                        h="90px"
-                        zIndex="overlay"
-                        cursor="not-allowed"
-                        bg="transparent"
-                        onClick={handleOverlayClick}
-                    />
-                )}
+                <Navbar sessionMode={Boolean(isSessionPage)} />
             </Box>
             <Box
-                className="main-layout-content"
-                {...(fullWidth && { maxW: '100%', pl: 0, pr: 0 })}
+                className={`main-layout-content${isSessionPage ? ' main-layout-content--session' : ''}`}
+                {...(isFullWidthRoute && { maxW: '100%', pl: 0, pr: 0 })}
             >
-                <Outlet />
+                <MotionBox
+                    key={location.pathname}
+                    className="main-layout-scene"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                >
+                    <Outlet />
+                </MotionBox>
             </Box>
         </Box>
     );

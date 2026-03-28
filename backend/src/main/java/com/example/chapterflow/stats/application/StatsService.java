@@ -5,6 +5,9 @@ import com.example.chapterflow.books.infra.persistence.BookRepository;
 import com.example.chapterflow.sessions.domain.ReadingSession;
 import com.example.chapterflow.sessions.domain.SessionStatus;
 import com.example.chapterflow.sessions.infra.persistence.ReadingSessionRepository;
+import com.example.chapterflow.shared.time.ZoneIdResolver;
+import com.example.chapterflow.stats.domain.activity.ReadingRhythm;
+import com.example.chapterflow.stats.domain.activity.ReadingRhythmAnalyzer;
 import com.example.chapterflow.stats.domain.activity.SessionAnalyzer;
 import com.example.chapterflow.stats.domain.streak.StreakInfo;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -28,25 +32,31 @@ public class StatsService {
     private final Clock clock;
 
     public StatsOverview getOverview(User user) {
+        return getOverview(user, null);
+    }
+
+    public StatsOverview getOverview(User user, String timezone) {
+        ZoneId zoneId = ZoneIdResolver.resolveOrUtc(timezone);
         long totalBooks = bookRepository.countByUser(user);
         long completedBooks = bookRepository.countByUserAndCompletedTrue(user);
         long totalPagesRead = sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED);
 
-        Instant since = LocalDate.now(clock).minusYears(1).atStartOfDay(clock.getZone()).toInstant();
+        Instant since = LocalDate.now(clock.withZone(zoneId)).minusYears(1).atStartOfDay(zoneId).toInstant();
         List<ReadingSession> sessions = sessionRepository.findCompletedSessionsSince(user, since, SessionStatus.COMPLETED);
 
         long totalReadingMinutes = calculateTotalMinutes(sessions);
-        Map<LocalDate, Integer> dailyPagesMap = SessionAnalyzer.getDailyPagesMap(sessions);
+        Map<LocalDate, Integer> dailyPagesMap = SessionAnalyzer.getDailyPagesMap(sessions, zoneId);
         List<DailyActivity> dailyActivity = dailyPagesMap.entrySet().stream()
                 .map(e -> new DailyActivity(e.getKey(), e.getValue()))
                 .toList();
         List<GenreStat> genreDistribution = buildGenreDistribution(user);
+        ReadingRhythm readingRhythm = ReadingRhythmAnalyzer.analyze(sessions, clock, zoneId);
 
-        StreakInfo streakInfo = streakService.calculateStreaks(user);
+        StreakInfo streakInfo = streakService.calculateStreaks(user, zoneId);
 
         return new StatsOverview(
                 totalBooks, completedBooks, totalPagesRead, totalReadingMinutes,
-                streakInfo.current(), streakInfo.longest(), genreDistribution, dailyActivity);
+                streakInfo.current(), streakInfo.longest(), genreDistribution, dailyActivity, readingRhythm);
     }
 
     private long calculateTotalMinutes(List<ReadingSession> sessions) {

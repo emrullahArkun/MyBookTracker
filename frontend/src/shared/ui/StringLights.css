@@ -21,7 +21,7 @@
 
 /* Adjust curve calculation visually */
 .string-lights__cord {
-    stroke: var(--neutral-600);
+    stroke: rgba(198, 206, 222, 0.32);
 }
 
 .string-lights__bulb-wrapper {
@@ -39,20 +39,21 @@
     /* Slightly wider base */
     height: 3px;
     /* Very short - just a connector, virtually "directly on rope" */
-    background-color: var(--neutral-800);
+    background-color: #33405a;
 }
 
 /* Updated larger, round HTML bulb */
 .string-lights__bulb {
-    width: 14px;
+    width: 13px;
     /* Larger size */
-    height: 14px;
+    height: 13px;
     border-radius: 50%;
     /* Perfect circle */
     background-color: var(--neutral-300);
     /* Off state */
     transition: background-color 0.3s ease;
-    animation: glow-html 2s ease-in-out infinite alternate;
+    border: 1px solid rgba(255, 246, 230, 0.26);
+    animation: glow-html 2.6s ease-in-out infinite alternate;
 }
 
 @keyframes sway {
@@ -67,12 +68,12 @@
 
 @keyframes glow-html {
     0% {
-        opacity: 0.7;
+        opacity: 0.72;
         filter: brightness(0.8);
     }
 
     100% {
         opacity: 1;
-        filter: brightness(1.3);
+        filter: brightness(1.25);
     }
 }

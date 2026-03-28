@@ -27,27 +27,29 @@ function SessionStatusDisplay({
         <>
             <HStack align="center" color={brandColor} spacing={2}>
                 <Icon as={FaBookOpen} boxSize={3.5} />
-                <Text fontWeight="600" letterSpacing="wider" textTransform="uppercase" fontSize="xs">
+                <Text fontWeight="700" letterSpacing="0.14em" textTransform="uppercase" fontSize="0.68rem">
                     {t('readingSession.activeSession')}
                 </Text>
             </HStack>
 
             <Box>
                 <Text
-                    fontSize={{ base: '6xl', md: '8xl' }}
+                    fontSize={{ base: '5xl', md: '7xl' }}
                     fontWeight="bold"
-                    fontFamily="monospace"
-                    color={isPaused ? 'gray.500' : 'white'}
+                    fontFamily="heading"
+                    letterSpacing="-0.05em"
+                    color={isPaused ? 'rgba(217, 204, 182, 0.56)' : '#f4ead7'}
                     lineHeight="1"
                 >
                     {formattedTime}
                 </Text>
                 <Text
-                    color={isPaused ? 'orange.300' : 'gray.500'}
+                    color={isPaused ? brandColor : 'rgba(217, 204, 182, 0.58)'}
                     mt={2}
-                    fontWeight="500"
+                    fontWeight="600"
                     fontSize="sm"
-                    letterSpacing="wide"
+                    letterSpacing="0.12em"
+                    textTransform="uppercase"
                 >
                     {getSessionStatusLabel({ isPaused, isBusy, sessionPhase, t })}
                 </Text>

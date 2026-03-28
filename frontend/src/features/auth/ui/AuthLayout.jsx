@@ -23,7 +23,7 @@ export const AuthLayout = ({ children, title, icon }) => {
     return (
         <div className="auth-layout">
             <div className="auth-layout__language-switcher">
-                <LanguageSwitcher />
+                <LanguageSwitcher variant="auth" />
             </div>
 
             {/* Brand Panel (Desktop Only) */}

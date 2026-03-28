@@ -19,28 +19,28 @@ const GoalCard = ({ book, index }) => {
 
     return (
         <MotionBox
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
-            bg="whiteAlpha.100"
+            transition={{ duration: 0.28, delay: index * 0.05 }}
+            bg="rgba(248, 236, 214, 0.04)"
             border="1px solid"
-            borderColor={isFinished ? 'green.700' : 'whiteAlpha.100'}
-            borderRadius="xl"
+            borderColor={isFinished ? 'rgba(126, 151, 112, 0.38)' : 'rgba(217, 188, 146, 0.12)'}
+            borderRadius="lg"
             p={5}
             cursor="pointer"
-            _hover={{ bg: 'whiteAlpha.200', transform: 'translateY(-2px)', transition: 'all 0.2s' }}
+            _hover={{ bg: 'rgba(248, 236, 214, 0.06)', borderColor: 'rgba(217, 188, 146, 0.24)', transform: 'translateY(-1px)', transition: 'all 0.2s' }}
             onClick={() => navigate(ROUTES.BOOK_STATS(book.id))}
         >
             <VStack align="start" spacing={3} w="full">
                 <HStack justify="space-between" w="full">
-                    <Text fontWeight="bold" fontSize="md" color="white" noOfLines={1} flex="1">
+                    <Text fontWeight="600" fontSize="lg" color="#f4ead7" noOfLines={1} flex="1" fontFamily="heading" letterSpacing="-0.02em">
                         {book.title}
                     </Text>
                     <Badge
                         size="sm"
-                        colorScheme={book.readingGoalType === 'WEEKLY' ? 'purple' : 'blue'}
-                        variant="subtle"
-                        fontSize="xs"
+                        bg="rgba(197, 154, 92, 0.12)"
+                        color="#d9bc92"
+                        variant="solid"
                         flexShrink={0}
                     >
                         {book.readingGoalType === 'WEEKLY' ? t('home.frequency.weekly') : t('home.frequency.monthly')}
@@ -48,7 +48,7 @@ const GoalCard = ({ book, index }) => {
                 </HStack>
 
                 {book.author && (
-                    <Text fontSize="sm" color="gray.500" noOfLines={1}>
+                    <Text fontSize="sm" color="rgba(217, 204, 182, 0.68)" noOfLines={1}>
                         {book.author}
                     </Text>
                 )}
@@ -56,7 +56,7 @@ const GoalCard = ({ book, index }) => {
                 <HStack justify="space-between" w="full">
                     <Box>
                         {isFinished ? (
-                            <HStack spacing={1} color="green.300">
+                            <HStack spacing={1} color="#95a17f">
                                 <Icon as={FaCheckCircle} />
                                 <Text fontSize="sm" fontWeight="bold">{t('home.completedGoals')}</Text>
                                 {multiplier >= 2 && (
@@ -64,7 +64,7 @@ const GoalCard = ({ book, index }) => {
                                 )}
                             </HStack>
                         ) : (
-                            <Text fontSize="sm" color="gray.400">
+                            <Text fontSize="sm" color="rgba(217, 204, 182, 0.64)">
                                 {progress} / {target} {t('bookStats.pages')}
                             </Text>
                         )}
@@ -72,7 +72,8 @@ const GoalCard = ({ book, index }) => {
                     <Text
                         fontWeight="bold"
                         fontSize="lg"
-                        color={isFinished ? 'green.300' : 'teal.200'}
+                        color={isFinished ? '#95a17f' : '#d9bc92'}
+                        fontFamily="heading"
                     >
                         {percent}%
                     </Text>
@@ -82,9 +83,9 @@ const GoalCard = ({ book, index }) => {
                     value={percent}
                     size="sm"
                     w="full"
-                    colorScheme={isFinished ? 'green' : 'teal'}
+                    colorScheme={isFinished ? 'green' : undefined}
                     borderRadius="full"
-                    bg="whiteAlpha.200"
+                    bg="rgba(248, 236, 214, 0.08)"
                 />
             </VStack>
         </MotionBox>

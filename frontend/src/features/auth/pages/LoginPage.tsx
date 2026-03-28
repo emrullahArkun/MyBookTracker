@@ -3,7 +3,6 @@ import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { ROUTES } from '../../../app/router/routes';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../model/AuthContext';
-import { useToast } from '@chakra-ui/react';
 import { MdEmail, MdLock, MdLogin } from 'react-icons/md';
 import { authApi } from '../api/authApi';
 import { getErrorMessage } from '../../../shared/lib/errorUtils';
@@ -25,7 +24,6 @@ function LoginPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
     const location = useLocation() as ReturnType<typeof useLocation> & { state: LocationState | null };
-    const toast = useToast();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -50,14 +48,6 @@ function LoginPage() {
             }
 
             login(data.user);
-            toast({
-                title: t('auth.login.title'),
-                description: t('auth.login.success'),
-                status: 'success',
-                duration: 3000,
-                isClosable: true,
-                position: 'top-right',
-            });
 
             const from = location.state?.from?.pathname || '/';
             navigate(from, { replace: true });

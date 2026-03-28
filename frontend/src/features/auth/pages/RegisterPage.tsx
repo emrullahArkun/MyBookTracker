@@ -9,9 +9,11 @@ import { getErrorMessage } from '../../../shared/lib/errorUtils';
 import { AuthLayout } from '../ui/AuthLayout';
 import { TextField } from '../../../shared/ui/TextField';
 import { Button } from '../../../shared/ui/Button';
+import { createAppToast } from '../../../shared/ui/AppToast';
+import styles from './RegisterPage.module.css';
 
 const linkStyle: CSSProperties = {
-    color: 'var(--primary-base)',
+    color: '#f3c785',
     fontWeight: 600,
     textDecoration: 'none',
     fontSize: '0.875rem',
@@ -81,24 +83,22 @@ function RegisterPage() {
         try {
             await authApi.register(email, password);
 
-            toast({
+            toast(createAppToast({
                 title: t('auth.register.title'),
                 description: t('auth.register.success'),
                 status: 'success',
                 duration: 5000,
-                isClosable: true,
                 position: 'top-right',
-            });
+            }));
             navigate(ROUTES.LOGIN);
         } catch (err) {
-            toast({
+            toast(createAppToast({
                 title: t('auth.errorTitle'),
                 description: getErrorMessage(err, t('auth.errorTitle')),
                 status: 'error',
                 duration: 5000,
-                isClosable: true,
                 position: 'top-right',
-            });
+            }));
         } finally {
             setIsLoading(false);
         }
@@ -109,8 +109,8 @@ function RegisterPage() {
             title={t('auth.register.title')}
             icon={<MdAppRegistration />}
         >
-            <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmit} noValidate className={styles.form}>
+                <div className={styles.inputsContainer}>
                     <TextField
                         label={t('auth.email')}
                         type="email"
@@ -152,16 +152,16 @@ function RegisterPage() {
                     type="submit"
                     variant="primary"
                     isLoading={isLoading}
-                    style={{ width: '100%' }}
+                    className={styles.submitButton}
                 >
                     {t('auth.register.button')}
                 </Button>
 
-                <div style={{ textAlign: 'center' }}>
-                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                <div className={styles.footer}>
+                    <span className={styles.footerText}>
                         {t('auth.register.loginLink')}{' '}
                     </span>
-                    <RouterLink to={ROUTES.LOGIN} style={linkStyle}>
+                    <RouterLink to={ROUTES.LOGIN} style={linkStyle} className={styles.loginLink}>
                         {t('auth.login.button')}
                     </RouterLink>
                 </div>

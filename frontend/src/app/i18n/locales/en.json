@@ -1,6 +1,7 @@
 {
     "navbar": {
         "brand": "ChapterFlow",
+        "focus": "Home",
         "goals": "My Goals",
         "discovery": "Discover",
         "search": "Search",
@@ -9,10 +10,95 @@
         "login": "Login",
         "session": "Reading Session",
         "stats": "Statistics",
-        "overview": "Dashboard",
+        "overview": "Insights",
         "achievements": "Achievements"
     },
     "home": {
+        "greeting": {
+            "morning": "Good morning.",
+            "afternoon": "Good afternoon.",
+            "evening": "Good evening.",
+            "night": "Late night reading?"
+        },
+        "lastActivity": "Yesterday you read {{pages}} pages of {{title}}.",
+        "lastActivityToday": "You already read {{pages}} pages of {{title}} today.",
+        "lastActivityNone": "Pick up where you left off, or start something new.",
+        "thisWeek": "This Week",
+        "weekDays": ["M", "T", "W", "T", "F", "S", "S"],
+        "readingPulse": "Reading Pulse",
+        "nextAchievement": "Next up",
+        "achievementProgress": "{{current}}/{{target}} {{unit}}",
+        "focusBadge": "Reading Moment",
+        "focusTitle": "Start with the book that already matters.",
+        "focusSubtitle": "ChapterFlow helps you begin, continue, and finish real reading sessions without side quests first.",
+        "ledgerTitle": "Reading ledger",
+        "journalLabel": "ChapterFlow Journal",
+        "focusBookLabel": "Book for now",
+        "continueReadingLabel": "Continue reading",
+        "todaySuggestion": {
+            "label": "Good for today",
+            "finishTitle": "{{pages}} pages left in {{title}}.",
+            "finishBody": "That would let you finish {{title}} without turning it into a big push.",
+            "progressTitle": "{{pages}} pages in {{title}} feel doable today.",
+            "progressBody": "That would take you to about page {{targetPage}}.",
+            "emptyTitle": "A gentle start is enough.",
+            "emptyBody": "As soon as you pick a book, this spot will suggest a stretch that feels manageable today."
+        },
+        "rhythm": {
+            "label": "Reading rhythm",
+            "summaryTitle": "You tend to read most {{timeOfDay}} right now.",
+            "summaryBody": "{{sessionLength}} stretches of about {{minutes}} minutes and roughly {{pages}} pages seem to fit you best at the moment.",
+            "buildingTitle": "Your reading rhythm is starting to show.",
+            "buildingBody": "Over the last 14 days that meant {{sessions}} sessions across {{days}} days.",
+            "emptyTitle": "This is where a rhythm can start to form.",
+            "emptyBody": "A few calm sessions are enough for this space to show when and how reading feels easiest for you.",
+            "timeOfDay": {
+                "MORNING": "in the morning",
+                "AFTERNOON": "in the afternoon",
+                "EVENING": "in the evening",
+                "NIGHT": "late at night",
+                "UNKNOWN": "across the day"
+            },
+            "sessionLength": {
+                "SHORT": "Shorter",
+                "MEDIUM": "Medium-length",
+                "LONG": "Longer",
+                "UNKNOWN": "Calmer"
+            },
+            "consistency": {
+                "steady": "This already looks pleasantly steady.",
+                "growing": "A good rhythm is starting to take shape.",
+                "light": "Even a few sessions are enough to bring reading closer again.",
+                "empty": "No pattern yet, but room for one."
+            }
+        },
+        "restart": {
+            "label": "Easy way back in",
+            "currentTitle": "{{title}} is the easiest way back in.",
+            "currentBody": "You are already on page {{page}}, so there is no need to build momentum from scratch.",
+            "queuedTitle": "{{title}} looks like a gentle next start.",
+            "queuedBody": "If you want something new, this one should be the easiest book to ease into.",
+            "emptyTitle": "Your library can start small.",
+            "emptyBody": "As soon as a book is there, this spot will show the easiest path back into reading."
+        },
+        "currentSessionLabel": "Resume your session",
+        "currentBookLabel": "Current read",
+        "progressLabel": "Progress",
+        "resumeSession": "Return to session",
+        "startSession": "Start reading now",
+        "openLibrary": "Open library",
+        "noCurrentBook": "Pick one book to turn into your reading routine.",
+        "noCurrentBookHint": "Add a book or choose one from your library, then jump straight into a calm reading session.",
+        "findBook": "Find a book",
+        "activeBooks": "Reading Now",
+        "activeGoals": "Active Goals",
+        "completedBooks": "Finished",
+        "nextUp": "Next Up",
+        "nextUpHint": "A small queue keeps reading simple.",
+        "viewLibrary": "View library",
+        "queueEmpty": "No other active books yet. Staying with one book for now is enough.",
+        "goalSectionHint": "Goals should support your reading habit, not distract from it.",
+        "viewGoals": "View goals",
         "goals": "My Goals",
         "yourTargets": "Your Goals",
         "noGoals": "No active goals",
@@ -56,6 +142,9 @@
     },
     "myBooks": {
         "title": "My Library",
+        "editorialTitle": "Arrange your books by the reading energy they carry right now.",
+        "focusHint": "Organize your library around what you are reading now, what is next, and what you already finished.",
+        "selected": "Selected",
         "deleteSelected": "Delete Selected",
         "deleteSelectedCount": "Delete ({{count}})",
         "deleteAll": "Delete All",
@@ -74,6 +163,15 @@
         "empty": {
             "line1": "No books in your library yet.",
             "line2": "Go to search to add books!"
+        },
+        "sections": {
+            "current": "Current Reads",
+            "currentHint": "Books already in motion should be the easiest ones to continue.",
+            "currentHintActive": "Your active session stays at the front so you can jump back in quickly.",
+            "next": "Up Next",
+            "nextHint": "Books you can ease into next.",
+            "finished": "Finished",
+            "finishedHint": "Completed books stay visible, but out of the way."
         }
     },
     "bookCard": {
@@ -138,13 +236,18 @@
                 "track": "Track your library",
                 "trackDesc": "Add, remove, and organize the books in your personal collection.",
                 "time": "Time your sessions",
-                "timeDesc": "Track your daily reading time with a built-in focus timer.",
+                "timeDesc": "Track your daily reading time with a built-in reading timer.",
                 "visualize": "Visualize progress",
                 "visualizeDesc": "See your reading habits and progress through beautiful analytics."
             }
         }
     },
     "readingSession": {
+        "focusBadge": "Reading Space",
+        "focusSubtitle": "A calmer session view helps the act of reading feel intentional instead of transactional.",
+        "focusSubtitleDeep": "Reading mode removes extra context so the page, the timer, and your next quiet stretch stay at the center.",
+        "focusMode": "Reading Mode",
+        "focusModeHint": "This view keeps only what matters right now: the book, the timer, and your next few pages.",
         "start": "Start Reading",
         "stop": "Stop",
         "finishOther": "Finish your other session first",
@@ -152,9 +255,35 @@
         "failedStart": "Failed to start session",
         "pagesReadAlert": "Great job! You read {{pages}} pages today.",
         "activeSession": "Active Session",
+        "currentBook": "Current Book",
         "currentSession": "Current Reading Session",
         "paused": "PAUSED",
         "readingPrompt": "KEEP READING...",
+        "cozyLine": "Stay with {{author}} for a while. Quiet progress still counts.",
+        "sidebarHint": "Keep this session gentle and steady. You do not need a perfect sprint for it to matter.",
+        "completion": {
+            "badge": "Session Complete",
+            "title": "You made real progress.",
+            "subtitle": "This session carried you {{pages}} pages further.",
+            "startLabel": "Page started",
+            "endLabel": "Page reached"
+        },
+        "ambientModes": {
+            "quiet": "Quiet",
+            "warm": "Warm",
+            "night": "Night"
+        },
+        "ambience": {
+            "quiet": "Let the rest fade back for a bit. {{title}} only needs your next calm stretch.",
+            "warm": "Keep the pace gentle and warm. A few quiet pages of {{title}} already count.",
+            "night": "Let the room go softer. {{title}} can be a small evening ritual, not a performance.",
+            "paused": "Pause is fine. Breathe, reset, and continue when the page feels ready."
+        },
+        "metrics": {
+            "currentPage": "Current Page",
+            "pagesLeft": "Pages Left",
+            "progress": "Book Progress"
+        },
         "notes": {
             "title": "Session Notes",
             "placeholder": "Thoughts, quotes, or ideas...",
@@ -171,6 +300,8 @@
             "resume": "Resume",
             "pause": "Pause",
             "stop": "Stop",
+            "enterFocus": "Read without distractions",
+            "showContext": "Show more",
             "save": "Save",
             "cancel": "Cancel"
         },
@@ -229,9 +360,14 @@
         "unknownAuthor": "Unknown Author"
     },
     "session": {
-        "returnToSession": "Return to Session"
+        "kicker": "Reading session",
+        "returnToSession": "Return to Session",
+        "returnHint": "Your reading space is still open."
     },
     "stats": {
+        "badge": "Insights",
+        "title": "See the reading rhythm that is actually working.",
+        "subtitle": "These signals focus on consistency and momentum, not on collecting charts for their own sake.",
         "books": "Books Read",
         "booksOf": "of {{total}} in library",
         "pages": "Pages",
@@ -240,8 +376,25 @@
         "timeSpent": "Time invested",
         "streak": "Streak",
         "streakBest": "Best: {{best}} days",
+        "readingDaysWeek": "Reading Days",
+        "readingDaysWeekHint": "Days with reading this week",
+        "pagesWeek": "Pages This Week",
+        "pagesWeekHint": "Progress from the current week",
+        "averageDay": "Avg. Reading Day",
+        "averageDayHint": "Pages on active reading days",
+        "bestDay": {
+            "title": "Best Recent Day",
+            "hint": "Strongest reading day: {{date}}",
+            "empty": "No standout reading day yet. A few short sessions will already change this."
+        },
+        "libraryProgress": {
+            "title": "Library Progress",
+            "hint": "{{completed}} of {{total}} library books finished"
+        },
+        "totalRhythm": "Best Streak",
+        "totalRhythmHint": "Longest run so far",
         "heatmap": {
-            "title": "Reading Activity",
+            "title": "Reading Rhythm",
             "pages": "pages",
             "less": "Less",
             "more": "More"
@@ -253,7 +406,7 @@
             "books": "books"
         },
         "weeklyPace": {
-            "title": "Weekly Pace",
+            "title": "Weekly Momentum",
             "empty": "No reading data yet"
         },
         "error": "Could not load statistics.",
@@ -304,6 +457,8 @@
         }
     },
     "bookStats": {
+        "badge": "Book ledger",
+        "profile": "Book profile",
         "readProgress": "Reading Progress",
         "pages": "Pages",
         "pageProgress": "{{current}} / {{total}} pages",
@@ -321,6 +476,7 @@
             "subLabel": "Until Finished"
         },
         "chart": {
+            "kicker": "Reading curve",
             "title": "Activity History",
             "subTitle": "Your reading habits over time",
             "badge": "Chronology",

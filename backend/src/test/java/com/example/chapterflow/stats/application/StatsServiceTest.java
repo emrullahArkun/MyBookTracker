@@ -3,9 +3,11 @@ package com.example.chapterflow.stats.application;
 import com.example.chapterflow.auth.domain.User;
 import com.example.chapterflow.books.infra.persistence.BookRepository;
 import com.example.chapterflow.sessions.domain.ReadingSession;
-import com.example.chapterflow.stats.domain.streak.StreakInfo;
 import com.example.chapterflow.sessions.domain.SessionStatus;
 import com.example.chapterflow.sessions.infra.persistence.ReadingSessionRepository;
+import com.example.chapterflow.stats.domain.activity.ReadingSessionLength;
+import com.example.chapterflow.stats.domain.activity.ReadingTimeOfDay;
+import com.example.chapterflow.stats.domain.streak.StreakInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +44,11 @@ class StatsServiceTest {
     void setUp() {
         user = new User();
         user.setId(1L);
+    }
+
+    private void mockStreaks(int current, int longest) {
+        when(streakService.calculateStreaks(eq(user), any(ZoneId.class)))
+                .thenReturn(new StreakInfo(current, longest));
     }
 
     private ReadingSession buildSession(LocalDate date, int pagesRead, int startHour) {
@@ -68,7 +76,7 @@ class StatsServiceTest {
                         buildSession(LocalDate.now(), 50, 14)));
         when(bookRepository.findAllCategoriesByUser(user))
                 .thenReturn(List.of("Thriller", "Krimi", "Thriller"));
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(3, 7));
+        mockStreaks(3, 7);
 
         StatsOverview result = statsService.getOverview(user);
 
@@ -81,6 +89,7 @@ class StatsServiceTest {
         assertEquals(2, result.dailyActivity().size());
         assertFalse(result.genreDistribution().isEmpty());
         assertEquals("Thriller", result.genreDistribution().get(0).genre());
+        assertTrue(result.readingRhythm().enoughData() == false || result.readingRhythm().sessionsLast14() >= 0);
     }
 
     @Test
@@ -91,7 +100,7 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
 
@@ -99,6 +108,7 @@ class StatsServiceTest {
         assertEquals(0, result.totalReadingMinutes());
         assertTrue(result.dailyActivity().isEmpty());
         assertTrue(result.genreDistribution().isEmpty());
+        assertEquals(0, result.readingRhythm().sessionsLast14());
     }
 
     @Test
@@ -112,10 +122,11 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(noPages));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertTrue(result.dailyActivity().isEmpty());
+        assertEquals(0, result.readingRhythm().averagePagesPerSession());
     }
 
     @Test
@@ -134,10 +145,11 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(noEnd));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertEquals(0, result.totalReadingMinutes());
+        assertEquals(0, result.readingRhythm().averageMinutesPerSession());
     }
 
     @Test
@@ -151,10 +163,11 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertEquals(0, result.totalReadingMinutes());
+        assertEquals(0, result.readingRhythm().averageMinutesPerSession());
     }
 
     @Test
@@ -173,7 +186,7 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertEquals(0, result.totalReadingMinutes());
@@ -190,10 +203,11 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertTrue(result.dailyActivity().isEmpty());
+        assertEquals(0, result.readingRhythm().averagePagesPerSession());
     }
 
     @Test
@@ -207,10 +221,40 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(List.of(s));
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertEquals(30, result.totalReadingMinutes()); // 60min - 30min paused
+        assertEquals(30, result.readingRhythm().averageMinutesPerSession()); // 60min - 30min paused
+    }
+
+    @Test
+    void getOverview_ShouldBuildReadingRhythmForRecentSessions() {
+        clock = Clock.fixed(Instant.parse("2026-03-28T10:00:00Z"), ZoneOffset.UTC);
+        statsService = new StatsService(bookRepository, sessionRepository, streakService, clock);
+
+        when(bookRepository.countByUser(user)).thenReturn(2L);
+        when(bookRepository.countByUserAndCompletedTrue(user)).thenReturn(0L);
+        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(72L);
+        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+                .thenReturn(List.of(
+                        buildSession(LocalDate.of(2026, 3, 17), 18, 18),
+                        buildSession(LocalDate.of(2026, 3, 20), 20, 18),
+                        buildSession(LocalDate.of(2026, 3, 24), 16, 19),
+                        buildSession(LocalDate.of(2026, 3, 27), 18, 18)));
+        when(bookRepository.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
+        when(streakService.calculateStreaks(eq(user), eq(ZoneId.of("Europe/Berlin"))))
+                .thenReturn(new StreakInfo(2, 4));
+
+        StatsOverview result = statsService.getOverview(user, "Europe/Berlin");
+
+        assertTrue(result.readingRhythm().enoughData());
+        assertEquals(4, result.readingRhythm().sessionsLast14());
+        assertEquals(4, result.readingRhythm().activeDaysLast14());
+        assertEquals(18, result.readingRhythm().averagePagesPerSession());
+        assertEquals(60, result.readingRhythm().averageMinutesPerSession());
+        assertEquals(ReadingTimeOfDay.EVENING, result.readingRhythm().preferredTimeOfDay());
+        assertEquals(ReadingSessionLength.LONG, result.readingRhythm().preferredSessionLength());
     }
 
     @Test
@@ -222,7 +266,7 @@ class StatsServiceTest {
         when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
                 .thenReturn(Collections.emptyList());
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(cats);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertTrue(result.genreDistribution().size() <= 8);
@@ -239,7 +283,7 @@ class StatsServiceTest {
         catsWithNull.add(null);
         catsWithNull.add("Fiction");
         when(bookRepository.findAllCategoriesByUser(user)).thenReturn(catsWithNull);
-        when(streakService.calculateStreaks(user)).thenReturn(new StreakInfo(0, 0));
+        mockStreaks(0, 0);
 
         StatsOverview result = statsService.getOverview(user);
         assertEquals(1, result.genreDistribution().size());

@@ -1,16 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap');
 @import "../shared/theme/tokens.css";
 
 :root {
-  font-family: 'Open Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-body);
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-
-  /* Use new tokens */
+  color-scheme: dark;
   color: var(--text-primary);
   background-color: var(--bg-app);
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -45,6 +42,7 @@ body {
   background-color: var(--bg-app);
   color: var(--text-primary);
   overflow-x: hidden;
+  font-family: var(--font-body);
 }
 
 h1,
@@ -54,8 +52,17 @@ h4,
 h5,
 h6 {
   margin: 0;
-  font-family: inherit;
+  font-family: var(--font-heading);
   font-weight: 600;
+  color: var(--text-primary);
+}
+
+p {
+  margin: 0;
+}
+
+::selection {
+  background: rgba(197, 154, 92, 0.28);
   color: var(--text-primary);
 }
 
@@ -66,4 +73,8 @@ button {
   padding: 0;
   font-family: inherit;
   cursor: pointer;
+}
+
+#root {
+  min-height: 100vh;
 }

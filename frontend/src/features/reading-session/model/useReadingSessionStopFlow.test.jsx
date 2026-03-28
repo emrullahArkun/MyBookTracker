@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useReadingSessionStopFlow } from './useReadingSessionStopFlow';
 
@@ -8,8 +8,8 @@ const createHook = (overrides = {}) => renderHook(() => useReadingSessionStopFlo
     pauseSession: vi.fn(),
     resumeSession: vi.fn(),
     stopSession: vi.fn(),
-    navigate: vi.fn(),
     toast: vi.fn(),
+    onStopSuccess: vi.fn(),
     t: (key, values) => values?.total ? `${key}:${values.total}` : key,
     setHasStopped: vi.fn(),
     ...overrides,
@@ -107,10 +107,9 @@ describe('useReadingSessionStopFlow', () => {
         });
 
         expect(stopSession).not.toHaveBeenCalled();
-        expect(toast).toHaveBeenCalledWith(expect.objectContaining({
-            status: 'warning',
-            title: 'readingSession.alerts.pageExceeds:200',
-        }));
+        expect(toast).toHaveBeenCalledTimes(1);
+        render(toast.mock.calls[0][0].render());
+        expect(screen.getByText('readingSession.alerts.pageExceeds:200')).toBeInTheDocument();
     });
 
     it('does nothing when confirm stop runs without a loaded book', async () => {
@@ -130,15 +129,13 @@ describe('useReadingSessionStopFlow', () => {
         expect(setHasStopped).not.toHaveBeenCalled();
     });
 
-    it('stops the session, navigates away, and shows a success toast on success', async () => {
+    it('stops the session and reports the completion summary on success', async () => {
         const stopSession = vi.fn().mockResolvedValue(true);
-        const navigate = vi.fn();
-        const toast = vi.fn();
+        const onStopSuccess = vi.fn();
         const setHasStopped = vi.fn();
         const { result } = createHook({
             stopSession,
-            navigate,
-            toast,
+            onStopSuccess,
             setHasStopped,
             book: { currentPage: 12, pageCount: 200 },
         });
@@ -154,21 +151,20 @@ describe('useReadingSessionStopFlow', () => {
         expect(setHasStopped).toHaveBeenCalledWith(true);
         expect(stopSession).toHaveBeenCalledTimes(1);
         expect(stopSession.mock.calls[0][1]).toBe(42);
-        expect(toast).toHaveBeenCalledWith(expect.objectContaining({
-            status: 'success',
-            title: 'readingSession.alerts.summary',
-        }));
-        expect(navigate).toHaveBeenCalledWith('/my-books');
+        expect(onStopSuccess).toHaveBeenCalledWith({
+            startPage: 12,
+            endPage: 42,
+            pagesRead: 30,
+        });
     });
 
-    it('clamps negative page deltas to zero in the success toast', async () => {
+    it('clamps negative page deltas to zero in the completion summary', async () => {
         const stopSession = vi.fn().mockResolvedValue(true);
-        const toast = vi.fn();
+        const onStopSuccess = vi.fn();
         const { result } = createHook({
             stopSession,
-            toast,
+            onStopSuccess,
             book: { currentPage: 50, pageCount: 200 },
-            t: (key, values) => values?.pages !== undefined ? `${key}:${values.pages}` : key,
         });
 
         act(() => {
@@ -179,10 +175,11 @@ describe('useReadingSessionStopFlow', () => {
             await result.current.handleConfirmStop();
         });
 
-        expect(toast).toHaveBeenCalledWith(expect.objectContaining({
-            status: 'success',
-            title: 'readingSession.alerts.summary:0',
-        }));
+        expect(onStopSuccess).toHaveBeenCalledWith({
+            startPage: 50,
+            endPage: 40,
+            pagesRead: 0,
+        });
     });
 
     it('restores state and resumes when stop fails after pausing for the dialog', async () => {
@@ -212,10 +209,9 @@ describe('useReadingSessionStopFlow', () => {
         expect(setHasStopped).toHaveBeenNthCalledWith(2, false);
         expect(resumeSession).toHaveBeenCalledTimes(1);
         expect(result.current.showStopConfirm).toBe(false);
-        expect(toast).toHaveBeenCalledWith(expect.objectContaining({
-            status: 'error',
-            title: 'readingSession.alerts.stopError',
-        }));
+        expect(toast).toHaveBeenCalledTimes(1);
+        render(toast.mock.calls[0][0].render());
+        expect(screen.getByText('readingSession.alerts.stopError')).toBeInTheDocument();
     });
 
     it('does not resume on failed stop when the session was already paused', async () => {

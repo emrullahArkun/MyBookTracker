@@ -1,4 +1,3 @@
-
 import { Flex, Button, Text } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,22 +11,42 @@ const LanguageSwitcher = ({ variant = 'default', ...props }) => {
 
     if (variant === 'auth') {
         return (
-            <Flex gap={2} position="absolute" top={4} right={4} {...props}>
+            <Flex
+                gap={1}
+                position="absolute"
+                top={4}
+                right={4}
+                p={1}
+                borderRadius="md"
+                bg="linear-gradient(180deg, rgba(38, 29, 23, 0.96) 0%, rgba(25, 20, 16, 0.98) 100%)"
+                border="1px solid"
+                borderColor="rgba(217, 188, 146, 0.14)"
+                boxShadow="0 14px 30px rgba(8, 6, 4, 0.2)"
+                {...props}
+            >
                 <Button
                     size="sm"
-                    variant={!isDe ? "solid" : "ghost"}
-                    colorScheme="teal"
+                    variant="ghost"
+                    color={!isDe ? "#f4ead7" : "rgba(217, 204, 182, 0.58)"}
+                    bg={!isDe ? "rgba(197, 154, 92, 0.14)" : "transparent"}
+                    _hover={{ bg: 'rgba(248, 236, 214, 0.08)', color: '#f4ead7' }}
+                    borderRadius="sm"
                     onClick={() => changeLanguage('en')}
-                    opacity={!isDe ? 1 : 0.6}
+                    minW="42px"
+                    px={3}
                 >
                     EN
                 </Button>
                 <Button
                     size="sm"
-                    variant={isDe ? "solid" : "ghost"}
-                    colorScheme="teal"
+                    variant="ghost"
+                    color={isDe ? "#f4ead7" : "rgba(217, 204, 182, 0.58)"}
+                    bg={isDe ? "rgba(197, 154, 92, 0.14)" : "transparent"}
+                    _hover={{ bg: 'rgba(248, 236, 214, 0.08)', color: '#f4ead7' }}
+                    borderRadius="sm"
                     onClick={() => changeLanguage('de')}
-                    opacity={isDe ? 1 : 0.6}
+                    minW="42px"
+                    px={3}
                 >
                     DE
                 </Button>
@@ -35,41 +54,57 @@ const LanguageSwitcher = ({ variant = 'default', ...props }) => {
         );
     }
 
-    // Default (Navbar style)
+    if (variant === 'navbar' || variant === 'default') {
+        return (
+            <Flex
+                align="center"
+                gap={1}
+                px={1}
+                py={1}
+                borderRadius="md"
+                bg="rgba(248, 236, 214, 0.03)"
+                border="1px solid"
+                borderColor="rgba(217, 188, 146, 0.08)"
+                {...props}
+            >
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    fontWeight={!isDe ? "semibold" : "medium"}
+                    color={!isDe ? "#f4ead7" : "rgba(217, 204, 182, 0.58)"}
+                    bg={!isDe ? "rgba(197, 154, 92, 0.14)" : "transparent"}
+                    _hover={{ color: "#f4ead7", bg: "rgba(248, 236, 214, 0.06)" }}
+                    borderRadius="sm"
+                    onClick={() => changeLanguage('en')}
+                    minW="40px"
+                    h="34px"
+                    px={3}
+                >
+                    EN
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    fontWeight={isDe ? "semibold" : "medium"}
+                    color={isDe ? "#f4ead7" : "rgba(217, 204, 182, 0.58)"}
+                    bg={isDe ? "rgba(197, 154, 92, 0.14)" : "transparent"}
+                    _hover={{ color: "#f4ead7", bg: "rgba(248, 236, 214, 0.06)" }}
+                    borderRadius="sm"
+                    onClick={() => changeLanguage('de')}
+                    minW="40px"
+                    h="34px"
+                    px={3}
+                >
+                    DE
+                </Button>
+            </Flex>
+        );
+    }
+
     return (
-        <Flex align="center" gap={2} ml={4} {...props}>
-            <Button
-                variant="unstyled"
-                size="sm"
-                fontWeight={!isDe ? "bold" : "normal"}
-                textDecoration={!isDe ? "underline" : "none"}
-                color={!isDe ? "white" : "whiteAlpha.700"}
-                _hover={{ color: "white" }}
-                onClick={() => changeLanguage('en')}
-                minW="auto"
-                h="auto"
-                p={0}
-                display="inline-flex"
-            >
-                EN
-            </Button>
-            <Text color="whiteAlpha.500" fontSize="sm">|</Text>
-            <Button
-                variant="unstyled"
-                size="sm"
-                fontWeight={isDe ? "bold" : "normal"}
-                textDecoration={isDe ? "underline" : "none"}
-                color={isDe ? "white" : "whiteAlpha.700"}
-                _hover={{ color: "white" }}
-                onClick={() => changeLanguage('de')}
-                minW="auto"
-                h="auto"
-                p={0}
-                display="inline-flex"
-            >
-                DE
-            </Button>
-        </Flex>
+        <Text color="rgba(217, 204, 182, 0.58)" fontSize="sm" {...props}>
+            {isDe ? 'DE' : 'EN'}
+        </Text>
     );
 };
 

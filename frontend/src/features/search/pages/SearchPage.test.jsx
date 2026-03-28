@@ -118,4 +118,113 @@ describe('SearchPage', () => {
 
         expect(loadMore).toHaveBeenCalledTimes(1);
     });
+
+    it('renders skeletons while loading and keeps the title mounted', () => {
+        mockUseBookSearch.mockReturnValue({
+            query: '',
+            setQuery: vi.fn(),
+            results: [],
+            error: null,
+            hasMore: true,
+            isLoading: true,
+            isFetchingNextPage: false,
+            searchBooks: vi.fn(),
+            loadMore: vi.fn(),
+            addBookToLibrary: vi.fn(),
+        });
+
+        render(<SearchPage />);
+
+        expect(screen.getByText('TypewriterTitle')).toBeInTheDocument();
+        expect(screen.getAllByText('Skeleton')).toHaveLength(5);
+        expect(screen.queryByText('search.endResults')).not.toBeInTheDocument();
+    });
+
+    it('shows the fetching-next-page state as a disabled loading button', () => {
+        mockUseBookSearch.mockReturnValue({
+            query: 'dup',
+            setQuery: vi.fn(),
+            results: [book],
+            error: null,
+            hasMore: true,
+            isLoading: false,
+            isFetchingNextPage: true,
+            searchBooks: vi.fn(),
+            loadMore: vi.fn(),
+            addBookToLibrary: vi.fn(),
+        });
+
+        render(<SearchPage />);
+
+        expect(screen.getByRole('button', { name: 'search.loading' })).toBeDisabled();
+        expect(screen.queryByRole('button', { name: 'search.loadMore' })).not.toBeInTheDocument();
+    });
+
+    it('shows the end message and surfaces search errors', () => {
+        mockUseBookSearch.mockReturnValue({
+            query: 'dup',
+            setQuery: vi.fn(),
+            results: [book],
+            error: 'Something went wrong',
+            hasMore: false,
+            isLoading: false,
+            isFetchingNextPage: false,
+            searchBooks: vi.fn(),
+            loadMore: vi.fn(),
+            addBookToLibrary: vi.fn(),
+        });
+
+        render(<SearchPage />);
+
+        expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+        expect(screen.getByText('search.endResults')).toBeInTheDocument();
+    });
+
+    it('does not call onBookAdded when addBookToLibrary returns a falsy value', async () => {
+        const onBookAdded = vi.fn();
+
+        mockUseBookSearch.mockReturnValue({
+            query: 'dup',
+            setQuery: vi.fn(),
+            results: [book],
+            error: null,
+            hasMore: false,
+            isLoading: false,
+            isFetchingNextPage: false,
+            searchBooks: vi.fn(),
+            loadMore: vi.fn(),
+            addBookToLibrary: vi.fn().mockResolvedValue(null),
+        });
+
+        render(<SearchPage onBookAdded={onBookAdded} />);
+        fireEvent.click(screen.getByRole('button', { name: 'Duplicate Book' }));
+
+        await waitFor(() => {
+            expect(window.__searchAddResult).toBe('resolved');
+        });
+
+        expect(onBookAdded).not.toHaveBeenCalled();
+    });
+
+    it('keeps the idle empty state quiet when there are no results yet', () => {
+        mockUseBookSearch.mockReturnValue({
+            query: '',
+            setQuery: vi.fn(),
+            results: [],
+            error: null,
+            hasMore: false,
+            isLoading: false,
+            isFetchingNextPage: false,
+            searchBooks: vi.fn(),
+            loadMore: vi.fn(),
+            addBookToLibrary: vi.fn(),
+        });
+
+        render(<SearchPage />);
+
+        expect(screen.getByText('TypewriterTitle')).toBeInTheDocument();
+        expect(screen.queryByText('search.endResults')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'search.loadMore' })).not.toBeInTheDocument();
+        expect(screen.queryByText('Skeleton')).not.toBeInTheDocument();
+    });
 });

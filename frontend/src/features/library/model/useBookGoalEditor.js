@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
 import { booksApi } from '../api';
+import { createAppToast } from '../../../shared/ui/AppToast';
 
 export const useBookGoalEditor = ({ book, bookId, refetch, onClose }) => {
     const { t } = useTranslation();
@@ -23,11 +24,19 @@ export const useBookGoalEditor = ({ book, bookId, refetch, onClose }) => {
         setIsSavingGoal(true);
         try {
             await booksApi.updateGoal(bookId, goalType, parseInt(goalPages, 10));
-            toast({ title: t('bookStats.goal.modal.success'), status: 'success', duration: 3000 });
+            toast(createAppToast({
+                title: t('bookStats.goal.modal.success'),
+                status: 'success',
+                duration: 3000,
+            }));
             refetch();
             onClose();
         } catch {
-            toast({ title: t('bookStats.goal.modal.error'), status: 'error', duration: 3000 });
+            toast(createAppToast({
+                title: t('bookStats.goal.modal.error'),
+                status: 'error',
+                duration: 3000,
+            }));
         } finally {
             setIsSavingGoal(false);
         }

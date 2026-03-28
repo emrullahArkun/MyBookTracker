@@ -1,0 +1,29 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.inputsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.submitButton {
+    width: 100%;
+}
+
+.footer {
+    text-align: center;
+}
+
+.footerText {
+    color: rgba(240, 229, 214, 0.72);
+    font-size: 0.875rem;
+}
+
+.loginLink:hover {
+    color: #ffd6a0;
+    text-decoration: underline;
+}

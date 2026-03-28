@@ -16,12 +16,12 @@ function LibraryActionsBar({
                     size="sm"
                     leftIcon={<FaTrash />}
                     onClick={onDeleteSelected}
-                    bg="whiteAlpha.100"
-                    color="red.300"
+                    bg="rgba(207, 109, 88, 0.12)"
+                    color="#f2b09e"
                     border="1px solid"
-                    borderColor="red.800"
-                    _hover={{ bg: 'red.900', borderColor: 'red.700' }}
-                    _active={{ bg: 'red.800' }}
+                    borderColor="rgba(207, 109, 88, 0.3)"
+                    _hover={{ bg: 'rgba(207, 109, 88, 0.18)', borderColor: 'rgba(207, 109, 88, 0.42)' }}
+                    _active={{ bg: 'rgba(207, 109, 88, 0.2)' }}
                 >
                     {t('myBooks.deleteSelectedCount', { count: selectedCount })}
                 </Button>
@@ -30,12 +30,9 @@ function LibraryActionsBar({
                 size="sm"
                 leftIcon={<FaTrashAlt />}
                 onClick={onDeleteAll}
-                bg="whiteAlpha.100"
-                color="gray.300"
-                border="1px solid"
-                borderColor="whiteAlpha.200"
-                _hover={{ color: 'red.300', bg: 'whiteAlpha.200', borderColor: 'red.800' }}
-                _active={{ bg: 'whiteAlpha.300' }}
+                variant="outline"
+                _hover={{ color: '#f2b09e', borderColor: 'rgba(207, 109, 88, 0.3)', bg: 'rgba(207, 109, 88, 0.05)' }}
+                _active={{ bg: 'rgba(248, 236, 214, 0.08)' }}
             >
                 {t('myBooks.deleteAll')}
             </Button>

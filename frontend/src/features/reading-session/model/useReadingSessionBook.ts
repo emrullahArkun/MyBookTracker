@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { UseToastOptions } from '@chakra-ui/react';
 import { readingSessionBooksApi } from '../api';
 import type { Book } from '../../../shared/types/books';
+import { createAppToast } from '../../../shared/ui/AppToast';
 
 type ToastFn = (options?: UseToastOptions) => void;
 
@@ -28,12 +29,11 @@ export const useReadingSessionBook = ({ bookId, token, toast, t }: UseReadingSes
                 const data = await readingSessionBooksApi.getById(bookId);
                 setBook(data ?? null);
             } catch {
-                toast({
+                toast(createAppToast({
                     title: t('readingSession.alerts.fetchError'),
                     status: 'error',
                     duration: 5000,
-                    isClosable: true,
-                });
+                }));
             } finally {
                 setFetchingBook(false);
             }

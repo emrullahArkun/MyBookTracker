@@ -49,3 +49,35 @@ Full support for English and German with automatic browser language detection.
 2. **Access the services**
     * App: `http://localhost:5173`
     * API: `http://localhost:8080`
+# Beta Access Mode
+
+The production stack can run in two frontend access modes via `docker-compose.prod.yml`:
+
+- `FRONTEND_ACCESS_MODE=beta`: Nginx protects the whole site with HTTP Basic Auth and adds `X-Robots-Tag: noindex, nofollow, noarchive`
+- `FRONTEND_ACCESS_MODE=live`: Nginx serves the site normally without the beta gate
+
+The backend is no longer published directly in the production compose file, so the Nginx gate cannot be bypassed through port `8080`.
+
+Create your production env file first:
+
+```bash
+cp .env.prod.example .env
+```
+
+To create beta credentials:
+
+```bash
+htpasswd -cB ops/nginx/.htpasswd yourtester
+```
+
+Then start the production-like beta stack with:
+
+```bash
+FRONTEND_ACCESS_MODE=beta docker compose -f docker-compose.prod.yml up -d --build
+```
+
+When you are ready to remove the gate later:
+
+```bash
+FRONTEND_ACCESS_MODE=live docker compose -f docker-compose.prod.yml up -d --build
+```

@@ -1,12 +1,12 @@
 import { useEffect, useReducer, type Dispatch, type SetStateAction } from 'react';
 import type { UseToastOptions } from '@chakra-ui/react';
-import { ROUTES } from '../../../app/router/routes';
 import {
     createInitialStopFlowState,
     READING_SESSION_STOP_EVENTS,
     readingSessionStopReducer,
 } from './readingSessionStopMachine';
 import type { Book } from '../../../shared/types/books';
+import { createAppToast } from '../../../shared/ui/AppToast';
 
 type TranslationValues = Record<string, string | number>;
 
@@ -16,6 +16,12 @@ type ToastFn = (options?: UseToastOptions) => void;
 
 type StopFlowBook = Pick<Book, 'currentPage' | 'pageCount'>;
 
+export type SessionCompletionSummary = {
+    startPage: number;
+    endPage: number;
+    pagesRead: number;
+};
+
 type UseReadingSessionStopFlowParams = {
     book: StopFlowBook | null;
     isPaused: boolean;
@@ -23,10 +29,10 @@ type UseReadingSessionStopFlowParams = {
     pauseSession: () => Promise<void>;
     resumeSession: () => Promise<void>;
     stopSession: (endTime: Date, endPage?: number) => Promise<boolean>;
-    navigate: (to: string) => void;
     toast: ToastFn;
     t: TranslationFn;
     setHasStopped: Dispatch<SetStateAction<boolean>>;
+    onStopSuccess: (summary: SessionCompletionSummary) => void;
 };
 
 export const useReadingSessionStopFlow = ({
@@ -36,10 +42,10 @@ export const useReadingSessionStopFlow = ({
     pauseSession,
     resumeSession,
     stopSession,
-    navigate,
     toast,
     t,
     setHasStopped,
+    onStopSuccess,
 }: UseReadingSessionStopFlowParams) => {
     const [state, dispatch] = useReducer(readingSessionStopReducer, undefined, createInitialStopFlowState);
     const { isOpen: showStopConfirm, endPage, resumeOnCancel } = state;
@@ -88,29 +94,27 @@ export const useReadingSessionStopFlow = ({
         }
 
         if (book.pageCount && pageNum > book.pageCount) {
-            toast({
+            toast(createAppToast({
                 title: t('readingSession.alerts.pageExceeds', { total: book.pageCount }),
                 status: 'warning',
                 duration: 5000,
-                isClosable: true,
-            });
+            }));
             return;
         }
 
         const startPage = book.currentPage || 0;
         const pagesRead = pageNum - startPage;
+        const normalizedPagesRead = pagesRead > 0 ? pagesRead : 0;
 
         setHasStopped(true);
         const success = await stopSession(new Date(), pageNum);
 
         if (success) {
-            toast({
-                title: t('readingSession.alerts.summary', { pages: pagesRead > 0 ? pagesRead : 0 }),
-                status: 'success',
-                duration: 5000,
-                isClosable: true,
+            onStopSuccess({
+                startPage,
+                endPage: pageNum,
+                pagesRead: normalizedPagesRead,
             });
-            navigate(ROUTES.MY_BOOKS);
             return;
         }
 
@@ -119,12 +123,11 @@ export const useReadingSessionStopFlow = ({
             resumeSession();
         }
         dispatch({ type: READING_SESSION_STOP_EVENTS.STOP_FAILED });
-        toast({
+        toast(createAppToast({
             title: t('readingSession.alerts.stopError'),
             status: 'error',
             duration: 5000,
-            isClosable: true,
-        });
+        }));
     };
 
     return {

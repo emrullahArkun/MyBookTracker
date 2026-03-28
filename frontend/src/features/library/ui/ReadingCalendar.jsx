@@ -17,17 +17,16 @@ import {
 } from '@chakra-ui/react';
 import { FaChevronLeft, FaChevronRight, FaCalendarAlt } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
+import { useThemeTokens } from '../../../shared/theme/useThemeTokens';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const ReadingCalendar = ({ sessions }) => {
     const { t } = useTranslation();
     const [currentDate, setCurrentDate] = useState(new Date());
+    const { textColor, modalBg, modalBorder, modalMutedText, modalSubtleBg, brandColor, modalShadow } = useThemeTokens();
 
-    // Theme calculations
-    const textColor = 'white';
-    const subTextColor = 'gray.400';
-    // const activeDayColor = 'white';
+    const subTextColor = modalMutedText;
 
     // 1. Process Sessions to get "Pages Read per Day" map
     // Logic: Sum of (endPage - startPage) for sessions ending on that day.
@@ -81,30 +80,39 @@ const ReadingCalendar = ({ sessions }) => {
 
             days.push(
                 hasActivity ? (
-                    <Tooltip key={day} label={`${pages} ${t('bookStats.pages')}`} hasArrow bg="teal.600" color="white">
+                    <Tooltip
+                        key={day}
+                        label={`${pages} ${t('bookStats.pages')}`}
+                        hasArrow
+                        bg={modalBg}
+                        color={textColor}
+                        border="1px solid"
+                        borderColor={modalBorder}
+                    >
                         <Box
                             textAlign="center"
                             p={2}
-                            bg='whiteAlpha.100'
+                            bg={modalSubtleBg}
                             borderRadius="md"
                             position="relative"
                             cursor='pointer'
-                            _hover={{ bg: 'whiteAlpha.200' }}
+                            _hover={{ bg: 'rgba(255, 248, 239, 0.12)' }}
                             border='1px solid'
-                            borderColor="teal.500"
+                            borderColor="rgba(243, 199, 133, 0.36)"
                         >
                             <Text color={textColor} fontSize="sm" fontWeight='bold'>
                                 {day}
                             </Text>
                             <Badge
-                                colorScheme="teal"
+                                bg={brandColor}
+                                color="#1c1917"
                                 variant="solid"
                                 fontSize="0.6rem"
                                 borderRadius="full"
                                 px={1}
                                 position="absolute"
                                 bottom="-5px" left="50%" transform="translateX(-50%)"
-                                boxShadow="0 0 5px teal"
+                                boxShadow="0 0 8px rgba(243, 199, 133, 0.3)"
                             >
                                 +{pages}
                             </Badge>
@@ -137,35 +145,35 @@ const ReadingCalendar = ({ sessions }) => {
                 <IconButton
                     icon={<FaCalendarAlt />}
                     variant="ghost"
-                    color="teal.200"
-                    _hover={{ bg: 'whiteAlpha.200', transform: 'scale(1.1)' }}
+                    color={brandColor}
+                    _hover={{ bg: 'rgba(248, 236, 214, 0.06)', transform: 'translateY(-1px)' }}
                     aria-label="Calendar"
                     size="lg"
                 />
             </PopoverTrigger>
-            <PopoverContent bg="gray.900" borderColor="whiteAlpha.300" boxShadow="xl" w="320px">
-                <PopoverArrow bg="gray.900" />
-                <PopoverCloseButton color="white" mt={2} mr={2} />
-                <PopoverHeader borderColor="whiteAlpha.100" pt={12} pb={4} borderBottomWidth="1px">
+            <PopoverContent bg={modalBg} borderColor={modalBorder} boxShadow={modalShadow} w="320px">
+                <PopoverArrow bg="#23324a" />
+                <PopoverCloseButton color={textColor} mt={2} mr={2} />
+                <PopoverHeader borderColor={modalBorder} pt={12} pb={4} borderBottomWidth="1px">
                     <Flex justify="space-between" align="center">
                         <IconButton
                             icon={<FaChevronLeft />}
                             size="sm"
                             variant="ghost"
-                            color="white"
+                            color={textColor}
                             onClick={prevMonth}
-                            _hover={{ bg: 'whiteAlpha.200', color: 'teal.200' }}
+                            _hover={{ bg: 'rgba(248, 236, 214, 0.06)', color: brandColor }}
                         />
-                        <Text color="white" fontWeight="bold">
+                        <Text color={textColor} fontWeight="bold">
                             {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                         </Text>
                         <IconButton
                             icon={<FaChevronRight />}
                             size="sm"
                             variant="ghost"
-                            color="white"
+                            color={textColor}
                             onClick={nextMonth}
-                            _hover={{ bg: 'whiteAlpha.200', color: 'teal.200' }}
+                            _hover={{ bg: 'rgba(248, 236, 214, 0.06)', color: brandColor }}
                         />
                     </Flex>
                 </PopoverHeader>
@@ -184,7 +192,7 @@ const ReadingCalendar = ({ sessions }) => {
                     </Grid>
 
                     <Box mt={6} textAlign="center">
-                        <Text fontSize="xs" color="gray.500">
+                        <Text fontSize="xs" color={modalMutedText}>
                             {t('bookStats.calendarHint')}
                         </Text>
                     </Box>

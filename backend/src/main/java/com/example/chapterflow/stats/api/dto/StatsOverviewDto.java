@@ -10,7 +10,8 @@ public record StatsOverviewDto(
         int currentStreak,
         int longestStreak,
         List<GenreStatDto> genreDistribution,
-        List<DailyActivityDto> dailyActivity) {
+        List<DailyActivityDto> dailyActivity,
+        ReadingRhythmDto readingRhythm) {
 
     public StatsOverviewDto {
         genreDistribution = genreDistribution == null ? List.of() : List.copyOf(genreDistribution);

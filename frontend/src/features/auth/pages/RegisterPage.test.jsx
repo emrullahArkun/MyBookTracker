@@ -123,13 +123,14 @@ describe('RegisterPage', () => {
         fireEvent.click(screen.getByText('auth.register.button'));
 
         await waitFor(() => {
-            expect(mockToast).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    description: 'Email taken',
-                    status: 'error',
-                })
-            );
+            expect(mockToast).toHaveBeenCalledTimes(1);
         });
+
+        const toastOptions = mockToast.mock.calls[0][0];
+        expect(toastOptions.position).toBe('top-right');
+        render(toastOptions.render());
+        expect(screen.getByText('auth.errorTitle')).toBeInTheDocument();
+        expect(screen.getByText('Email taken')).toBeInTheDocument();
     });
 
     it('should render login link', () => {

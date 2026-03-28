@@ -18,24 +18,24 @@ function LibraryPagination({
                 icon={<FaChevronLeft />}
                 onClick={onPreviousPage}
                 isDisabled={page === 0 || totalPages <= 1}
-                color="white"
+                color="rgba(244, 234, 215, 0.86)"
                 variant="ghost"
                 fontSize="lg"
                 aria-label={t('common.previousPage')}
-                _hover={{ bg: 'whiteAlpha.100' }}
+                _hover={{ bg: 'rgba(248, 236, 214, 0.06)' }}
             />
-            <Text color="gray.500" fontSize="sm">
+            <Text color="rgba(217, 204, 182, 0.58)" fontSize="sm" textTransform="uppercase" letterSpacing="0.12em">
                 {currentPage} / {totalPageCount}
             </Text>
             <IconButton
                 icon={<FaChevronRight />}
                 onClick={onNextPage}
                 isDisabled={page >= totalPages - 1 || totalPages <= 1}
-                color="white"
+                color="rgba(244, 234, 215, 0.86)"
                 variant="ghost"
                 fontSize="lg"
                 aria-label={t('common.nextPage')}
-                _hover={{ bg: 'whiteAlpha.100' }}
+                _hover={{ bg: 'rgba(248, 236, 214, 0.06)' }}
             />
         </Flex>
     );

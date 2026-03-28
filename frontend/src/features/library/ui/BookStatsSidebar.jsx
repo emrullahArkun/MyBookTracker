@@ -22,35 +22,33 @@ const BookStatsSidebar = ({
     stats,
     goalProgress,
     onOpenModal,
-    cardBg,
     textColor,
-    subTextColor
+    subTextColor,
+    compact = false,
 }) => {
     const { t } = useTranslation();
 
     return (
         <MotionBox
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.28 }}
             h="full"
         >
             <Card
-                bg={cardBg}
-                borderRadius="2xl"
-                border="1px solid"
-                borderColor="whiteAlpha.100"
                 boxShadow="none"
-                p={5}
+                p={compact ? 4 : 5}
                 h="full"
+                overflow="hidden"
+                bg="transparent"
+                border="none"
             >
-                <VStack spacing={5} align="center" w="full">
-                    {/* Cover Image */}
+                <VStack spacing={compact ? 3 : 5} align="center" w="full">
                     <Box
-                        borderRadius="xl"
+                        borderRadius="lg"
                         overflow="hidden"
-                        boxShadow="lg"
-                        maxW="180px"
+                        boxShadow="0 18px 28px rgba(8, 6, 4, 0.26)"
+                        maxW={compact ? '120px' : '180px'}
                         w="100%"
                     >
                         <BookCover
@@ -58,56 +56,57 @@ const BookStatsSidebar = ({
                             w="100%"
                             h="auto"
                             objectFit="cover"
-                            borderRadius="xl"
+                            borderRadius="lg"
                         />
                     </Box>
 
-                    {/* Title & Author */}
                     <Box textAlign="center" w="full">
-                        <Heading size="md" mb={1} color={textColor} fontWeight="700" lineHeight="1.3">
+                        <Text fontSize="0.66rem" textTransform="uppercase" letterSpacing="0.14em" color="rgba(217, 204, 182, 0.56)" mb={2}>
+                            {t('bookStats.profile')}
+                        </Text>
+                        <Heading size={compact ? 'md' : 'lg'} mb={1} color={textColor} fontWeight="600" lineHeight="1.1" noOfLines={compact ? 2 : undefined} fontFamily="heading">
                             {book.title}
                         </Heading>
-                        <Text fontSize="sm" color={subTextColor}>
+                        <Text fontSize={compact ? 'sm' : 'md'} color={subTextColor} noOfLines={1}>
                             {book.authorName}
                         </Text>
                     </Box>
 
-                    <Box w="full" h="1px" bg="whiteAlpha.100" />
+                    <Box w="full" h="1px" bg="rgba(217, 188, 146, 0.1)" />
 
-                    {/* Goal Section */}
-                    <Box w="full" bg="whiteAlpha.50" p={4} borderRadius="xl" border="1px solid" borderColor="whiteAlpha.100">
+                    <Box w="full" bg="rgba(248, 236, 214, 0.05)" p={4} borderRadius="xl" border="1px solid" borderColor="rgba(217, 188, 146, 0.1)">
                         <Flex justify="space-between" align="center" mb={2}>
-                            <Text fontSize="xs" fontWeight="600" color="gray.400" textTransform="uppercase" letterSpacing="wider">
+                            <Text fontSize="0.68rem" fontWeight="700" color="rgba(217, 204, 182, 0.56)" textTransform="uppercase" letterSpacing="0.14em">
                                 {t('bookStats.goal.title')}
                             </Text>
-                            <Button size="xs" colorScheme="teal" variant="ghost" onClick={onOpenModal}>
+                            <Button size="xs" variant="ghost" onClick={onOpenModal}>
                                 {goalProgress ? t('bookStats.goal.edit') : t('bookStats.goal.set')}
                             </Button>
                         </Flex>
 
                         {goalProgress ? (
                             <VStack align="start" spacing={1} w="full">
-                                <Flex justify="space-between" w="full" fontSize="xs" color="teal.200" mb={1}>
+                                <Flex justify="space-between" w="full" fontSize="xs" color="#d9bc92" mb={1}>
                                     <Text>{goalProgress.type === 'WEEKLY' ? t('bookStats.goal.modal.weekly') : t('bookStats.goal.modal.monthly')}</Text>
                                     <Text>{goalProgress.current} / {goalProgress.target} {t('bookStats.pages')}</Text>
                                 </Flex>
                                 <Progress
                                     value={goalProgress.percent}
                                     size="xs"
-                                    colorScheme={goalProgress.isGoalReached ? "green" : "teal"}
+                                    colorScheme={goalProgress.isGoalReached ? "green" : undefined}
                                     w="full"
                                     borderRadius="full"
-                                    bg="whiteAlpha.100"
+                                    bg="rgba(248, 236, 214, 0.08)"
                                     hasStripe={goalProgress.isGoalReached}
                                     isAnimated={goalProgress.isGoalReached}
                                 />
                                 {goalProgress.isGoalReached && (
-                                    <Flex align="center" mt={1} color="green.300">
+                                    <Flex align="center" mt={1} color="#95a17f">
                                         <Icon as={FaCheck} mr={1} boxSize={3} />
                                         <Text fontSize="xs" fontWeight="bold">
                                             {goalProgress.type === 'WEEKLY' ? t('bookStats.goal.weeklyInfo') : t('bookStats.goal.monthlyInfo')}
                                             {goalProgress.multiplier >= 2 && (
-                                                <Text as="span" ml={1} color="green.200" textTransform="uppercase" fontSize="xx-s">
+                                                <Text as="span" ml={1} color="#b3c19e" textTransform="uppercase" fontSize="xx-s">
                                                     ({goalProgress.multiplier}x {t('bookStats.goal.surpassed')}!)
                                                 </Text>
                                             )}
@@ -116,25 +115,23 @@ const BookStatsSidebar = ({
                                 )}
                             </VStack>
                         ) : (
-                            <Text fontSize="xs" color="gray.500">{t('bookStats.goal.noGoal')}</Text>
+                            <Text fontSize="xs" color="rgba(217, 204, 182, 0.56)">{t('bookStats.goal.noGoal')}</Text>
                         )}
                     </Box>
 
-                    {/* Progress Section */}
                     {stats && (
                         <Box w="full">
-                            <Flex justify="space-between" mb={2} fontSize="xs" fontWeight="600" color="gray.400" textTransform="uppercase" letterSpacing="wider">
+                            <Flex justify="space-between" mb={2} fontSize="0.68rem" fontWeight="700" color="rgba(217, 204, 182, 0.56)" textTransform="uppercase" letterSpacing="0.14em">
                                 <Text>{t('bookStats.readProgress')}</Text>
                                 <Text>{stats.progressPercent}%</Text>
                             </Flex>
                             <Progress
                                 value={stats.progressPercent}
                                 size="xs"
-                                colorScheme="teal"
                                 borderRadius="full"
-                                bg="whiteAlpha.100"
+                                bg="rgba(248, 236, 214, 0.08)"
                             />
-                            <Text fontSize="xs" color="gray.400" mt={2} textAlign="center">
+                            <Text fontSize="xs" color="rgba(217, 204, 182, 0.64)" mt={2} textAlign="center">
                                 {stats.pagesRead} <span style={{ opacity: 0.5 }}>/</span> {stats.totalPages} {t('bookStats.pages')}
                             </Text>
                         </Box>
@@ -142,12 +139,9 @@ const BookStatsSidebar = ({
 
                     {book.completed && (
                         <Badge
-                            colorScheme="teal"
+                            bg="rgba(149, 161, 127, 0.18)"
+                            color="#c7d1b5"
                             variant="solid"
-                            fontSize="xs"
-                            px={3}
-                            py={1}
-                            borderRadius="full"
                         >
                             <Icon as={FaCheck} mr={1} />
                             {t('bookStats.completed')}

@@ -25,8 +25,10 @@ public class StatsController {
     private final StreakService streakService;
 
     @GetMapping("/overview")
-    public ResponseEntity<StatsOverviewDto> getOverview(@CurrentUser User user) {
-        return ResponseEntity.ok(StatsApiMapper.toDto(statsService.getOverview(user)));
+    public ResponseEntity<StatsOverviewDto> getOverview(
+            @CurrentUser User user,
+            @RequestHeader(value = "X-Timezone", required = false) String timezone) {
+        return ResponseEntity.ok(StatsApiMapper.toDto(statsService.getOverview(user, timezone)));
     }
 
     @GetMapping("/achievements")

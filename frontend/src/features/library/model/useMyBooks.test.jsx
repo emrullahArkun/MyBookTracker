@@ -219,6 +219,18 @@ describe('useMyBooks wrapper tests', () => {
         expect(booksApi.getAll).not.toHaveBeenCalled();
     });
 
+    it('should fall back to an empty page when the API returns null', async () => {
+        booksApi.getAll.mockResolvedValue(null);
+        const { result } = renderHook(() => useMyBooks(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.loading).toBe(false);
+        });
+
+        expect(result.current.books).toHaveLength(0);
+        expect(result.current.totalPages).toBe(0);
+    });
+
     it('should call updateStatus mutation', async () => {
         const { result } = renderHook(() => useMyBooks(), { wrapper });
         await waitFor(() => expect(result.current.books).toHaveLength(1));
@@ -297,6 +309,49 @@ describe('useMyBooks wrapper tests', () => {
 
         await waitFor(() => {
             expect(booksApi.delete).toHaveBeenCalledWith(1);
+        });
+    });
+
+    it('should remove a deleted book from the selected set immediately', async () => {
+        const { result } = renderHook(() => useMyBooks(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.books).toHaveLength(1);
+        });
+
+        act(() => {
+            result.current.toggleSelection(1);
+        });
+
+        expect(result.current.selectedBooks.has(1)).toBe(true);
+
+        act(() => {
+            result.current.deleteBook(1);
+        });
+
+        expect(result.current.selectedBooks.has(1)).toBe(false);
+    });
+
+    it('should clear selected books after deleteAll settles', async () => {
+        const { result } = renderHook(() => useMyBooks(), { wrapper });
+
+        await waitFor(() => {
+            expect(result.current.books).toHaveLength(1);
+        });
+
+        act(() => {
+            result.current.toggleSelection(1);
+        });
+
+        expect(result.current.selectedBooks.has(1)).toBe(true);
+
+        act(() => {
+            result.current.deleteAll();
+        });
+
+        await waitFor(() => {
+            expect(booksApi.deleteAll).toHaveBeenCalled();
+            expect(result.current.selectedBooks.size).toBe(0);
         });
     });
 });
