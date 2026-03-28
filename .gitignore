@@ -40,4 +40,3 @@ node_modules/
 ### Local Env ###
 .env
 .env.*
-ops/nginx/.htpasswd
