@@ -41,11 +41,37 @@ Full support for English and German with automatic browser language detection.
 
 ## Getting Started
 
-1. **Start the application**
+### Prerequisites
+
+- Docker & Docker Compose
+- Node.js (for local frontend development)
+- [Task](https://taskfile.dev/) (optional, for convenience commands)
+
+### Setup
+
+1. **Create a `.env` file** in the project root (see `.env.example`):
     ```bash
-    docker compose up --build
+    cp .env.example .env
     ```
 
-2. **Access the services**
-    * App: `http://localhost:5173`
-    * API: `http://localhost:8080`
+2. **Install frontend dependencies**:
+    ```bash
+    cd frontend && npm install
+    ```
+
+### Run
+
+**Full stack in Docker:**
+```bash
+docker compose up --build
+```
+
+**Development mode** (Backend in Docker, Frontend locally with hot reload):
+```bash
+task dev
+```
+
+### Access the services
+
+* App: `http://localhost:5173`
+* API: `http://localhost:8080`
