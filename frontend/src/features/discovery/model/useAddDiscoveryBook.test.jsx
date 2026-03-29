@@ -10,6 +10,8 @@ let mockAuthState = {
 
 const mockToast = vi.fn();
 const mockClose = vi.fn();
+const mockIsActive = vi.fn(() => false);
+const mockUpdate = vi.fn();
 const mockCreate = vi.fn();
 const mockBuildLibraryBookPayload = vi.fn((book) => ({ isbn: book.isbn, title: book.title }));
 
@@ -27,6 +29,8 @@ vi.mock('@chakra-ui/react', async () => {
         ...actual,
         useToast: () => {
             mockToast.close = mockClose;
+            mockToast.isActive = mockIsActive;
+            mockToast.update = mockUpdate;
             return mockToast;
         },
     };
@@ -109,7 +113,6 @@ describe('useAddDiscoveryBook', () => {
         expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['ownedIsbns', 'reader@example.com'] });
         expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['discovery'] });
         expect(mockBuildLibraryBookPayload).toHaveBeenCalledWith({ isbn: 'remove-me', title: 'Remove Me' });
-        expect(mockClose).toHaveBeenCalledWith('add-book-toast');
         expect(mockToast).toHaveBeenCalled();
     });
 
@@ -131,7 +134,6 @@ describe('useAddDiscoveryBook', () => {
 
         await expect(result.current.mutateAsync({ isbn: 'dup', title: 'Duplicate' })).rejects.toEqual({ status: 409 });
 
-        expect(mockClose).toHaveBeenCalledWith('add-book-toast');
         const toastConfig = mockToast.mock.calls[0][0];
         render(toastConfig.render());
         expect(screen.getByText('search.toast.duplicate')).toBeInTheDocument();

@@ -222,7 +222,6 @@ const SessionTimerCard = ({
 
                 {showStopConfirm ? (
                     <SessionStopConfirm
-                        subTextColor={subTextColor}
                         endPage={endPage}
                         setEndPage={setEndPage}
                         currentPage={currentPage}

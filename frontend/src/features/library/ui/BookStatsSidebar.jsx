@@ -97,8 +97,6 @@ const BookStatsSidebar = ({
                                     w="full"
                                     borderRadius="full"
                                     bg="rgba(248, 236, 214, 0.08)"
-                                    hasStripe={goalProgress.isGoalReached}
-                                    isAnimated={goalProgress.isGoalReached}
                                 />
                                 {goalProgress.isGoalReached && (
                                     <Flex align="center" mt={1} color="#95a17f">

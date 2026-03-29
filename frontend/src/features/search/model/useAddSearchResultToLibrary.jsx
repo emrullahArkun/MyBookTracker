@@ -23,25 +23,33 @@ export const useAddSearchResultToLibrary = () => {
             queryClient.invalidateQueries({ queryKey: ['myBooks'] });
             queryClient.invalidateQueries({ queryKey: ['ownedIsbns', user?.email] });
             queryClient.invalidateQueries({ queryKey: ['discovery'] });
-            toast.close('add-book-toast');
-            toast(createAppToast({
+            const toastOptions = createAppToast({
                 id: 'add-book-toast',
                 title: t('search.toast.successTitle'),
                 status: 'success',
                 duration: 3000,
-            }));
+            });
+            if (toast.isActive('add-book-toast')) {
+                toast.update('add-book-toast', toastOptions);
+            } else {
+                toast(toastOptions);
+            }
         },
         onError: (err) => {
             const isDuplicate = err.status === 409;
             const message = isDuplicate ? t('search.toast.duplicate') : (err.message || t('search.toast.addFailed'));
 
-            toast.close('add-book-toast');
-            toast(createAppToast({
+            const toastOptions = createAppToast({
                 id: 'add-book-toast',
                 title: message,
                 status: isDuplicate ? 'warning' : 'error',
                 duration: 3000,
-            }));
+            });
+            if (toast.isActive('add-book-toast')) {
+                toast.update('add-book-toast', toastOptions);
+            } else {
+                toast(toastOptions);
+            }
         }
     });
 };

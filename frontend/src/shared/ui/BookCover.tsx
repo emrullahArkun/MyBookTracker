@@ -231,7 +231,8 @@ const getGoogleBooksFallbackUrl = (rawUrl?: string): string => {
 
 const getCoverSources = (primaryUrl: string, googleFallbackUrl: string, openLibraryUrl: string): string[] => {
     if (shouldPreferOpenLibraryCover(primaryUrl, openLibraryUrl)) {
-        return openLibraryUrl ? [openLibraryUrl] : [];
+        const orderedSources = [openLibraryUrl, primaryUrl, googleFallbackUrl];
+        return [...new Set(orderedSources.filter(Boolean))];
     }
 
     const orderedSources = [primaryUrl, googleFallbackUrl, openLibraryUrl];

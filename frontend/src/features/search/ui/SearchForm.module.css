@@ -51,10 +51,10 @@
     right: 0;
     z-index: 5;
     background:
-        linear-gradient(180deg, rgba(18, 24, 34, 0.96) 0%, rgba(10, 14, 22, 0.98) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+        linear-gradient(180deg, rgba(43, 33, 25, 0.98) 0%, rgba(27, 21, 17, 0.98) 100%);
+    border: 1px solid rgba(217, 188, 146, 0.16);
     border-radius: 18px;
-    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 20px 44px rgba(8, 6, 4, 0.32);
     backdrop-filter: blur(16px);
     padding: 16px;
 }
