@@ -22,7 +22,10 @@ describe('SearchForm', () => {
 
     it('should render search input', () => {
         render(<SearchForm {...baseProps} />);
-        expect(screen.getByPlaceholderText('search.placeholder')).toBeDefined();
+        const input = screen.getByPlaceholderText('search.placeholder');
+        expect(input).toBeDefined();
+        expect(input).toHaveAttribute('aria-expanded', 'false');
+        expect(input).not.toHaveAttribute('aria-controls');
     });
 
     it('should call setQuery on input change', () => {
@@ -111,6 +114,22 @@ describe('SearchForm', () => {
         expect(onCloseHistory).not.toHaveBeenCalled();
     });
 
+    it('should keep history open when focus stays inside the search shell', () => {
+        const onCloseHistory = vi.fn();
+        render(
+            <SearchForm
+                {...baseProps}
+                recentSearches={['Dune']}
+                isHistoryOpen
+                onCloseHistory={onCloseHistory}
+            />,
+        );
+
+        fireEvent.focusIn(screen.getByRole('button', { name: /Dune/i }));
+
+        expect(onCloseHistory).not.toHaveBeenCalled();
+    });
+
     it('should close history when focus moves outside the search shell', () => {
         const onCloseHistory = vi.fn();
         render(
@@ -144,5 +163,21 @@ describe('SearchForm', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
 
         expect(onCloseHistory).toHaveBeenCalledTimes(1);
+    });
+
+    it('should ignore non-Escape key presses while history is open', () => {
+        const onCloseHistory = vi.fn();
+        render(
+            <SearchForm
+                {...baseProps}
+                recentSearches={['Dune']}
+                isHistoryOpen
+                onCloseHistory={onCloseHistory}
+            />,
+        );
+
+        fireEvent.keyDown(document, { key: 'Enter' });
+
+        expect(onCloseHistory).not.toHaveBeenCalled();
     });
 });

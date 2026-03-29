@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { createRef } from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import BookCover from './BookCover';
 
 describe('BookCover', () => {
@@ -239,6 +239,52 @@ describe('BookCover', () => {
 
         const img = screen.getByRole('img');
         expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/9783161484100-L.jpg?default=false');
+    });
+
+    it('keeps google covers with isbn when no thumbnail-size marker is present', () => {
+        const book = {
+            title: 'Google Cover Without Zoom',
+            isbn: '9783161484100',
+            coverUrl: 'https://books.google.com/books/content?id=abc&printsec=frontcover&img=1&source=gbs_api',
+        };
+
+        render(<BookCover book={book} />);
+
+        const img = screen.getByRole('img');
+        expect(img.src).toContain('https://books.google.com/books/content');
+        expect(img.src).not.toContain('/b/isbn/');
+    });
+
+    it('falls back to open library when google cover parsing fails for a thumbnail url', () => {
+        const originalURL = global.URL;
+        const failingUrl = 'https://books.google.com/books/content?id=abc&printsec=frontcover&img=1&zoom=3&source=gbs_api';
+
+        global.URL = class URLMock extends originalURL {
+            constructor(url, base) {
+                if (url === failingUrl) {
+                    throw new TypeError('bad url');
+                }
+
+                super(url, base);
+            }
+        };
+
+        try {
+            render(
+                <BookCover
+                    book={{
+                        title: 'Broken Google Cover',
+                        isbn: '9783161484100',
+                        coverUrl: failingUrl,
+                    }}
+                />,
+            );
+
+            const img = screen.getByRole('img');
+            expect(img.src).toBe('https://covers.openlibrary.org/b/isbn/9783161484100-L.jpg?default=false');
+        } finally {
+            global.URL = originalURL;
+        }
     });
 
     it('keeps google content thumbnails when no open library fallback exists', () => {
