@@ -143,7 +143,6 @@ const BookStatsPage = () => {
                         {stats && (
                             <BookStatsCharts
                                 stats={stats}
-                                sessions={sessions}
                                 bookId={id}
                                 cardBg={cardBg}
                                 textColor={textColor}

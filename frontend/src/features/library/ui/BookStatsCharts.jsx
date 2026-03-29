@@ -12,13 +12,11 @@ import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianG
 import { FaChartLine } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import ReadingCalendar from './ReadingCalendar';
 
 const MotionCard = motion(Card);
 
 const BookStatsCharts = ({
     stats,
-    sessions,
     bookId,
     cardBg,
     textColor,
@@ -45,7 +43,7 @@ const BookStatsCharts = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, delay: 0.12 }}
         >
-            <Flex justify="space-between" align="center" mb={3} flexShrink={0}>
+            <Flex mb={3} flexShrink={0}>
                 <Box>
                     <Text fontSize="0.68rem" fontWeight="700" color={mutedTextColor} textTransform="uppercase" letterSpacing="0.14em" mb={2}>
                         {t('bookStats.chart.kicker')}
@@ -55,9 +53,6 @@ const BookStatsCharts = ({
                     </Heading>
                     <Text fontSize="sm" color={subTextColor}>{t('bookStats.chart.subTitle')}</Text>
                 </Box>
-                <Flex align="center">
-                    <ReadingCalendar sessions={sessions} />
-                </Flex>
             </Flex>
 
             <Box flex="1" minH="160px" minW={0} w="full">
