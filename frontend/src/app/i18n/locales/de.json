@@ -215,7 +215,7 @@
             "button": "Registrieren",
             "link": "Noch kein Konto?",
             "loginLink": "Bereits registriert?",
-            "success": "Registrierung erfolgreich! Bitte prüfen Sie Ihre E-Mails.",
+            "success": "Registrierung erfolgreich!",
             "loadingText": "Konto wird erstellt..."
         },
         "verify": {

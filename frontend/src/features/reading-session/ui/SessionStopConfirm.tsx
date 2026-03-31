@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
     AlertDialog,
     AlertDialogBody,
@@ -36,6 +36,7 @@ function SessionStopConfirm({
 }: SessionStopConfirmProps) {
     const { t } = useTranslation();
     const cancelRef = useRef<HTMLButtonElement | null>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
     const {
         textColor,
         overlayBg,
@@ -46,6 +47,15 @@ function SessionStopConfirm({
         modalShadow,
         brandColor,
     } = useThemeTokens();
+
+    useEffect(() => {
+        const focusHandle = window.requestAnimationFrame(() => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        });
+
+        return () => window.cancelAnimationFrame(focusHandle);
+    }, []);
 
     return (
         <AlertDialog
@@ -92,6 +102,7 @@ function SessionStopConfirm({
                                 {t('readingSession.finish.endPage')}
                             </FormLabel>
                             <Input
+                                ref={inputRef}
                                 type="number"
                                 value={endPage}
                                 onChange={(event: ChangeEvent<HTMLInputElement>) => setEndPage(event.target.value)}

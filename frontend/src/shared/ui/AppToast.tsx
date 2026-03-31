@@ -2,6 +2,7 @@ import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaTimesCircle } from 'react-icons/fa';
 import type { UseToastOptions } from '@chakra-ui/react';
 import type { IconType } from 'react-icons';
+import { useThemeTokens } from '../theme/useThemeTokens';
 
 type AppToastStatus = 'success' | 'error' | 'warning' | 'info';
 
@@ -19,6 +20,7 @@ type ToastPalette = {
     icon: IconType;
     iconColor: string;
     glow: string;
+    iconBg: string;
 };
 
 const APP_TOAST_CONTAINER_STYLE = { marginTop: '84px' };
@@ -26,23 +28,27 @@ const APP_TOAST_CONTAINER_STYLE = { marginTop: '84px' };
 const TOAST_PALETTES: Record<AppToastStatus, ToastPalette> = {
     success: {
         icon: FaCheckCircle,
-        iconColor: '#9ad0a6',
-        glow: 'rgba(154, 208, 166, 0.28)',
+        iconColor: '#a8c992',
+        glow: 'rgba(168, 201, 146, 0.24)',
+        iconBg: 'rgba(168, 201, 146, 0.12)',
     },
     error: {
         icon: FaTimesCircle,
-        iconColor: '#f2a38d',
-        glow: 'rgba(242, 163, 141, 0.28)',
+        iconColor: '#de9d86',
+        glow: 'rgba(222, 157, 134, 0.24)',
+        iconBg: 'rgba(222, 157, 134, 0.12)',
     },
     warning: {
         icon: FaExclamationTriangle,
-        iconColor: '#f3c785',
-        glow: 'rgba(243, 199, 133, 0.28)',
+        iconColor: '#d8b179',
+        glow: 'rgba(216, 177, 121, 0.24)',
+        iconBg: 'rgba(216, 177, 121, 0.12)',
     },
     info: {
         icon: FaInfoCircle,
-        iconColor: '#9db6df',
-        glow: 'rgba(157, 182, 223, 0.28)',
+        iconColor: '#d8ba8c',
+        glow: 'rgba(216, 186, 140, 0.24)',
+        iconBg: 'rgba(216, 186, 140, 0.12)',
     },
 };
 
@@ -54,6 +60,13 @@ type AppToastMessageProps = {
 
 const AppToastMessage = ({ title, description, status }: AppToastMessageProps) => {
     const palette = TOAST_PALETTES[status];
+    const {
+        modalBg,
+        modalBorder,
+        modalShadow,
+        textColor,
+        modalMutedText,
+    } = useThemeTokens();
 
     return (
         <Box
@@ -63,35 +76,37 @@ const AppToastMessage = ({ title, description, status }: AppToastMessageProps) =
             px={4}
         >
             <Flex
-                align="flex-start"
+                align="center"
                 gap={3}
                 px={4}
                 py={3.5}
                 borderRadius="20px"
-                bg="linear-gradient(180deg, rgba(23, 33, 50, 0.96) 0%, rgba(55, 41, 33, 0.94) 100%)"
+                bg={modalBg}
                 border="1px solid"
-                borderColor="rgba(255, 238, 214, 0.12)"
-                boxShadow="0 18px 40px rgba(8, 12, 20, 0.34), inset 0 1px 0 rgba(255, 244, 232, 0.06)"
-                color="#fff8ef"
+                borderColor={modalBorder}
+                boxShadow={`${modalShadow}, inset 0 1px 0 rgba(255, 244, 232, 0.04)`}
+                color={textColor}
             >
                 <Flex
-                    w={10}
-                    h={10}
+                    w={12}
+                    h={12}
                     flexShrink={0}
                     align="center"
                     justify="center"
                     borderRadius="full"
-                    bg="rgba(255, 248, 239, 0.08)"
+                    bg={`linear-gradient(180deg, rgba(255, 248, 239, 0.08) 0%, ${palette.iconBg} 100%)`}
+                    border="1px solid"
+                    borderColor={modalBorder}
                     boxShadow={`0 0 20px ${palette.glow}`}
                 >
-                    <Icon as={palette.icon} color={palette.iconColor} boxSize={4.5} />
+                    <Icon as={palette.icon} color={palette.iconColor} boxSize={8} />
                 </Flex>
-                <Box>
+                <Box flex="1">
                     <Text fontSize="sm" fontWeight="700" lineHeight="1.4">
                         {title}
                     </Text>
                     {description ? (
-                        <Text mt={1} fontSize="xs" color="rgba(240, 229, 214, 0.74)" lineHeight="1.5">
+                        <Text mt={1} fontSize="xs" color={modalMutedText} lineHeight="1.5">
                             {description}
                         </Text>
                     ) : null}

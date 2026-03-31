@@ -215,7 +215,7 @@
             "button": "Register",
             "link": "Don't have an account?",
             "loginLink": "Already have an account?",
-            "success": "Registration successful! Please check your email.",
+            "success": "Registration successful!",
             "loadingText": "Creating account..."
         },
         "verify": {
