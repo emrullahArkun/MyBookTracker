@@ -54,7 +54,7 @@ jobs:
         github.ref == 'refs/heads/main'
       )
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
@@ -104,7 +104,7 @@ jobs:
         github.ref == 'refs/heads/main'
       )
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
