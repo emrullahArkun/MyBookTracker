@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 class ReadingSessionTest {
 
@@ -20,22 +21,21 @@ class ReadingSessionTest {
         user = new User();
         user.setId(1L);
 
-        book = new Book();
-        book.setId(1L);
+        book = book().id(1L).build();
 
         now = Instant.now();
     }
 
     @Test
     void startNew_ShouldUseZero_WhenCurrentPageNull() {
-        book.setCurrentPage(null);
+        book.restoreTracking(null, null, null);
         ReadingSession session = ReadingSession.startNew(user, book, now);
         assertEquals(0, session.getStartPage());
     }
 
     @Test
     void startNew_ShouldUseCurrentPage_WhenAvailable() {
-        book.setCurrentPage(50);
+        book.restoreTracking(50, null, null);
         ReadingSession session = ReadingSession.startNew(user, book, now);
         assertEquals(50, session.getStartPage());
     }

@@ -1,8 +1,7 @@
 package com.example.mybooktracker.stats.application;
 
 import com.example.mybooktracker.auth.domain.User;
-import com.example.mybooktracker.sessions.domain.SessionStatus;
-import com.example.mybooktracker.sessions.infra.persistence.ReadingSessionRepository;
+import com.example.mybooktracker.sessions.application.ReadingSessionQueryPort;
 import com.example.mybooktracker.stats.domain.streak.StreakCalculator;
 import com.example.mybooktracker.stats.domain.streak.StreakInfo;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +30,7 @@ class StreakServiceTest {
     private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_INSTANT, ZoneOffset.UTC);
 
     @Mock
-    private ReadingSessionRepository sessionRepository;
+    private ReadingSessionQueryPort readingSessionQueryPort;
 
     private StreakService streakService;
 
@@ -39,14 +38,14 @@ class StreakServiceTest {
 
     @BeforeEach
     void setUp() {
-        streakService = new StreakService(sessionRepository, new StreakCalculator(), FIXED_CLOCK);
+        streakService = new StreakService(readingSessionQueryPort, new StreakCalculator(), FIXED_CLOCK);
         user = new User();
         user.setId(1L);
     }
 
     @Test
     void calculateStreaks_ShouldReturnZeros_WhenNoReadingDays() {
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(Collections.emptyList());
 
         StreakInfo result = streakService.calculateStreaks(user);
@@ -56,7 +55,7 @@ class StreakServiceTest {
 
     @Test
     void calculateStreaks_ShouldCountConsecutiveDays_IncludingToday() {
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         FIXED_DATE.atStartOfDay(ZoneOffset.UTC).plusHours(10).toInstant(),
                         FIXED_DATE.minusDays(1).atStartOfDay(ZoneOffset.UTC).plusHours(14).toInstant(),
@@ -71,7 +70,7 @@ class StreakServiceTest {
     @Test
     void calculateStreaks_ShouldCountFromYesterday_WhenNoSessionToday() {
         LocalDate yesterday = FIXED_DATE.minusDays(1);
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         yesterday.atStartOfDay(ZoneOffset.UTC).plusHours(20).toInstant(),
                         yesterday.minusDays(1).atStartOfDay(ZoneOffset.UTC).plusHours(15).toInstant()
@@ -84,7 +83,7 @@ class StreakServiceTest {
 
     @Test
     void calculateStreaks_ShouldBreakCurrentOnGap() {
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         FIXED_DATE.atStartOfDay(ZoneOffset.UTC).plusHours(10).toInstant(),
                         FIXED_DATE.minusDays(1).atStartOfDay(ZoneOffset.UTC).plusHours(10).toInstant(),
@@ -99,7 +98,7 @@ class StreakServiceTest {
     @Test
     void calculateStreaks_ShouldReturnZeroCurrent_WhenLastReadingWasTwoDaysAgo() {
         LocalDate twoDaysAgo = FIXED_DATE.minusDays(2);
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         twoDaysAgo.atStartOfDay(ZoneOffset.UTC).plusHours(12).toInstant()
                 ));
@@ -111,7 +110,7 @@ class StreakServiceTest {
 
     @Test
     void calculateStreaks_ShouldFindLongestConsecutiveRun() {
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         FIXED_DATE.atStartOfDay(ZoneOffset.UTC).plusHours(10).toInstant(),
                         FIXED_DATE.minusDays(1).atStartOfDay(ZoneOffset.UTC).plusHours(10).toInstant(),
@@ -127,7 +126,7 @@ class StreakServiceTest {
 
     @Test
     void calculateStreaks_ShouldReturnOneForBoth_WhenSingleDayToday() {
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         FIXED_DATE.atStartOfDay(ZoneOffset.UTC).plusHours(18).toInstant()
                 ));
@@ -150,7 +149,7 @@ class StreakServiceTest {
         Instant earlyMorning = todayBerlin.atStartOfDay(berlin).plusHours(1).plusMinutes(30)
                 .toInstant();
 
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(lateEvening, earlyMorning));
 
         StreakInfo berlinResult = streakService.calculateStreaks(user, berlin);
@@ -159,7 +158,7 @@ class StreakServiceTest {
 
     @Test
     void calculateStreaks_ShouldDeduplicateMultipleSessionsSameDay() {
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         FIXED_DATE.atStartOfDay(ZoneOffset.UTC).plusHours(10).toInstant(),
                         FIXED_DATE.atStartOfDay(ZoneOffset.UTC).plusHours(14).toInstant(),
@@ -173,7 +172,7 @@ class StreakServiceTest {
 
     @Test
     void calculateStreaks_ShouldFallbackToUtc_WhenNoTimezoneProvided() {
-        when(sessionRepository.findAllCompletedEndTimes(eq(user), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.findCompletedEndTimes(eq(user)))
                 .thenReturn(List.of(
                         FIXED_DATE.atStartOfDay(ZoneOffset.UTC).plusHours(10).toInstant()
                 ));

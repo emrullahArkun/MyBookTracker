@@ -1,7 +1,11 @@
 package com.example.mybooktracker.books.api;
 
 import com.example.mybooktracker.auth.domain.User;
+import com.example.mybooktracker.books.api.dto.BookFocusResponse;
 import com.example.mybooktracker.books.application.BookService;
+import com.example.mybooktracker.books.application.BookCollectionViewService;
+import com.example.mybooktracker.books.application.BookFocusView;
+import com.example.mybooktracker.books.application.BookSection;
 import com.example.mybooktracker.books.application.CreateBookCommand;
 import com.example.mybooktracker.books.application.ReadingGoalProgressService;
 import com.example.mybooktracker.books.api.dto.BookDto;
@@ -30,6 +34,7 @@ import java.util.Map;
 public class BookController {
 
     private final BookService bookService;
+    private final BookCollectionViewService bookCollectionViewService;
     private final BookMapper bookMapper;
     private final ReadingGoalProgressService progressService;
 
@@ -43,6 +48,30 @@ public class BookController {
         Page<BookDto> dtoPage = bookPage.map(book -> toDtoWithProgress(book, progressMap.get(book.getId())));
 
         return ResponseEntity.ok(dtoPage);
+    }
+
+    @GetMapping("/sections/{section}")
+    public ResponseEntity<Page<BookDto>> getBooksBySection(
+            @PathVariable String section,
+            @PageableDefault(size = 4) Pageable pageable,
+            @CurrentUser User user) {
+        Page<Book> bookPage = bookCollectionViewService.getSectionPage(user, BookSection.fromValue(section), pageable);
+        Map<Long, Integer> progressMap = progressService.calculateProgressBatch(bookPage.getContent());
+
+        Page<BookDto> dtoPage = bookPage.map(book -> toDtoWithProgress(book, progressMap.get(book.getId())));
+        return ResponseEntity.ok(dtoPage);
+    }
+
+    @GetMapping("/focus")
+    public ResponseEntity<BookFocusResponse> getBookFocus(
+            @RequestParam(defaultValue = "3") int queueSize,
+            @CurrentUser User user) {
+        BookFocusView focusView = bookCollectionViewService.getFocus(user, queueSize);
+        return ResponseEntity.ok(new BookFocusResponse(
+                focusView.currentBook() != null ? bookMapper.toDto(focusView.currentBook()) : null,
+                focusView.queuedBooks().stream().map(bookMapper::toDto).toList(),
+                focusView.activeBooksCount(),
+                focusView.completedBooksCount()));
     }
 
     @GetMapping("/owned")

@@ -2,9 +2,8 @@ package com.example.mybooktracker.stats.application;
 
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.books.application.BookQueryPort;
-import com.example.mybooktracker.sessions.infra.persistence.ReadingSessionRepository;
+import com.example.mybooktracker.sessions.application.ReadingSessionQueryPort;
 import com.example.mybooktracker.sessions.domain.ReadingSession;
-import com.example.mybooktracker.sessions.domain.SessionStatus;
 import com.example.mybooktracker.stats.domain.activity.SessionAnalyzer;
 import com.example.mybooktracker.stats.domain.achievements.AchievementContext;
 import com.example.mybooktracker.stats.domain.streak.StreakInfo;
@@ -23,20 +22,20 @@ import java.util.Map;
 public class AchievementContextFactory {
 
     private final BookQueryPort bookQueryPort;
-    private final ReadingSessionRepository sessionRepository;
+    private final ReadingSessionQueryPort readingSessionQueryPort;
     private final StreakService streakService;
     private final Clock clock;
 
     public AchievementContext build(User user, ZoneId zoneId) {
         long totalBooks = bookQueryPort.countByUser(user);
         long completedBooks = bookQueryPort.countCompletedByUser(user);
-        long totalPages = sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED);
-        long totalSessions = sessionRepository.countCompletedByUser(user, SessionStatus.COMPLETED);
+        long totalPages = readingSessionQueryPort.sumCompletedPagesByUser(user);
+        long totalSessions = readingSessionQueryPort.countCompletedByUser(user);
         StreakInfo streakInfo = streakService.calculateStreaks(user, zoneId);
         int bestStreak = streakInfo.longest();
 
         Instant since = LocalDate.now(clock.withZone(zoneId)).minusYears(1).atStartOfDay(zoneId).toInstant();
-        List<ReadingSession> sessions = sessionRepository.findCompletedSessionsSince(user, since, SessionStatus.COMPLETED);
+        List<ReadingSession> sessions = readingSessionQueryPort.findCompletedSessionsSince(user, since);
         Map<java.time.LocalDate, Integer> dailyPagesMap = SessionAnalyzer.getDailyPagesMap(sessions, zoneId);
         int maxDailyPages = dailyPagesMap.values().stream()
                 .mapToInt(Integer::intValue)

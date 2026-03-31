@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Flex,
@@ -11,25 +11,26 @@ import {
     useToast,
     useDisclosure,
 } from '@chakra-ui/react';
-import { useMyBooks } from '../model/useMyBooks';
+import { useLibraryPageData } from '../model/useLibraryPageData';
 import ConfirmDialog from '../../../shared/ui/ConfirmDialog';
 import MyBookCard from '../ui/MyBookCard';
 import LibraryActionsBar from '../ui/LibraryActionsBar';
 import LibraryEmptyState from '../ui/LibraryEmptyState';
 import LibraryPagination from '../ui/LibraryPagination';
 import { useReadingSessionContext } from '../../reading-session';
-import type { Book } from '../../../shared/types/books';
+import type { Book, LibrarySectionKey, PaginatedResponse } from '../../../shared/types/books';
 import { createAppToast } from '../../../shared/ui/AppToast';
 import { useThemeTokens } from '../../../shared/theme/useThemeTokens';
 
 type LibrarySection = {
-    key: string;
+    key: LibrarySectionKey;
     title: string;
     hint: string;
     books: Book[];
+    totalBooks: number;
+    page: number;
+    totalPages: number;
 };
-
-const SECTION_PAGE_SIZE = 4;
 
 function LibraryPage() {
     const { t } = useTranslation();
@@ -42,89 +43,64 @@ function LibraryPage() {
         borderColor,
         panelShadow,
     } = useThemeTokens();
-    const {
-        books,
-        loading,
-        error,
-        selectedBooks,
-        toggleSelection,
-        deleteSelected,
-        deleteAll,
-        updateBookProgress,
-        deleteError,
-    } = useMyBooks();
-    const { activeSession } = useReadingSessionContext();
-    const [sectionPages, setSectionPages] = useState<Record<string, number>>({
+    const [sectionPages, setSectionPages] = useState<Record<LibrarySectionKey, number>>({
         current: 0,
         next: 0,
         finished: 0,
     });
+    const {
+        loading,
+        error,
+        sections: sectionPagesData,
+        selectedBooks,
+        toggleSelection,
+        deleteSelected,
+        deleteAll,
+        deleteError,
+    } = useLibraryPageData(sectionPages);
+    const { activeSession } = useReadingSessionContext();
 
     const toast = useToast();
     const { isOpen: isDeleteAllOpen, onOpen: onDeleteAllOpen, onClose: onDeleteAllClose } = useDisclosure();
     const { isOpen: isDeleteSelectedOpen, onOpen: onDeleteSelectedOpen, onClose: onDeleteSelectedClose } = useDisclosure();
 
-    const sections = useMemo<LibrarySection[]>(() => {
-        const activeSessionBookId = activeSession?.bookId ?? null;
-
-        const currentReads = [...books]
-            .filter((book) => !book.completed && (book.currentPage || 0) > 0)
-            .sort((a, b) => {
-                if (a.id === activeSessionBookId) return -1;
-                if (b.id === activeSessionBookId) return 1;
-                return (b.currentPage || 0) - (a.currentPage || 0);
-            });
-
-        const upNext = [...books]
-            .filter((book) => !book.completed && (book.currentPage || 0) === 0)
-            .sort((a, b) => {
-                const aHasGoal = a.readingGoalType ? 1 : 0;
-                const bHasGoal = b.readingGoalType ? 1 : 0;
-                return bHasGoal - aHasGoal;
-            });
-
-        const finished = [...books]
-            .filter((book) => Boolean(book.completed))
-            .sort((a, b) => (b.currentPage || 0) - (a.currentPage || 0));
+    const sections: LibrarySection[] = (() => {
+        const toSection = (
+            key: LibrarySectionKey,
+            title: string,
+            hint: string,
+            data: PaginatedResponse<Book>
+        ): LibrarySection => ({
+            key,
+            title,
+            hint,
+            books: data.content || [],
+            totalBooks: data.totalElements || 0,
+            page: data.number || 0,
+            totalPages: Math.max(data.totalPages || 0, 1),
+        });
 
         return [
-            {
-                key: 'current',
-                title: t('myBooks.sections.current'),
-                hint: activeSession
-                    ? t('myBooks.sections.currentHintActive')
-                    : t('myBooks.sections.currentHint'),
-                books: currentReads,
-            },
-            {
-                key: 'next',
-                title: t('myBooks.sections.next'),
-                hint: t('myBooks.sections.nextHint'),
-                books: upNext,
-            },
-            {
-                key: 'finished',
-                title: t('myBooks.sections.finished'),
-                hint: t('myBooks.sections.finishedHint'),
-                books: finished,
-            },
+            toSection(
+                'current',
+                t('myBooks.sections.current'),
+                activeSession ? t('myBooks.sections.currentHintActive') : t('myBooks.sections.currentHint'),
+                sectionPagesData.current
+            ),
+            toSection(
+                'next',
+                t('myBooks.sections.next'),
+                t('myBooks.sections.nextHint'),
+                sectionPagesData.next
+            ),
+            toSection(
+                'finished',
+                t('myBooks.sections.finished'),
+                t('myBooks.sections.finishedHint'),
+                sectionPagesData.finished
+            ),
         ];
-    }, [activeSession, books, t]);
-
-    const paginatedSections = useMemo(() => (
-        sections.map((section) => {
-            const totalSectionPages = Math.max(1, Math.ceil(section.books.length / SECTION_PAGE_SIZE));
-            const currentSectionPage = Math.min(sectionPages[section.key] ?? 0, totalSectionPages - 1);
-            const startIndex = currentSectionPage * SECTION_PAGE_SIZE;
-
-            return {
-                ...section,
-                page: currentSectionPage,
-                totalPages: totalSectionPages,
-                visibleBooks: section.books.slice(startIndex, startIndex + SECTION_PAGE_SIZE),
-            };
-        })
-    ), [sectionPages, sections]);
+    })();
 
     useEffect(() => {
         setSectionPages((prev) => {
@@ -132,8 +108,7 @@ function LibraryPage() {
             let changed = false;
 
             for (const section of sections) {
-                const totalSectionPages = Math.max(1, Math.ceil(section.books.length / SECTION_PAGE_SIZE));
-                const clampedPage = Math.min(prev[section.key] ?? 0, totalSectionPages - 1);
+                const clampedPage = Math.min(prev[section.key] ?? 0, section.totalPages - 1);
 
                 if (nextPages[section.key] !== clampedPage) {
                     nextPages[section.key] = clampedPage;
@@ -166,9 +141,9 @@ function LibraryPage() {
     };
 
     const totalSelected = selectedBooks.size;
-    const activeCount = sections.find((section) => section.key === 'current')?.books.length ?? 0;
-    const nextCount = sections.find((section) => section.key === 'next')?.books.length ?? 0;
-    const finishedCount = sections.find((section) => section.key === 'finished')?.books.length ?? 0;
+    const activeCount = sections.find((section) => section.key === 'current')?.totalBooks ?? 0;
+    const nextCount = sections.find((section) => section.key === 'next')?.totalBooks ?? 0;
+    const finishedCount = sections.find((section) => section.key === 'finished')?.totalBooks ?? 0;
     const panelStyles = {
         bg: cardBg,
         border: '1px solid',
@@ -177,7 +152,9 @@ function LibraryPage() {
         boxShadow: panelShadow,
     };
 
-    if (loading && books.length === 0) {
+    const totalBooks = sections.reduce((sum, section) => sum + section.totalBooks, 0);
+
+    if (loading && totalBooks === 0) {
         return <Center h="200px" color={textColor}>{t('myBooks.loading')}</Center>;
     }
 
@@ -234,7 +211,7 @@ function LibraryPage() {
                 </Box>
             </SimpleGrid>
 
-            {books.length > 0 && (
+            {totalBooks > 0 && (
                 <Flex
                     align="center"
                     justify="flex-end"
@@ -250,13 +227,13 @@ function LibraryPage() {
                 </Flex>
             )}
 
-            {books.length === 0 ? (
+            {totalBooks === 0 ? (
                 <LibraryEmptyState />
             ) : (
                 <>
                     <Stack spacing={10}>
-                        {paginatedSections.map((section) => {
-                            if (section.books.length === 0) {
+                        {sections.map((section) => {
+                            if (section.totalBooks === 0) {
                                 return null;
                             }
 
@@ -269,7 +246,7 @@ function LibraryPage() {
                                                     {section.title}
                                                 </Text>
                                                 <Text fontSize="xs" color={mutedTextColor} textTransform="uppercase" letterSpacing="0.12em">
-                                                    {section.books.length}
+                                                    {section.totalBooks}
                                                 </Text>
                                             </Flex>
                                             <Text color={subTextColor} fontSize="sm">
@@ -296,13 +273,12 @@ function LibraryPage() {
                                     </Flex>
 
                                     <Flex wrap="wrap" gap={5} justify="flex-start" alignContent="flex-start">
-                                        {section.visibleBooks.map((book) => (
+                                        {section.books.map((book) => (
                                             <Box key={book.id} w={{ base: 'calc(50% - 10px)', sm: '208px' }} flexShrink={0}>
                                                 <MyBookCard
                                                     book={book}
                                                     isSelected={selectedBooks.has(book.id)}
                                                     onToggleSelect={toggleSelection}
-                                                    onUpdateProgress={updateBookProgress}
                                                 />
                                             </Box>
                                         ))}

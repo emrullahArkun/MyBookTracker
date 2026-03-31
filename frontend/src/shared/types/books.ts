@@ -22,6 +22,7 @@ export type CreateLibraryBookPayload = {
 };
 
 export type ReadingGoalType = 'WEEKLY' | 'MONTHLY' | null;
+export type LibrarySectionKey = 'current' | 'next' | 'finished';
 
 export type Book = {
     id: number;
@@ -46,6 +47,13 @@ export type PaginatedResponse<T> = {
     totalElements: number;
     size: number;
     number: number;
+};
+
+export type BookFocusResponse = {
+    currentBook: Book | null;
+    queuedBooks: Book[];
+    activeBooksCount: number;
+    completedBooksCount: number;
 };
 
 export type UpdateBookProgressRequest = {

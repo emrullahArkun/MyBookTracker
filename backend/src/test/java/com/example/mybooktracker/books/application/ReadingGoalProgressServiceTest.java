@@ -3,8 +3,7 @@ package com.example.mybooktracker.books.application;
 import com.example.mybooktracker.books.domain.Book;
 import com.example.mybooktracker.books.domain.ReadingGoalPeriodCalculator;
 import com.example.mybooktracker.books.domain.ReadingGoalType;
-import com.example.mybooktracker.sessions.infra.persistence.ReadingSessionRepository;
-import com.example.mybooktracker.sessions.domain.SessionStatus;
+import com.example.mybooktracker.sessions.application.ReadingSessionQueryPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,15 +17,15 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @ExtendWith(MockitoExtension.class)
 class ReadingGoalProgressServiceTest {
 
     @Mock
-    private ReadingSessionRepository sessionRepository;
+    private ReadingSessionQueryPort readingSessionQueryPort;
 
     private ReadingGoalProgressService progressService;
 
@@ -40,60 +39,55 @@ class ReadingGoalProgressServiceTest {
     @BeforeEach
     void setUp() {
         Clock fixedClock = Clock.fixed(FIXED_NOW, ZoneOffset.UTC);
-        progressService = new ReadingGoalProgressService(sessionRepository, fixedClock, new ReadingGoalPeriodCalculator());
+        progressService = new ReadingGoalProgressService(readingSessionQueryPort, fixedClock, new ReadingGoalPeriodCalculator());
     }
 
     @Test
     void calculateProgress_ShouldReturnNull_WhenGoalTypeIsNull() {
-        Book book = createBook();
-        book.setReadingGoalType(null);
-        book.setReadingGoalPages(100);
+        Book book = book().id(1L).isbn("isbn123").title("Test Book").publishYear(2023).pageCount(300).currentPage(50)
+                .completed(false).goal(null, 100).build();
 
         assertNull(progressService.calculateProgress(book));
-        verifyNoInteractions(sessionRepository);
+        verifyNoInteractions(readingSessionQueryPort);
     }
 
     @Test
     void calculateProgress_ShouldReturnNull_WhenGoalPagesIsNull() {
         Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(null);
+        book.updateReadingGoal(ReadingGoalType.WEEKLY, null);
 
         assertNull(progressService.calculateProgress(book));
-        verifyNoInteractions(sessionRepository);
+        verifyNoInteractions(readingSessionQueryPort);
     }
 
     @Test
     void calculateProgress_Weekly_ShouldQueryFromStartOfWeek() {
         Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
+        book.updateReadingGoal(ReadingGoalType.WEEKLY, 100);
 
-        when(sessionRepository.sumPagesReadByBookSince(eq(book), eq(EXPECTED_WEEK_START), eq(SessionStatus.COMPLETED))).thenReturn(25);
+        when(readingSessionQueryPort.sumCompletedPagesByBookSince(eq(book), eq(EXPECTED_WEEK_START))).thenReturn(25);
 
         assertEquals(25, progressService.calculateProgress(book));
-        verify(sessionRepository).sumPagesReadByBookSince(eq(book), eq(EXPECTED_WEEK_START), eq(SessionStatus.COMPLETED));
+        verify(readingSessionQueryPort).sumCompletedPagesByBookSince(eq(book), eq(EXPECTED_WEEK_START));
     }
 
     @Test
     void calculateProgress_Monthly_ShouldQueryFromStartOfMonth() {
         Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.MONTHLY);
-        book.setReadingGoalPages(200);
+        book.updateReadingGoal(ReadingGoalType.MONTHLY, 200);
 
-        when(sessionRepository.sumPagesReadByBookSince(eq(book), eq(EXPECTED_MONTH_START), eq(SessionStatus.COMPLETED))).thenReturn(50);
+        when(readingSessionQueryPort.sumCompletedPagesByBookSince(eq(book), eq(EXPECTED_MONTH_START))).thenReturn(50);
 
         assertEquals(50, progressService.calculateProgress(book));
-        verify(sessionRepository).sumPagesReadByBookSince(eq(book), eq(EXPECTED_MONTH_START), eq(SessionStatus.COMPLETED));
+        verify(readingSessionQueryPort).sumCompletedPagesByBookSince(eq(book), eq(EXPECTED_MONTH_START));
     }
 
     @Test
     void calculateProgress_ShouldReturnZero_WhenNoSessionsInPeriod() {
         Book book = createBook();
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
+        book.updateReadingGoal(ReadingGoalType.WEEKLY, 100);
 
-        when(sessionRepository.sumPagesReadByBookSince(eq(book), eq(EXPECTED_WEEK_START), eq(SessionStatus.COMPLETED))).thenReturn(0);
+        when(readingSessionQueryPort.sumCompletedPagesByBookSince(eq(book), eq(EXPECTED_WEEK_START))).thenReturn(0);
 
         assertEquals(0, progressService.calculateProgress(book));
     }
@@ -101,20 +95,18 @@ class ReadingGoalProgressServiceTest {
     @Test
     void calculateProgressBatch_ShouldReturnMapWithProgress() {
         Book weeklyBook = createBook();
-        weeklyBook.setId(1L);
-        weeklyBook.setReadingGoalType(ReadingGoalType.WEEKLY);
-        weeklyBook.setReadingGoalPages(100);
+        weeklyBook.assignIdentity(1L);
+        weeklyBook.updateReadingGoal(ReadingGoalType.WEEKLY, 100);
 
         Book monthlyBook = createBook();
-        monthlyBook.setId(2L);
-        monthlyBook.setReadingGoalType(ReadingGoalType.MONTHLY);
-        monthlyBook.setReadingGoalPages(200);
+        monthlyBook.assignIdentity(2L);
+        monthlyBook.updateReadingGoal(ReadingGoalType.MONTHLY, 200);
 
-        ReadingSessionRepository.BookPageSum weeklySum = mockBookPageSum(1L, 25);
-        when(sessionRepository.sumPagesReadByBooksSince(eq(List.of(weeklyBook)), eq(EXPECTED_WEEK_START), eq(SessionStatus.COMPLETED)))
+        ReadingSessionQueryPort.BookPageProgress weeklySum = new ReadingSessionQueryPort.BookPageProgress(1L, 25);
+        when(readingSessionQueryPort.sumCompletedPagesByBooksSince(eq(List.of(weeklyBook)), eq(EXPECTED_WEEK_START)))
                 .thenReturn(List.of(weeklySum));
-        ReadingSessionRepository.BookPageSum monthlySum = mockBookPageSum(2L, 50);
-        when(sessionRepository.sumPagesReadByBooksSince(eq(List.of(monthlyBook)), eq(EXPECTED_MONTH_START), eq(SessionStatus.COMPLETED)))
+        ReadingSessionQueryPort.BookPageProgress monthlySum = new ReadingSessionQueryPort.BookPageProgress(2L, 50);
+        when(readingSessionQueryPort.sumCompletedPagesByBooksSince(eq(List.of(monthlyBook)), eq(EXPECTED_MONTH_START)))
                 .thenReturn(List.of(monthlySum));
 
         Map<Long, Integer> result = progressService.calculateProgressBatch(List.of(weeklyBook, monthlyBook));
@@ -126,11 +118,10 @@ class ReadingGoalProgressServiceTest {
     @Test
     void calculateProgressBatch_ShouldReturnZero_WhenNoSessions() {
         Book book = createBook();
-        book.setId(1L);
-        book.setReadingGoalType(ReadingGoalType.WEEKLY);
-        book.setReadingGoalPages(100);
+        book.assignIdentity(1L);
+        book.updateReadingGoal(ReadingGoalType.WEEKLY, 100);
 
-        when(sessionRepository.sumPagesReadByBooksSince(anyList(), eq(EXPECTED_WEEK_START), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByBooksSince(eq(List.of(book)), eq(EXPECTED_WEEK_START)))
                 .thenReturn(java.util.Collections.emptyList());
 
         Map<Long, Integer> result = progressService.calculateProgressBatch(List.of(book));
@@ -141,30 +132,16 @@ class ReadingGoalProgressServiceTest {
     @Test
     void calculateProgressBatch_ShouldSkipBooksWithoutGoals() {
         Book bookNoGoal = createBook();
-        bookNoGoal.setId(1L);
-        bookNoGoal.setReadingGoalType(null);
+        bookNoGoal.assignIdentity(1L);
 
         Map<Long, Integer> result = progressService.calculateProgressBatch(List.of(bookNoGoal));
 
         assertTrue(result.isEmpty());
-        verifyNoInteractions(sessionRepository);
+        verifyNoInteractions(readingSessionQueryPort);
     }
 
     private Book createBook() {
-        Book book = new Book();
-        book.setId(1L);
-        book.setIsbn("isbn123");
-        book.setTitle("Test Book");
-        book.setPublishYear(2023);
-        book.setPageCount(300);
-        book.setCurrentPage(50);
-        return book;
-    }
-
-    private ReadingSessionRepository.BookPageSum mockBookPageSum(Long bookId, Integer totalPages) {
-        ReadingSessionRepository.BookPageSum mock = org.mockito.Mockito.mock(ReadingSessionRepository.BookPageSum.class);
-        when(mock.getBookId()).thenReturn(bookId);
-        when(mock.getTotalPages()).thenReturn(totalPages);
-        return mock;
+        return book().id(1L).isbn("isbn123").title("Test Book").publishYear(2023).pageCount(300).currentPage(50)
+                .completed(false).build();
     }
 }

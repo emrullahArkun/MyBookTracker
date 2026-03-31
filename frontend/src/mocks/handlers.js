@@ -1,6 +1,81 @@
 import { http, HttpResponse } from 'msw';
 
 export const handlers = [
+    http.get('/api/books/sections/:section', ({ params }) => {
+        const { section } = params;
+        const pages = {
+            current: {
+                content: [
+                    {
+                        id: 1,
+                        title: 'Test Book 1',
+                        authorName: 'Author 1',
+                        coverUrl: 'http://example.com/cover1.jpg',
+                        completed: false,
+                        currentPage: 20,
+                        pageCount: 300,
+                        isbn: '111',
+                    },
+                ],
+                totalPages: 1,
+                totalElements: 1,
+                size: 4,
+                number: 0,
+            },
+            next: {
+                content: [],
+                totalPages: 0,
+                totalElements: 0,
+                size: 4,
+                number: 0,
+            },
+            finished: {
+                content: [
+                    {
+                        id: 2,
+                        title: 'Test Book 2',
+                        authorName: 'Author 2',
+                        coverUrl: 'http://example.com/cover2.jpg',
+                        completed: true,
+                        currentPage: 300,
+                        pageCount: 300,
+                        isbn: '222',
+                    },
+                ],
+                totalPages: 1,
+                totalElements: 1,
+                size: 4,
+                number: 0,
+            },
+        };
+
+        return HttpResponse.json(pages[section] || {
+            content: [],
+            totalPages: 0,
+            totalElements: 0,
+            size: 4,
+            number: 0,
+        });
+    }),
+
+    http.get('/api/books/focus', () => {
+        return HttpResponse.json({
+            currentBook: {
+                id: 1,
+                title: 'Test Book 1',
+                authorName: 'Author 1',
+                coverUrl: 'http://example.com/cover1.jpg',
+                completed: false,
+                currentPage: 20,
+                pageCount: 300,
+                isbn: '111',
+            },
+            queuedBooks: [],
+            activeBooksCount: 1,
+            completedBooksCount: 1,
+        });
+    }),
+
     // Mock GET /api/books
     http.get('/api/books', () => {
         return HttpResponse.json({

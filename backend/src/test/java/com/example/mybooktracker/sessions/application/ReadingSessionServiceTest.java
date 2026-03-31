@@ -24,6 +24,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @ExtendWith(MockitoExtension.class)
 class ReadingSessionServiceTest {
@@ -44,10 +45,7 @@ class ReadingSessionServiceTest {
     void setUp() {
         user = new User();
         user.setId(1L);
-        book = new Book();
-        book.setId(10L);
-        book.setCurrentPage(0);
-        book.setPageCount(200);
+        book = book().id(10L).currentPage(0).pageCount(200).build();
     }
 
     // --- startSession ---
@@ -67,7 +65,7 @@ class ReadingSessionServiceTest {
     @Test
     void startSession_ShouldReturnExisting_WhenAlreadyReadingSameBook() {
         ReadingSession existing = new ReadingSession();
-        existing.setBook(book);
+        existing.attachToBook(book);
         existing.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(existing));
@@ -79,7 +77,7 @@ class ReadingSessionServiceTest {
     @Test
     void startSession_ShouldResumePausedSession_WhenSameBook() {
         ReadingSession paused = new ReadingSession();
-        paused.setBook(book);
+        paused.attachToBook(book);
         paused.setStatus(SessionStatus.PAUSED);
         paused.setPausedAt(Instant.now().minusSeconds(60));
 
@@ -93,11 +91,10 @@ class ReadingSessionServiceTest {
 
     @Test
     void startSession_ShouldAutoStopPrevious_WhenReadingDifferentBook() {
-        Book otherBook = new Book();
-        otherBook.setId(20L);
+        Book otherBook = book().id(20L).build();
 
         ReadingSession existing = new ReadingSession();
-        existing.setBook(otherBook);
+        existing.attachToBook(otherBook);
         existing.setStatus(SessionStatus.ACTIVE);
 
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
@@ -121,11 +118,10 @@ class ReadingSessionServiceTest {
 
     @Test
     void startSession_ShouldKeepExistingSessionActive_WhenNewBookNotFound() {
-        Book otherBook = new Book();
-        otherBook.setId(20L);
+        Book otherBook = book().id(20L).build();
 
         ReadingSession existing = new ReadingSession();
-        existing.setBook(otherBook);
+        existing.attachToBook(otherBook);
         existing.setStatus(SessionStatus.ACTIVE);
 
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
@@ -142,7 +138,7 @@ class ReadingSessionServiceTest {
     @Test
     void stopSession_ShouldCompleteSession() {
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
@@ -154,7 +150,7 @@ class ReadingSessionServiceTest {
     @Test
     void stopSession_ShouldUpdateBookProgress_WhenEndPageProvided() {
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
@@ -167,7 +163,7 @@ class ReadingSessionServiceTest {
     @Test
     void stopSession_ShouldAccumulatePausedTime_WhenPaused() {
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStatus(SessionStatus.PAUSED);
         session.setPausedAt(Instant.now().minusSeconds(10));
         session.setPausedMillis(5000L);
@@ -181,7 +177,7 @@ class ReadingSessionServiceTest {
     @Test
     void stopSession_ShouldUseNow_WhenEndTimeNull() {
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));
@@ -201,9 +197,9 @@ class ReadingSessionServiceTest {
 
     @Test
     void stopSession_ShouldHandleNegativePagesRead() {
-        book.setCurrentPage(100);
+        book.restoreTracking(100, null, null);
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStartPage(100); // Session recorded start page at 100
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
@@ -216,7 +212,7 @@ class ReadingSessionServiceTest {
     @Test
     void stopSession_ShouldNotAccumulatePause_WhenPausedButPausedAtNull() {
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStatus(SessionStatus.PAUSED);
         session.setPausedAt(null); // PAUSED but pausedAt is null
         session.setPausedMillis(5000L);
@@ -230,7 +226,7 @@ class ReadingSessionServiceTest {
     @Test
     void stopSession_ShouldAccumulatePause_WhenPausedMillisNull() {
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStatus(SessionStatus.PAUSED);
         session.setPausedAt(Instant.now().minusSeconds(10));
         session.setPausedMillis(null); // null pausedMillis
@@ -244,9 +240,9 @@ class ReadingSessionServiceTest {
 
     @Test
     void stopSession_ShouldHandleNullCurrentPage_WhenCalculatingPagesRead() {
-        book.setCurrentPage(null); // null currentPage defaults to 0
+        book.restoreTracking(null, null, null); // null currentPage defaults to 0
         ReadingSession session = new ReadingSession();
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStatus(SessionStatus.ACTIVE);
         when(sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(eq(user), anyList()))
                 .thenReturn(Optional.of(session));

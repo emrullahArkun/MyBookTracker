@@ -66,7 +66,7 @@ class ReadingRhythmAnalyzerTest {
         user.setId(1L);
 
         ReadingSession session = new ReadingSession();
-        session.setUser(user);
+        session.assignUser(user);
         session.setStatus(SessionStatus.COMPLETED);
         Instant start = date.atTime(startHour, 0).atZone(ZoneOffset.UTC).toInstant();
         session.setStartTime(start);

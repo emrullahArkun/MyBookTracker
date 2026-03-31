@@ -1,6 +1,8 @@
 package com.example.mybooktracker.books.api;
 
 import com.example.mybooktracker.books.api.dto.BookDto;
+import com.example.mybooktracker.books.application.BookCollectionViewService;
+import com.example.mybooktracker.books.application.BookFocusView;
 import com.example.mybooktracker.books.api.dto.CreateBookRequest;
 import com.example.mybooktracker.books.api.dto.UpdateProgressRequest;
 import com.example.mybooktracker.books.api.dto.UpdateStatusRequest;
@@ -43,6 +45,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @ExtendWith(MockitoExtension.class)
 class BookControllerTest {
@@ -55,6 +58,9 @@ class BookControllerTest {
 
         @Mock
         private ReadingGoalProgressService progressService;
+
+        @Mock
+        private BookCollectionViewService bookCollectionViewService;
 
         @InjectMocks
         private BookController bookController;
@@ -99,8 +105,7 @@ class BookControllerTest {
 
         @Test
         void getAllBooks_ShouldReturnPage() throws Exception {
-                Book book = new Book();
-                book.setId(1L);
+                Book book = book().id(1L).build();
                 List<Book> books = new java.util.ArrayList<>(List.of(book));
                 Page<Book> page = new PageImpl<>(books);
 
@@ -120,8 +125,7 @@ class BookControllerTest {
 
         @Test
         void getAllBooks_ShouldIncludeProgress_WhenCalculated() throws Exception {
-                Book book = new Book();
-                book.setId(1L);
+                Book book = book().id(1L).build();
                 List<Book> books = new java.util.ArrayList<>(List.of(book));
                 Page<Book> page = new PageImpl<>(books);
 
@@ -140,6 +144,46 @@ class BookControllerTest {
         }
 
         @Test
+        void getBooksBySection_ShouldReturnPagedSection() throws Exception {
+                Book book = book().id(1L).build();
+                Page<Book> page = new PageImpl<>(List.of(book));
+
+                when(bookCollectionViewService.getSectionPage(any(), any(), any(Pageable.class))).thenReturn(page);
+                when(progressService.calculateProgressBatch(anyList())).thenReturn(Map.of());
+                when(bookMapper.toDto(any(Book.class))).thenReturn(
+                                new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null, false, null,
+                                                null, null, null));
+
+                mockMvc.perform(get("/api/books/sections/current")
+                                .param("page", "0")
+                                .param("size", "4"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.content[0].id").value(1));
+        }
+
+        @Test
+        void getBookFocus_ShouldReturnCurrentBookAndCounts() throws Exception {
+                Book currentBook = book().id(1L).build();
+                Book queuedBook = book().id(2L).build();
+
+                when(bookCollectionViewService.getFocus(any(), eq(3)))
+                                .thenReturn(new BookFocusView(currentBook, List.of(queuedBook), 4, 2));
+                when(bookMapper.toDto(currentBook)).thenReturn(
+                                new BookDto(1L, "isbn-1", "Current", "Author", 2023, "url", 100, 20, null, false,
+                                                null, null, null, List.of()));
+                when(bookMapper.toDto(queuedBook)).thenReturn(
+                                new BookDto(2L, "isbn-2", "Queued", "Author", 2023, "url", 100, 0, null, false,
+                                                null, null, null, List.of()));
+
+                mockMvc.perform(get("/api/books/focus"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.currentBook.id").value(1))
+                                .andExpect(jsonPath("$.queuedBooks[0].id").value(2))
+                                .andExpect(jsonPath("$.activeBooksCount").value(4))
+                                .andExpect(jsonPath("$.completedBooksCount").value(2));
+        }
+
+        @Test
         void getAllOwnedIsbns_ShouldReturnList() throws Exception {
                 when(bookService.getAllOwnedIsbns(any())).thenReturn(List.of("123"));
 
@@ -150,8 +194,7 @@ class BookControllerTest {
 
         @Test
         void getBooksWithGoals_ShouldReturnBooks() throws Exception {
-                Book book = new Book();
-                book.setId(1L);
+                Book book = book().id(1L).build();
                 when(bookService.findBooksWithGoals(any())).thenReturn(List.of(book));
                 when(progressService.calculateProgressBatch(anyList())).thenReturn(Map.of());
                 when(bookMapper.toDto(any(Book.class))).thenReturn(
@@ -166,8 +209,7 @@ class BookControllerTest {
 
         @Test
         void getBooksWithGoals_ShouldIncludeProgress_WhenCalculated() throws Exception {
-                Book book = new Book();
-                book.setId(1L);
+                Book book = book().id(1L).build();
                 when(bookService.findBooksWithGoals(any())).thenReturn(List.of(book));
                 when(progressService.calculateProgressBatch(anyList())).thenReturn(Map.of(1L, 75));
                 when(bookMapper.toDto(any(Book.class))).thenReturn(
@@ -182,7 +224,7 @@ class BookControllerTest {
 
         @Test
         void getBookById_ShouldReturnBook() throws Exception {
-                Book book = new Book();
+                Book book = book().build();
                 when(bookService.getBookByIdOrThrow(eq(1L), any())).thenReturn(book);
                 when(bookMapper.toDto(book)).thenReturn(
                                 new BookDto(1L, "isbn", "title", "author", 2023, "url", 100, 0, null, false, null,
@@ -195,8 +237,7 @@ class BookControllerTest {
 
         @Test
         void getBookById_ShouldIncludeProgress_WhenCalculated() throws Exception {
-                Book book = new Book();
-                book.setId(1L);
+                Book book = book().id(1L).build();
                 when(bookService.getBookByIdOrThrow(eq(1L), any())).thenReturn(book);
                 when(progressService.calculateProgress(book)).thenReturn(60);
                 when(bookMapper.toDto(book)).thenReturn(
@@ -213,8 +254,7 @@ class BookControllerTest {
         void createBook_ShouldReturnCreatedBook() throws Exception {
                 CreateBookRequest request = new CreateBookRequest("isbn", "title", "author", 2023, "url", 100,
                                 List.of("cat"));
-                Book book = new Book();
-                book.setId(1L);
+                Book book = book().id(1L).build();
                 when(bookService.createBook(any(), any())).thenReturn(book);
                 when(progressService.calculateProgress(book)).thenReturn(30);
                 when(bookMapper.toDto(book)).thenReturn(
@@ -232,7 +272,7 @@ class BookControllerTest {
         @Test
         void updateBookProgress_ShouldUpdate() throws Exception {
                 UpdateProgressRequest request = new UpdateProgressRequest(50);
-                Book book = new Book();
+                Book book = book().build();
                 when(bookService.updateBookProgress(eq(1L), eq(50), any())).thenReturn(book);
                 when(progressService.calculateProgress(book)).thenReturn(55);
                 when(bookMapper.toDto(book))
@@ -249,7 +289,7 @@ class BookControllerTest {
         @Test
         void updateBookStatus_ShouldUpdate() throws Exception {
                 UpdateStatusRequest request = new UpdateStatusRequest(true);
-                Book book = new Book();
+                Book book = book().build();
                 when(bookService.updateBookStatus(eq(1L), eq(true), any())).thenReturn(book);
                 when(progressService.calculateProgress(book)).thenReturn(65);
                 when(bookMapper.toDto(book)).thenReturn(
@@ -266,7 +306,7 @@ class BookControllerTest {
         @Test
         void updateBookGoal_ShouldUpdate() throws Exception {
                 SetGoalRequest request = new SetGoalRequest(ReadingGoalType.WEEKLY, 100);
-                Book book = new Book();
+                Book book = book().build();
                 when(bookService.updateReadingGoal(eq(1L), eq(ReadingGoalType.WEEKLY), eq(100), any()))
                                 .thenReturn(book);
                 when(progressService.calculateProgress(book)).thenReturn(75);

@@ -34,6 +34,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -74,12 +75,8 @@ class ReadingSessionControllerIntegrationTest {
                 testUser.setEnabled(true);
                 testUser = userRepository.save(testUser);
 
-                testBook = new Book();
-                testBook.setTitle("Reading Timer Test");
-                testBook.setAuthor("Timer Author");
-                testBook.setIsbn("9999999999");
-                testBook.setUser(testUser);
-                testBook.setStartDate(LocalDate.now());
+                testBook = book().title("Reading Timer Test").author("Timer Author").isbn("9999999999")
+                                .user(testUser).startDate(LocalDate.now()).build();
                 testBook = bookRepository.save(testBook);
         }
 
@@ -138,7 +135,7 @@ class ReadingSessionControllerIntegrationTest {
 
         @Test
         void testStopSession_WithEndTimeAndEndPage_ShouldPersistValues() throws Exception {
-                testBook.setPageCount(200);
+                testBook.changePageCount(200);
                 testBook = bookRepository.save(testBook);
 
                 mockMvc.perform(post("/api/sessions/start")

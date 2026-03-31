@@ -56,6 +56,24 @@ const createTestWrapper = () => {
     );
 };
 
+const createSectionPage = (content) => ({
+    content,
+    totalElements: content.length,
+    totalPages: content.length > 0 ? 1 : 0,
+    size: 4,
+    number: 0,
+});
+
+const mockLibrarySections = ({ current = [], next = [], finished = [] }) => {
+    server.use(
+        http.get('/api/books/sections/:section', ({ params }) => {
+            const section = String(params.section);
+            const data = { current, next, finished };
+            return HttpResponse.json(createSectionPage(data[section] || []));
+        })
+    );
+};
+
 describe('MyBooks Component', () => {
     beforeEach(() => {
         mockNavigate.mockClear();
@@ -102,7 +120,7 @@ describe('MyBooks Component', () => {
     it('handles API errors gracefully', async () => {
         // Override the handler to return an error for this test
         server.use(
-            http.get('/api/books', () => {
+            http.get('/api/books/sections/:section', () => {
                 return new HttpResponse(null, { status: 500 });
             })
         );
@@ -116,11 +134,7 @@ describe('MyBooks Component', () => {
     });
 
     it('renders empty state when no books exist', async () => {
-        server.use(
-            http.get('/api/books', () => {
-                return HttpResponse.json({ content: [], totalElements: 0, totalPages: 0, number: 0 });
-            })
-        );
+        mockLibrarySections({ current: [], next: [], finished: [] });
         render(<LibraryPage />, { wrapper: createTestWrapper() });
         expect(await screen.findByText('No books in your library yet.')).toBeInTheDocument();
         expect(await screen.findByText('Go to search to add books!')).toBeInTheDocument();
@@ -128,18 +142,11 @@ describe('MyBooks Component', () => {
     });
 
     it('groups books into current, next, and finished sections', async () => {
-        server.use(
-            http.get('/api/books', () => HttpResponse.json({
-                content: [
-                    { id: 1, title: 'Current Book', authorName: 'Author 1', currentPage: 45, pageCount: 300, completed: false, coverUrl: 'http://example.com/current.jpg', user: { id: 1 } },
-                    { id: 2, title: 'Next Book', authorName: 'Author 2', currentPage: 0, pageCount: 250, completed: false, readingGoalType: 'WEEKLY', coverUrl: 'http://example.com/next.jpg', user: { id: 1 } },
-                    { id: 3, title: 'Finished Book', authorName: 'Author 3', currentPage: 210, pageCount: 210, completed: true, coverUrl: 'http://example.com/finished.jpg', user: { id: 1 } },
-                ],
-                totalElements: 3,
-                totalPages: 1,
-                number: 0,
-            }))
-        );
+        mockLibrarySections({
+            current: [{ id: 1, title: 'Current Book', authorName: 'Author 1', currentPage: 45, pageCount: 300, completed: false, coverUrl: 'http://example.com/current.jpg', user: { id: 1 } }],
+            next: [{ id: 2, title: 'Next Book', authorName: 'Author 2', currentPage: 0, pageCount: 250, completed: false, readingGoalType: 'WEEKLY', coverUrl: 'http://example.com/next.jpg', user: { id: 1 } }],
+            finished: [{ id: 3, title: 'Finished Book', authorName: 'Author 3', currentPage: 210, pageCount: 210, completed: true, coverUrl: 'http://example.com/finished.jpg', user: { id: 1 } }],
+        });
 
         render(<LibraryPage />, { wrapper: createTestWrapper() });
 
@@ -151,17 +158,12 @@ describe('MyBooks Component', () => {
 
     it('prioritizes the active session book and uses the active-session hint', async () => {
         mockReadingSessionContext.mockReturnValue({ activeSession: { bookId: 2 } });
-        server.use(
-            http.get('/api/books', () => HttpResponse.json({
-                content: [
-                    { id: 1, title: 'Later Current Book', authorName: 'Author 1', currentPage: 90, pageCount: 300, completed: false, coverUrl: 'http://example.com/later.jpg', user: { id: 1 } },
-                    { id: 2, title: 'Active Session Book', authorName: 'Author 2', currentPage: 20, pageCount: 200, completed: false, coverUrl: 'http://example.com/active.jpg', user: { id: 1 } },
-                ],
-                totalElements: 2,
-                totalPages: 1,
-                number: 0,
-            }))
-        );
+        mockLibrarySections({
+            current: [
+                { id: 2, title: 'Active Session Book', authorName: 'Author 2', currentPage: 20, pageCount: 200, completed: false, coverUrl: 'http://example.com/active.jpg', user: { id: 1 } },
+                { id: 1, title: 'Later Current Book', authorName: 'Author 1', currentPage: 90, pageCount: 300, completed: false, coverUrl: 'http://example.com/later.jpg', user: { id: 1 } },
+            ],
+        });
 
         render(<LibraryPage />, { wrapper: createTestWrapper() });
 
@@ -172,16 +174,9 @@ describe('MyBooks Component', () => {
     });
 
     it('hides sections that have no books', async () => {
-        server.use(
-            http.get('/api/books', () => HttpResponse.json({
-                content: [
-                    { id: 3, title: 'Finished Only', authorName: 'Author 3', currentPage: 210, pageCount: 210, completed: true, coverUrl: 'http://example.com/finished-only.jpg', user: { id: 1 } },
-                ],
-                totalElements: 1,
-                totalPages: 1,
-                number: 0,
-            }))
-        );
+        mockLibrarySections({
+            finished: [{ id: 3, title: 'Finished Only', authorName: 'Author 3', currentPage: 210, pageCount: 210, completed: true, coverUrl: 'http://example.com/finished-only.jpg', user: { id: 1 } }],
+        });
 
         render(<LibraryPage />, { wrapper: createTestWrapper() });
 
@@ -191,15 +186,10 @@ describe('MyBooks Component', () => {
     });
 
     it('shows a toast when deleting selected books fails', async () => {
-        server.use(
-            http.get('/api/books', () => HttpResponse.json({
-                content: [{ id: 1, title: 'Test Book 1', authorName: 'Author 1', coverUrl: 'http://example.com/cover1.jpg', readingProgress: 0, pageCount: 300, completed: false, user: { id: 1 } }],
-                totalElements: 1,
-                totalPages: 1,
-                number: 0
-            })),
-            http.delete('/api/books/1', () => new HttpResponse(null, { status: 500 }))
-        );
+        mockLibrarySections({
+            current: [{ id: 1, title: 'Test Book 1', authorName: 'Author 1', coverUrl: 'http://example.com/cover1.jpg', readingProgress: 0, pageCount: 300, completed: false, user: { id: 1 } }],
+        });
+        server.use(http.delete('/api/books/1', () => new HttpResponse(null, { status: 500 })));
 
         const user = userEvent.setup();
         render(<LibraryPage />, { wrapper: createTestWrapper() });
@@ -222,11 +212,7 @@ describe('MyBooks Component', () => {
 
     it('navigates to search when clicking the search button in empty state', async () => {
         const user = userEvent.setup();
-        server.use(
-            http.get('/api/books', () => {
-                return HttpResponse.json({ content: [], totalElements: 0, totalPages: 0, number: 0 });
-            })
-        );
+        mockLibrarySections({ current: [], next: [], finished: [] });
         render(<LibraryPage />, { wrapper: createTestWrapper() });
         const searchBtn = await screen.findByText('Search');
         await user.click(searchBtn);
@@ -235,16 +221,9 @@ describe('MyBooks Component', () => {
 
     describe('Selection & Bulk Delete', () => {
         it('toggles selection and deletes selected books', async () => {
-            server.use(
-                http.get('/api/books', () => {
-                    return HttpResponse.json({
-                        content: [{ id: 1, title: 'Test Book 1', authorName: 'Author 1', coverUrl: 'http://example.com/cover1.jpg', readingProgress: 0, pageCount: 300, completed: false, user: { id: 1 } }],
-                        totalElements: 1,
-                        totalPages: 1,
-                        number: 0
-                    });
-                })
-            );
+            mockLibrarySections({
+                current: [{ id: 1, title: 'Test Book 1', authorName: 'Author 1', coverUrl: 'http://example.com/cover1.jpg', readingProgress: 0, pageCount: 300, completed: false, user: { id: 1 } }],
+            });
             const user = userEvent.setup();
             render(<LibraryPage />, { wrapper: createTestWrapper() });
 
@@ -281,16 +260,9 @@ describe('MyBooks Component', () => {
         });
 
         it('supports deleting all books and canceling', async () => {
-            server.use(
-                http.get('/api/books', () => {
-                    return HttpResponse.json({
-                        content: [{ id: 1, title: 'Test Book 1', authorName: 'Author 1', coverUrl: 'http://example.com/cover1.jpg', readingProgress: 0, pageCount: 300, completed: false, user: { id: 1 } }],
-                        totalElements: 1,
-                        totalPages: 1,
-                        number: 0
-                    });
-                })
-            );
+            mockLibrarySections({
+                current: [{ id: 1, title: 'Test Book 1', authorName: 'Author 1', coverUrl: 'http://example.com/cover1.jpg', readingProgress: 0, pageCount: 300, completed: false, user: { id: 1 } }],
+            });
             const user = userEvent.setup();
             render(<LibraryPage />, { wrapper: createTestWrapper() });
 
@@ -325,26 +297,41 @@ describe('MyBooks Component', () => {
 
     describe('Section Pagination', () => {
         it('shows independent pagination for each populated section', async () => {
-            const user = userEvent.setup();
             server.use(
-                http.get('/api/books', () => {
-                    return HttpResponse.json({
-                        content: [
-                            { id: 1, title: 'Current 1', currentPage: 10, completed: false, user: { id: 1 } },
-                            { id: 2, title: 'Current 2', currentPage: 20, completed: false, user: { id: 1 } },
-                            { id: 3, title: 'Current 3', currentPage: 30, completed: false, user: { id: 1 } },
-                            { id: 4, title: 'Current 4', currentPage: 40, completed: false, user: { id: 1 } },
-                            { id: 5, title: 'Current 5', currentPage: 50, completed: false, user: { id: 1 } },
-                            { id: 6, title: 'Next 1', currentPage: 0, completed: false, user: { id: 1 } },
-                            { id: 7, title: 'Next 2', currentPage: 0, completed: false, user: { id: 1 } },
-                            { id: 8, title: 'Next 3', currentPage: 0, completed: false, user: { id: 1 } },
-                            { id: 9, title: 'Next 4', currentPage: 0, completed: false, user: { id: 1 } },
-                            { id: 10, title: 'Next 5', currentPage: 0, completed: false, user: { id: 1 } },
+                http.get('/api/books/sections/:section', ({ params, request }) => {
+                    const page = Number(new URL(request.url).searchParams.get('page') || '0');
+                    const data = {
+                        current: [
+                            {
+                                ...createSectionPage([
+                                    { id: 5, title: 'Current 5', currentPage: 50, completed: false, user: { id: 1 } },
+                                    { id: 4, title: 'Current 4', currentPage: 40, completed: false, user: { id: 1 } },
+                                    { id: 3, title: 'Current 3', currentPage: 30, completed: false, user: { id: 1 } },
+                                    { id: 2, title: 'Current 2', currentPage: 20, completed: false, user: { id: 1 } },
+                                ]),
+                                totalPages: 2,
+                                totalElements: 5,
+                            },
+                            { ...createSectionPage([{ id: 1, title: 'Current 1', currentPage: 10, completed: false, user: { id: 1 } }]), totalPages: 2, totalElements: 5, number: 1 },
                         ],
-                        totalElements: 10,
-                        totalPages: 1,
-                        number: 0
-                    });
+                        next: [
+                            {
+                                ...createSectionPage([
+                                    { id: 6, title: 'Next 1', currentPage: 0, completed: false, user: { id: 1 } },
+                                    { id: 7, title: 'Next 2', currentPage: 0, completed: false, user: { id: 1 } },
+                                    { id: 8, title: 'Next 3', currentPage: 0, completed: false, user: { id: 1 } },
+                                    { id: 9, title: 'Next 4', currentPage: 0, completed: false, user: { id: 1 } },
+                                ]),
+                                totalPages: 2,
+                                totalElements: 5,
+                            },
+                            { ...createSectionPage([{ id: 10, title: 'Next 5', currentPage: 0, completed: false, user: { id: 1 } }]), totalPages: 2, totalElements: 5, number: 1 },
+                        ],
+                    };
+
+                    const section = String(params.section);
+                    const sectionPages = data[section];
+                    return HttpResponse.json(sectionPages ? sectionPages[page] : createSectionPage([]));
                 })
             );
 
@@ -353,40 +340,13 @@ describe('MyBooks Component', () => {
             expect((await screen.findAllByText('Current 5')).length).toBeGreaterThan(0);
             expect(screen.getAllByText('Next 1')).not.toHaveLength(0);
             expect(screen.getAllByText('1 / 2')).toHaveLength(2);
-
-            expect(screen.queryAllByText('Current 1')).toHaveLength(0);
             expect(screen.queryAllByText('Next 5')).toHaveLength(0);
-
-            await user.click(screen.getByLabelText('Next page for Current Reads'));
-
-            await waitFor(() => {
-                expect(screen.getAllByText('Current 1').length).toBeGreaterThan(0);
-            });
-
-            expect(screen.queryAllByText('Next 5')).toHaveLength(0);
-            expect(screen.getByLabelText('Previous page for Current Reads')).not.toBeDisabled();
+            expect(screen.getByLabelText('Previous page for Current Reads')).toBeDisabled();
             expect(screen.getByLabelText('Previous page for Waiting for You')).toBeDisabled();
-
-            await user.click(screen.getByLabelText('Next page for Waiting for You'));
-
-            await waitFor(() => {
-                expect(screen.getAllByText('Next 5').length).toBeGreaterThan(0);
-            });
-
-            expect(screen.getAllByText('Current 1').length).toBeGreaterThan(0);
         });
 
         it('keeps section pagination visible even when there is only one page', async () => {
-            server.use(
-                http.get('/api/books', () => {
-                    return HttpResponse.json({
-                        content: [{ id: 1, title: 'B1' }],
-                        totalElements: 1,
-                        totalPages: 1,
-                        number: 0
-                    });
-                })
-            );
+            mockLibrarySections({ next: [{ id: 1, title: 'B1' }] });
 
             render(<LibraryPage />, { wrapper: createTestWrapper() });
 

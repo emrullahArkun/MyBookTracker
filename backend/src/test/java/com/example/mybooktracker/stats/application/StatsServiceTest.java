@@ -2,9 +2,8 @@ package com.example.mybooktracker.stats.application;
 
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.books.application.BookQueryPort;
+import com.example.mybooktracker.sessions.application.ReadingSessionQueryPort;
 import com.example.mybooktracker.sessions.domain.ReadingSession;
-import com.example.mybooktracker.sessions.domain.SessionStatus;
-import com.example.mybooktracker.sessions.infra.persistence.ReadingSessionRepository;
 import com.example.mybooktracker.stats.domain.activity.ReadingSessionLength;
 import com.example.mybooktracker.stats.domain.activity.ReadingTimeOfDay;
 import com.example.mybooktracker.stats.domain.streak.StreakInfo;
@@ -33,7 +32,7 @@ import static org.mockito.Mockito.when;
 class StatsServiceTest {
 
     @Mock private BookQueryPort bookQueryPort;
-    @Mock private ReadingSessionRepository sessionRepository;
+    @Mock private ReadingSessionQueryPort readingSessionQueryPort;
     @Mock private StreakService streakService;
     @Spy private Clock clock = Clock.systemUTC();
     @InjectMocks private StatsService statsService;
@@ -53,8 +52,7 @@ class StatsServiceTest {
 
     private ReadingSession buildSession(LocalDate date, int pagesRead, int startHour) {
         ReadingSession s = new ReadingSession();
-        s.setUser(user);
-        s.setStatus(SessionStatus.COMPLETED);
+        s.assignUser(user);
         Instant start = date.atTime(startHour, 0).atZone(ZoneOffset.UTC).toInstant();
         s.setStartTime(start);
         s.setEndTime(start.plusSeconds(3600)); // 1 hour later
@@ -69,8 +67,8 @@ class StatsServiceTest {
     void getOverview_ShouldReturnAllStats() {
         when(bookQueryPort.countByUser(user)).thenReturn(5L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(2L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(500L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(500L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(
                         buildSession(LocalDate.now().minusDays(1), 30, 10),
                         buildSession(LocalDate.now(), 50, 14)));
@@ -96,8 +94,8 @@ class StatsServiceTest {
     void getOverview_ShouldHandleEmptyData() {
         when(bookQueryPort.countByUser(user)).thenReturn(0L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(0L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(Collections.emptyList());
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
         mockStreaks(0, 0);
@@ -118,8 +116,8 @@ class StatsServiceTest {
 
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(0L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(noPages));
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
         mockStreaks(0, 0);
@@ -132,8 +130,7 @@ class StatsServiceTest {
     @Test
     void getOverview_ShouldSkipSessionsWithNullEndTime() {
         ReadingSession noEnd = new ReadingSession();
-        noEnd.setUser(user);
-        noEnd.setStatus(SessionStatus.COMPLETED);
+        noEnd.assignUser(user);
         noEnd.setStartTime(Instant.now().minusSeconds(3600));
         noEnd.setEndTime(null);
         noEnd.setPagesRead(10);
@@ -141,8 +138,8 @@ class StatsServiceTest {
 
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(0L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(noEnd));
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
         mockStreaks(0, 0);
@@ -159,8 +156,8 @@ class StatsServiceTest {
 
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(10L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
         mockStreaks(0, 0);
@@ -173,8 +170,7 @@ class StatsServiceTest {
     @Test
     void getOverview_ShouldHandleSessionWithNullStartTime() {
         ReadingSession s = new ReadingSession();
-        s.setUser(user);
-        s.setStatus(SessionStatus.COMPLETED);
+        s.assignUser(user);
         s.setStartTime(null);
         s.setEndTime(Instant.now());
         s.setPagesRead(10);
@@ -182,8 +178,8 @@ class StatsServiceTest {
 
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(10L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(10L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
         mockStreaks(0, 0);
@@ -199,8 +195,8 @@ class StatsServiceTest {
 
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(0L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
         mockStreaks(0, 0);
@@ -217,8 +213,8 @@ class StatsServiceTest {
 
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(20L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(20L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(s));
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(Collections.emptyList());
         mockStreaks(0, 0);
@@ -231,12 +227,12 @@ class StatsServiceTest {
     @Test
     void getOverview_ShouldBuildReadingRhythmForRecentSessions() {
         clock = Clock.fixed(Instant.parse("2026-03-28T10:00:00Z"), ZoneOffset.UTC);
-        statsService = new StatsService(bookQueryPort, sessionRepository, streakService, clock);
+        statsService = new StatsService(bookQueryPort, readingSessionQueryPort, streakService, clock);
 
         when(bookQueryPort.countByUser(user)).thenReturn(2L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(72L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(72L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(List.of(
                         buildSession(LocalDate.of(2026, 3, 17), 18, 18),
                         buildSession(LocalDate.of(2026, 3, 20), 20, 18),
@@ -262,8 +258,8 @@ class StatsServiceTest {
         List<String> cats = List.of("A", "B", "C", "D", "E", "F", "G", "H", "I", "J");
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(0L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(Collections.emptyList());
         when(bookQueryPort.findAllCategoriesByUser(user)).thenReturn(cats);
         mockStreaks(0, 0);
@@ -276,8 +272,8 @@ class StatsServiceTest {
     void getOverview_ShouldHandleNullCategories() {
         when(bookQueryPort.countByUser(user)).thenReturn(1L);
         when(bookQueryPort.countCompletedByUser(user)).thenReturn(0L);
-        when(sessionRepository.sumPagesReadByUser(user, SessionStatus.COMPLETED)).thenReturn(0L);
-        when(sessionRepository.findCompletedSessionsSince(eq(user), any(), eq(SessionStatus.COMPLETED)))
+        when(readingSessionQueryPort.sumCompletedPagesByUser(user)).thenReturn(0L);
+        when(readingSessionQueryPort.findCompletedSessionsSince(eq(user), any()))
                 .thenReturn(Collections.emptyList());
         List<String> catsWithNull = new java.util.ArrayList<>();
         catsWithNull.add(null);

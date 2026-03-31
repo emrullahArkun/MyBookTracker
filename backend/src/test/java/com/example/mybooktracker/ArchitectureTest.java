@@ -76,6 +76,12 @@ public class ArchitectureTest {
                         .resideInAnyPackage("..api..", "..api.dto..");
 
         @ArchTest
+        static final ArchRule cross_feature_application_should_not_depend_on_sessions_infra = noClasses().that()
+                        .resideInAnyPackage("..books.application..", "..stats.application..")
+                        .should().dependOnClassesThat()
+                        .resideInAnyPackage("..sessions.infra..", "..sessions.infra.persistence..");
+
+        @ArchTest
         static final ArchRule domain_should_not_depend_on_api_or_infra_packages = noClasses().that()
                         .resideInAPackage("..domain..")
                         .should().dependOnClassesThat()

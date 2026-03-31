@@ -29,6 +29,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @ExtendWith(MockitoExtension.class)
 class BookServiceTest {
@@ -55,7 +56,7 @@ class BookServiceTest {
     @Test
     void findAllByUser_ShouldReturnPage() {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<Book> page = new PageImpl<>(List.of(new Book()));
+        Page<Book> page = new PageImpl<>(List.of(book().build()));
         when(bookRepository.findByUserOrderByCompletedAsc(user, pageable)).thenReturn(page);
 
         assertEquals(1, bookService.findAllByUser(user, pageable).getTotalElements());
@@ -63,7 +64,7 @@ class BookServiceTest {
 
     @Test
     void findByIdAndUser_ShouldReturnOptional() {
-        Book book = new Book();
+        Book book = book().build();
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
 
         assertTrue(bookService.findByIdAndUser(1L, user).isPresent());
@@ -87,7 +88,8 @@ class BookServiceTest {
 
     @Test
     void findBooksWithGoals_ShouldReturnMatchingBooks() {
-        when(bookRepository.findByUserAndReadingGoalTypeIsNotNull(user)).thenReturn(List.of(new Book()));
+        when(bookRepository.findByUserAndReadingGoalTypeIsNotNull(user))
+                .thenReturn(List.of(book().build()));
 
         List<Book> result = bookService.findBooksWithGoals(user);
 
@@ -97,8 +99,8 @@ class BookServiceTest {
     @Test
     void createBook_ShouldSaveBook() {
         CreateBookCommand command = new CreateBookCommand("isbn", "title", "author", 2023, "url", 100, List.of("cat"));
-        Book book = new Book();
-        book.setAuthor("author");
+        Book book = book().isbn("isbn").title("title").author("author").publishYear(2023).coverUrl("url")
+                .pageCount(100).categories(List.of("cat")).build();
         when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
         when(createBookCommandMapper.toEntity(command)).thenReturn(book);
         when(bookRepository.saveAndFlush(any(Book.class))).thenAnswer(i -> i.getArgument(0));
@@ -122,7 +124,8 @@ class BookServiceTest {
     @Test
     void createBook_ShouldTranslateConstraintViolation_WhenDuplicateRaceOccurs() {
         CreateBookCommand command = new CreateBookCommand("isbn", "title", "author", 2023, "url", 100, List.of("cat"));
-        Book book = new Book();
+        Book book = book().isbn("isbn").title("title").author("author").publishYear(2023).coverUrl("url")
+                .pageCount(100).categories(List.of("cat")).build();
         when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
         when(createBookCommandMapper.toEntity(command)).thenReturn(book);
         when(bookRepository.saveAndFlush(any(Book.class)))
@@ -134,11 +137,10 @@ class BookServiceTest {
     @Test
     void createBook_ShouldPreserveExistingDefaults_WhenMapperAlreadySetThem() {
         CreateBookCommand command = new CreateBookCommand("isbn", "title", "author", 2023, "url", 100, List.of("cat"));
-        Book book = new Book();
+        Book book = book().isbn("isbn").title("title").author("author").publishYear(2023).coverUrl("url")
+                .pageCount(100).categories(List.of("cat")).build();
         LocalDate existingStartDate = LocalDate.of(2024, 1, 10);
-        book.setCurrentPage(42);
-        book.setStartDate(existingStartDate);
-        book.setCompleted(true);
+        book.restoreTracking(42, existingStartDate, true);
 
         when(bookRepository.existsByIsbnAndUser("isbn", user)).thenReturn(false);
         when(createBookCommandMapper.toEntity(command)).thenReturn(book);
@@ -153,8 +155,7 @@ class BookServiceTest {
 
     @Test
     void deleteByIdAndUser_ShouldDeleteBookAndSessions() {
-        Book book = new Book();
-        book.setId(1L);
+        Book book = book().id(1L).build();
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
 
         bookService.deleteByIdAndUser(1L, user);
@@ -185,8 +186,7 @@ class BookServiceTest {
 
     @Test
     void updateBookProgress_ShouldUpdateProgressOnBook() {
-        Book book = new Book();
-        book.setPageCount(100);
+        Book book = book().pageCount(100).build();
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
 
         Book result = bookService.updateBookProgress(1L, 50, user);
@@ -203,7 +203,7 @@ class BookServiceTest {
 
     @Test
     void updateBookStatus_ShouldSetCompleted() {
-        Book book = new Book();
+        Book book = book().build();
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
 
         Book result = bookService.updateBookStatus(1L, true, user);
@@ -212,8 +212,8 @@ class BookServiceTest {
 
     @Test
     void updateBookStatus_ShouldUnsetCompleted() {
-        Book book = new Book();
-        book.setCompleted(true);
+        Book book = book().build();
+        book.updateStatus(true);
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
 
         Book result = bookService.updateBookStatus(1L, false, user);
@@ -222,7 +222,7 @@ class BookServiceTest {
 
     @Test
     void updateReadingGoal_ShouldSetGoal() {
-        Book book = new Book();
+        Book book = book().build();
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
 
         Book result = bookService.updateReadingGoal(1L, ReadingGoalType.WEEKLY, 100, user);

@@ -14,31 +14,7 @@ import {
     buildTodaySuggestion,
 } from './homeInsights';
 
-const HOME_BOOK_PAGE_SIZE = 24;
-
-const sortBooksForFocus = (books: Book[]): Book[] => {
-    return [...books].sort((a, b) => {
-        const aCompleted = Boolean(a.completed);
-        const bCompleted = Boolean(b.completed);
-        if (aCompleted !== bCompleted) {
-            return aCompleted ? 1 : -1;
-        }
-
-        const aStarted = (a.currentPage || 0) > 0 ? 1 : 0;
-        const bStarted = (b.currentPage || 0) > 0 ? 1 : 0;
-        if (aStarted !== bStarted) {
-            return bStarted - aStarted;
-        }
-
-        const aHasGoal = a.readingGoalType ? 1 : 0;
-        const bHasGoal = b.readingGoalType ? 1 : 0;
-        if (aHasGoal !== bHasGoal) {
-            return bHasGoal - aHasGoal;
-        }
-
-        return (b.currentPage || 0) - (a.currentPage || 0);
-    });
-};
+const EMPTY_BOOKS: Book[] = [];
 
 const getStartOfWeek = (date: Date): Date => {
     const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -77,7 +53,7 @@ type LastActivity = {
     title?: string;
 };
 
-const getLastActivity = (dailyActivity: DailyActivity[], books: Book[]): LastActivity => {
+const getLastActivity = (dailyActivity: DailyActivity[], currentBook: Book | null): LastActivity => {
     if (dailyActivity.length === 0) return { type: 'none' };
 
     const today = formatLocalDate(new Date());
@@ -88,7 +64,6 @@ const getLastActivity = (dailyActivity: DailyActivity[], books: Book[]): LastAct
     const todayEntry = dailyActivity.find((d) => d.date === today);
     const yesterdayEntry = dailyActivity.find((d) => d.date === yesterday);
 
-    const currentBook = books.find((b) => !b.completed && (b.currentPage || 0) > 0);
     const bookTitle = currentBook?.title || '';
 
     if (todayEntry && todayEntry.pagesRead > 0) {
@@ -105,12 +80,9 @@ export const useHomeFocusData = () => {
     const { activeSession } = useReadingSessionContext();
     const goalsData = useGoalsData();
 
-    const booksQuery = useQuery<Book[], Error>({
-        queryKey: ['home', user?.email, 'books'],
-        queryFn: async () => {
-            const response = await booksApi.getAll(0, HOME_BOOK_PAGE_SIZE);
-            return response?.content || [];
-        },
+    const focusQuery = useQuery({
+        queryKey: ['home', user?.email, 'focus'],
+        queryFn: () => booksApi.getFocus(),
         enabled: !!token,
     });
 
@@ -121,30 +93,10 @@ export const useHomeFocusData = () => {
         staleTime: 5 * 60 * 1000,
     });
 
-    const sortedBooks = useMemo(() => sortBooksForFocus(booksQuery.data || []), [booksQuery.data]);
-
-    const currentBook = useMemo(() => {
-        if (sortedBooks.length === 0) {
-            return null;
-        }
-
-        if (activeSession) {
-            return sortedBooks.find((book) => book.id === activeSession.bookId) || null;
-        }
-
-        return sortedBooks.find((book) => !book.completed) || null;
-    }, [activeSession, sortedBooks]);
-
-    const queuedBooks = useMemo(() => (
-        sortedBooks
-            .filter((book) => !book.completed && book.id !== currentBook?.id)
-            .slice(0, 3)
-    ), [currentBook?.id, sortedBooks]);
-
-    const completedBooksCount = useMemo(
-        () => sortedBooks.filter((book) => book.completed).length,
-        [sortedBooks]
-    );
+    const currentBook = focusQuery.data?.currentBook || null;
+    const queuedBooks = focusQuery.data?.queuedBooks ?? EMPTY_BOOKS;
+    const activeBooksCount = focusQuery.data?.activeBooksCount || 0;
+    const completedBooksCount = focusQuery.data?.completedBooksCount || 0;
 
     const weekDays = useMemo(
         () => buildWeekDays(statsQuery.data?.dailyActivity || []),
@@ -152,8 +104,8 @@ export const useHomeFocusData = () => {
     );
 
     const lastActivity = useMemo(
-        () => getLastActivity(statsQuery.data?.dailyActivity || [], sortedBooks),
-        [statsQuery.data?.dailyActivity, sortedBooks]
+        () => getLastActivity(statsQuery.data?.dailyActivity || [], currentBook),
+        [currentBook, statsQuery.data?.dailyActivity]
     );
 
     const readingRhythm = useMemo(
@@ -180,7 +132,7 @@ export const useHomeFocusData = () => {
         activeGoalBooks: goalsData.activeBooks.slice(0, 2),
         activeGoalCount: goalsData.activeBooks.length,
         streak: goalsData.streak,
-        activeBooksCount: sortedBooks.filter((book) => !book.completed).length,
+        activeBooksCount,
         completedBooksCount,
         weekDays,
         lastActivity,
@@ -188,11 +140,11 @@ export const useHomeFocusData = () => {
         todaySuggestion,
         resumeSuggestion,
         greetingKey,
-        loading: booksQuery.isLoading || statsQuery.isLoading || goalsData.loading,
-        isError: booksQuery.isError || statsQuery.isError || goalsData.isError,
-        error: booksQuery.error?.message || statsQuery.error?.message || goalsData.error || null,
+        loading: focusQuery.isLoading || statsQuery.isLoading || goalsData.loading,
+        isError: focusQuery.isError || statsQuery.isError || goalsData.isError,
+        error: focusQuery.error?.message || statsQuery.error?.message || goalsData.error || null,
         refresh: async () => {
-            await Promise.all([booksQuery.refetch(), statsQuery.refetch(), goalsData.refresh()]);
+            await Promise.all([focusQuery.refetch(), statsQuery.refetch(), goalsData.refresh()]);
         },
     };
 };

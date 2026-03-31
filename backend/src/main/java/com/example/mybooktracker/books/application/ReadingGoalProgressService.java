@@ -3,8 +3,7 @@ package com.example.mybooktracker.books.application;
 import com.example.mybooktracker.books.domain.Book;
 import com.example.mybooktracker.books.domain.ReadingGoalPeriodCalculator;
 import com.example.mybooktracker.books.domain.ReadingGoalType;
-import com.example.mybooktracker.sessions.domain.SessionStatus;
-import com.example.mybooktracker.sessions.infra.persistence.ReadingSessionRepository;
+import com.example.mybooktracker.sessions.application.ReadingSessionQueryPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +17,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ReadingGoalProgressService {
 
-    private final ReadingSessionRepository sessionRepository;
+    private final ReadingSessionQueryPort readingSessionQueryPort;
     private final Clock clock;
     private final ReadingGoalPeriodCalculator readingGoalPeriodCalculator;
 
@@ -28,7 +27,7 @@ public class ReadingGoalProgressService {
         }
 
         Instant startInstant = readingGoalPeriodCalculator.getStartOfPeriod(book.getReadingGoalType(), clock);
-        return sessionRepository.sumPagesReadByBookSince(book, startInstant, SessionStatus.COMPLETED);
+        return readingSessionQueryPort.sumCompletedPagesByBookSince(book, startInstant);
     }
 
     public Map<Long, Integer> calculateProgressBatch(List<Book> books) {
@@ -44,8 +43,8 @@ public class ReadingGoalProgressService {
 
         if (!weeklyBooks.isEmpty()) {
             Instant weekStart = readingGoalPeriodCalculator.getStartOfPeriod(ReadingGoalType.WEEKLY, clock);
-            for (var row : sessionRepository.sumPagesReadByBooksSince(weeklyBooks, weekStart, SessionStatus.COMPLETED)) {
-                result.put(row.getBookId(), row.getTotalPages());
+            for (var row : readingSessionQueryPort.sumCompletedPagesByBooksSince(weeklyBooks, weekStart)) {
+                result.put(row.bookId(), row.totalPages());
             }
             // Books with goals but no sessions yet get 0
             for (Book book : weeklyBooks) {
@@ -55,8 +54,8 @@ public class ReadingGoalProgressService {
 
         if (!monthlyBooks.isEmpty()) {
             Instant monthStart = readingGoalPeriodCalculator.getStartOfPeriod(ReadingGoalType.MONTHLY, clock);
-            for (var row : sessionRepository.sumPagesReadByBooksSince(monthlyBooks, monthStart, SessionStatus.COMPLETED)) {
-                result.put(row.getBookId(), row.getTotalPages());
+            for (var row : readingSessionQueryPort.sumCompletedPagesByBooksSince(monthlyBooks, monthStart)) {
+                result.put(row.bookId(), row.totalPages());
             }
             for (Book book : monthlyBooks) {
                 result.putIfAbsent(book.getId(), 0);

@@ -36,6 +36,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @ExtendWith(MockitoExtension.class)
 class ReadingSessionControllerTest {
@@ -78,12 +79,11 @@ class ReadingSessionControllerTest {
                 .build();
         objectMapper = new ObjectMapper();
 
-        Book book = new Book();
-        book.setId(1L);
+        Book book = book().id(1L).build();
 
         session = new ReadingSession();
         session.setId(10L);
-        session.setBook(book);
+        session.attachToBook(book);
         session.setStartTime(Instant.now());
         session.setStatus(SessionStatus.ACTIVE);
 

@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @ExtendWith(MockitoExtension.class)
 class AchievementServiceTest {
@@ -121,10 +122,7 @@ class AchievementServiceTest {
 
     @Test
     void getAchievements_ShouldUnlockSpeedReader() {
-        Book book = new Book();
-        book.setCompleted(true);
-        book.setStartDate(LocalDate.of(2026, 3, 23));
-        book.setPageCount(200);
+        Book book = book().pageCount(200).startDate(LocalDate.of(2026, 3, 23)).completed(true).build();
 
         ReadingSession session = buildSession(
                 Instant.parse("2026-03-25T10:00:00Z"),
@@ -156,10 +154,7 @@ class AchievementServiceTest {
 
     @Test
     void getAchievements_ShouldNotUnlockSpeedReaderWhenBookWasCompletedTooSlowly() {
-        Book book = new Book();
-        book.setCompleted(true);
-        book.setStartDate(LocalDate.of(2026, 3, 1));
-        book.setPageCount(200);
+        Book book = book().pageCount(200).startDate(LocalDate.of(2026, 3, 1)).completed(true).build();
 
         ReadingSession session = buildSession(
                 Instant.parse("2026-03-25T10:00:00Z"),
@@ -233,7 +228,7 @@ class AchievementServiceTest {
         ReadingSession session = new ReadingSession();
         session.setStartTime(startTime);
         session.setEndTime(endTime);
-        session.setBook(book);
+        session.attachToBook(book);
         return session;
     }
 }

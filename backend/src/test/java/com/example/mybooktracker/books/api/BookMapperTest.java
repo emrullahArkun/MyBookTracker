@@ -9,6 +9,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 class BookMapperTest {
 
@@ -21,10 +22,7 @@ class BookMapperTest {
 
     @Test
     void toDto_ShouldUseEmptyCategories_WhenBookCategoriesAreNull() {
-        Book book = new Book();
-        book.setId(7L);
-        book.setTitle("The Left Hand of Darkness");
-        book.setCategories(null);
+        Book book = book().id(7L).title("The Left Hand of Darkness").build();
 
         BookDto dto = mapper.toDto(book);
 
@@ -35,8 +33,7 @@ class BookMapperTest {
 
     @Test
     void toDto_ShouldCopyCategories_WhenBookCategoriesExist() {
-        Book book = new Book();
-        book.setCategories(List.of("Sci-Fi", "Classic"));
+        Book book = book().categories(List.of("Sci-Fi", "Classic")).build();
 
         BookDto dto = mapper.toDto(book);
 

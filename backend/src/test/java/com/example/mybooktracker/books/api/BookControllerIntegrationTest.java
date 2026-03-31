@@ -27,6 +27,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -130,8 +131,8 @@ public class BookControllerIntegrationTest {
         @Test
         void shouldUpdateBookProgress() throws Exception {
                 Book savedBook = createBook("Progress Book", "333-333", "Progress Author");
-                savedBook.setCurrentPage(0);
-                savedBook.setPageCount(100);
+                savedBook.changePageCount(100);
+                savedBook.updateProgress(0);
                 bookRepository.save(savedBook);
 
                 Map<String, Integer> updateRequest = Map.of("currentPage", 50);
@@ -168,12 +169,9 @@ public class BookControllerIntegrationTest {
         }
 
         private Book createBook(String title, String isbn, String author) {
-                Book book = new Book();
-                book.setTitle(title);
-                book.setIsbn(isbn);
-                book.setAuthor(author);
-                book.setUser(defaultUser);
-                book.setCompleted(false);
+                Book book = book().isbn(isbn).title(title).author(author).build();
+                book.assignToUser(defaultUser);
+                book.updateStatus(false);
                 return bookRepository.save(book);
         }
 }

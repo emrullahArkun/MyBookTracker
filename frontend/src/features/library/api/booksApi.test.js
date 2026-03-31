@@ -20,6 +20,18 @@ describe('booksApi', () => {
         expect(apiClient.get).toHaveBeenCalledWith('/api/books?page=2&size=20');
     });
 
+    it('getSection should GET with section, page and size', async () => {
+        apiClient.get.mockResolvedValue({ content: [] });
+        await booksApi.getSection('current', 1, 4);
+        expect(apiClient.get).toHaveBeenCalledWith('/api/books/sections/current?page=1&size=4');
+    });
+
+    it('getFocus should GET with queue size', async () => {
+        apiClient.get.mockResolvedValue({ currentBook: null, queuedBooks: [] });
+        await booksApi.getFocus(5);
+        expect(apiClient.get).toHaveBeenCalledWith('/api/books/focus?queueSize=5');
+    });
+
     it('getAll should use default page=0 size=12', async () => {
         apiClient.get.mockResolvedValue({ content: [] });
         await booksApi.getAll();

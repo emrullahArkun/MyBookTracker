@@ -13,18 +13,13 @@ public class CreateBookCommandMapper {
             return null;
         }
 
-        Book book = new Book();
-        book.setAuthor(command.authorName());
-        book.setIsbn(command.isbn());
-        book.setTitle(command.title());
-        book.setPublishYear(command.publishYear());
-        book.setCoverUrl(command.coverUrl());
-        book.setPageCount(command.pageCount());
-
-        if (command.categories() != null) {
-            book.replaceCategories(new ArrayList<>(command.categories()));
-        }
-
-        return book;
+        return Book.create(
+                command.isbn(),
+                command.title(),
+                command.authorName(),
+                command.publishYear(),
+                command.coverUrl(),
+                command.pageCount(),
+                command.categories() != null ? new ArrayList<>(command.categories()) : null);
     }
 }

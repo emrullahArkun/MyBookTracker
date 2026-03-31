@@ -1,7 +1,9 @@
 import apiClient from '../../../shared/api/apiClient';
 import type {
     Book,
+    BookFocusResponse,
     CreateLibraryBookPayload,
+    LibrarySectionKey,
     PaginatedResponse,
     UpdateBookGoalRequest,
     UpdateBookProgressRequest,
@@ -10,6 +12,9 @@ import type {
 
 export const booksApi = {
     getAll: (page = 0, size = 12) => apiClient.get<PaginatedResponse<Book>>(`/api/books?page=${page}&size=${size}`),
+    getSection: (section: LibrarySectionKey, page = 0, size = 4) =>
+        apiClient.get<PaginatedResponse<Book>>(`/api/books/sections/${section}?page=${page}&size=${size}`),
+    getFocus: (queueSize = 3) => apiClient.get<BookFocusResponse>(`/api/books/focus?queueSize=${queueSize}`),
     getOwnedIsbns: () => apiClient.get<string[]>('/api/books/owned'),
     getWithGoals: () => apiClient.get<Book[]>('/api/books/with-goals'),
     getById: (id: number) => apiClient.get<Book>(`/api/books/${id}`),

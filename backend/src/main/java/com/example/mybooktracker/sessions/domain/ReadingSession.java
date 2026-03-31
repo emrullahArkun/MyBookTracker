@@ -3,6 +3,7 @@ package com.example.mybooktracker.sessions.domain;
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.books.domain.Book;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,10 +23,12 @@ public class ReadingSession {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Setter(AccessLevel.NONE)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Setter(AccessLevel.NONE)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id", nullable = false)
     private Book book;
@@ -53,12 +56,20 @@ public class ReadingSession {
 
     public static ReadingSession startNew(User user, Book book, Instant now) {
         ReadingSession session = new ReadingSession();
-        session.user = user;
-        session.book = book;
+        session.assignUser(user);
+        session.attachToBook(book);
         session.startTime = now;
         session.startPage = book.getCurrentPage() != null ? book.getCurrentPage() : 0;
         session.status = SessionStatus.ACTIVE;
         return session;
+    }
+
+    public void assignUser(User user) {
+        this.user = user;
+    }
+
+    public void attachToBook(Book book) {
+        this.book = book;
     }
 
     public long getPausedMillisOrZero() {

@@ -3,11 +3,9 @@ package com.example.mybooktracker.books.domain;
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.sessions.domain.ReadingSession;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -22,9 +20,7 @@ import java.util.List;
         @UniqueConstraint(columnNames = { "user_id", "isbn" })
 })
 @Getter
-@Setter
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Book {
 
@@ -63,15 +59,89 @@ public class Book {
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReadingSession> readingSessions = new ArrayList<>();
 
+    public static Book create(
+            String isbn,
+            String title,
+            String author,
+            Integer publishYear,
+            String coverUrl,
+            Integer pageCount,
+            List<String> categories) {
+        Book book = new Book();
+        book.isbn = isbn;
+        book.title = title;
+        book.author = author;
+        book.publishYear = publishYear;
+        book.coverUrl = coverUrl;
+        book.pageCount = pageCount;
+        book.replaceCategories(categories);
+        return book;
+    }
+
+    public static Book restore(
+            Long id,
+            String isbn,
+            String title,
+            String author,
+            User user,
+            Integer publishYear,
+            String coverUrl,
+            Integer pageCount,
+            Integer currentPage,
+            LocalDate startDate,
+            Boolean completed,
+            ReadingGoalType readingGoalType,
+            Integer readingGoalPages,
+            List<String> categories) {
+        Book book = create(isbn, title, author, publishYear, coverUrl, pageCount, categories);
+        book.id = id;
+        book.user = user;
+        book.currentPage = currentPage;
+        book.startDate = startDate;
+        book.completed = completed;
+        book.readingGoalType = readingGoalType;
+        book.readingGoalPages = readingGoalPages;
+        return book;
+    }
+
+    public void assignIdentity(Long id) {
+        this.id = id;
+    }
+
+    public void updateMetadata(
+            String isbn,
+            String title,
+            String author,
+            Integer publishYear,
+            String coverUrl,
+            Integer pageCount) {
+        this.isbn = isbn;
+        this.title = title;
+        this.author = author;
+        this.publishYear = publishYear;
+        this.coverUrl = coverUrl;
+        this.pageCount = pageCount;
+    }
+
+    public void changePageCount(Integer pageCount) {
+        this.pageCount = pageCount;
+    }
+
+    public void restoreTracking(Integer currentPage, LocalDate startDate, Boolean completed) {
+        this.currentPage = currentPage;
+        this.startDate = startDate;
+        this.completed = completed;
+    }
+
     // Helper methods to keep both sides of the bidirectional relationship in sync
     public void addReadingSession(ReadingSession session) {
         readingSessions.add(session);
-        session.setBook(this);
+        session.attachToBook(this);
     }
 
     public void removeReadingSession(ReadingSession session) {
         readingSessions.remove(session);
-        session.setBook(null);
+        session.attachToBook(null);
     }
 
     public void assignToUser(User user) {

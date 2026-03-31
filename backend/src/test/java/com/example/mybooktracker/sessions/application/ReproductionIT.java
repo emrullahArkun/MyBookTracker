@@ -17,6 +17,7 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static com.example.mybooktracker.support.BookFixtures.book;
 
 @SpringBootTest
 @Transactional
@@ -51,14 +52,8 @@ public class ReproductionIT {
         testUser = userRepository.save(testUser);
 
         // Create Book
-        testBook = new Book();
-        testBook.setTitle("Integration Book");
-        testBook.setIsbn("123-456");
-        testBook.setAuthor("Test Author");
-        testBook.setUser(testUser);
-        testBook.setPageCount(100);
-        testBook.setCurrentPage(0);
-        testBook.setStartDate(java.time.LocalDate.now());
+        testBook = book().title("Integration Book").isbn("123-456").author("Test Author").user(testUser)
+                .pageCount(100).currentPage(0).startDate(java.time.LocalDate.now()).build();
         testBook = bookRepository.save(testBook);
     }
 
