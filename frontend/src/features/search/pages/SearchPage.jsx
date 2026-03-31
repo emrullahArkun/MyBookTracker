@@ -7,7 +7,10 @@ import SearchResultSkeleton from '../ui/SearchResultSkeleton';
 import TypewriterTitle from '../../../shared/ui/TypewriterTitle';
 import { useTranslation } from 'react-i18next';
 
-function SearchPage({ onBookAdded }) {
+/**
+ * @param {{ onBookAdded?: () => void }} props
+ */
+function SearchPage({ onBookAdded = undefined }) {
     const { t } = useTranslation();
     const {
         query, setQuery,
