@@ -40,7 +40,7 @@ jobs:
       run: mvn -B verify
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: backend/target/site/jacoco/jacoco.xml
@@ -89,7 +89,7 @@ jobs:
       run: npm run coverage
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: frontend/coverage/lcov.info
