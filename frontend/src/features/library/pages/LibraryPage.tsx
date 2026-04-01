@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Flex,
@@ -32,6 +32,21 @@ type LibrarySection = {
     totalPages: number;
 };
 
+const toLibrarySection = (
+    key: LibrarySectionKey,
+    title: string,
+    hint: string,
+    data: PaginatedResponse<Book>
+): LibrarySection => ({
+    key,
+    title,
+    hint,
+    books: data.content || [],
+    totalBooks: data.totalElements || 0,
+    page: data.number || 0,
+    totalPages: Math.max(data.totalPages || 0, 1),
+});
+
 function LibraryPage() {
     const { t } = useTranslation();
     const {
@@ -63,62 +78,47 @@ function LibraryPage() {
     const toast = useToast();
     const { isOpen: isDeleteAllOpen, onOpen: onDeleteAllOpen, onClose: onDeleteAllClose } = useDisclosure();
     const { isOpen: isDeleteSelectedOpen, onOpen: onDeleteSelectedOpen, onClose: onDeleteSelectedClose } = useDisclosure();
-
-    const sections: LibrarySection[] = useMemo(() => {
-        const toSection = (
-            key: LibrarySectionKey,
-            title: string,
-            hint: string,
-            data: PaginatedResponse<Book>
-        ): LibrarySection => ({
-            key,
-            title,
-            hint,
-            books: data.content || [],
-            totalBooks: data.totalElements || 0,
-            page: data.number || 0,
-            totalPages: Math.max(data.totalPages || 0, 1),
-        });
-
-        return [
-            toSection(
-                'current',
-                t('myBooks.sections.current'),
-                activeSession ? t('myBooks.sections.currentHintActive') : t('myBooks.sections.currentHint'),
-                sectionPagesData.current
-            ),
-            toSection(
-                'next',
-                t('myBooks.sections.next'),
-                t('myBooks.sections.nextHint'),
-                sectionPagesData.next
-            ),
-            toSection(
-                'finished',
-                t('myBooks.sections.finished'),
-                t('myBooks.sections.finishedHint'),
-                sectionPagesData.finished
-            ),
-        ];
-    }, [sectionPagesData, activeSession, t]);
+    const currentSection = toLibrarySection(
+        'current',
+        t('myBooks.sections.current'),
+        activeSession ? t('myBooks.sections.currentHintActive') : t('myBooks.sections.currentHint'),
+        sectionPagesData.current
+    );
+    const nextSection = toLibrarySection(
+        'next',
+        t('myBooks.sections.next'),
+        t('myBooks.sections.nextHint'),
+        sectionPagesData.next
+    );
+    const finishedSection = toLibrarySection(
+        'finished',
+        t('myBooks.sections.finished'),
+        t('myBooks.sections.finishedHint'),
+        sectionPagesData.finished
+    );
+    const sections: LibrarySection[] = [currentSection, nextSection, finishedSection];
 
     useEffect(() => {
         setSectionPages((prev) => {
             const nextPages = { ...prev };
             let changed = false;
 
-            for (const section of sections) {
-                const clampedPage = Math.min(prev[section.key] ?? 0, section.totalPages - 1);
+            for (const [key, totalPages] of [
+                ['current', currentSection.totalPages],
+                ['next', nextSection.totalPages],
+                ['finished', finishedSection.totalPages],
+            ] as const) {
+                const clampedPage = Math.min(prev[key] ?? 0, totalPages - 1);
 
-                if (nextPages[section.key] !== clampedPage) {
-                    nextPages[section.key] = clampedPage;
+                if (nextPages[key] !== clampedPage) {
+                    nextPages[key] = clampedPage;
                     changed = true;
                 }
             }
 
             return changed ? nextPages : prev;
         });
-    }, [sections]);
+    }, [currentSection.totalPages, nextSection.totalPages, finishedSection.totalPages]);
 
     useEffect(() => {
         if (deleteError) {
@@ -141,9 +141,9 @@ function LibraryPage() {
     };
 
     const totalSelected = selectedBooks.size;
-    const activeCount = sections.find((section) => section.key === 'current')?.totalBooks ?? 0;
-    const nextCount = sections.find((section) => section.key === 'next')?.totalBooks ?? 0;
-    const finishedCount = sections.find((section) => section.key === 'finished')?.totalBooks ?? 0;
+    const activeCount = currentSection.totalBooks;
+    const nextCount = nextSection.totalBooks;
+    const finishedCount = finishedSection.totalBooks;
     const panelStyles = {
         bg: cardBg,
         border: '1px solid',
