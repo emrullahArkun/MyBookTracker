@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { FaHistory, FaSearch } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import styles from './SearchForm.module.css';
@@ -44,7 +44,7 @@ const SearchForm = ({
         onSearch();
     };
 
-    const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    const handleInputKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
         if (!isHistoryVisible) {
             return;
         }
@@ -108,7 +108,7 @@ const SearchForm = ({
             onCloseHistory();
         };
 
-        const handleKeyDown = (event: KeyboardEvent) => {
+        const handleKeyDown = (event: globalThis.KeyboardEvent) => {
             if (event.key === 'Escape') {
                 onCloseHistory();
             }
