@@ -77,6 +77,7 @@ export const ReadingSessionProvider = ({ children }: ReadingSessionProviderProps
             await sessionsApi.stop(endTime, endPage);
             dispatch({ type: READING_SESSION_EVENTS.STOP_SUCCEEDED });
             broadcastUpdate();
+            queryClient.invalidateQueries({ queryKey: ['myBooksSection'] });
             queryClient.invalidateQueries({ queryKey: ['myBooks'] });
             queryClient.invalidateQueries({ queryKey: ['book'] });
             queryClient.invalidateQueries({ queryKey: ['bookSessions'] });
