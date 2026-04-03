@@ -2,24 +2,28 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBookSearch } from './useBookSearch';
-import { discoveryApi } from '../../discovery/api';
+import { discoveryApi } from '../../discovery';
 import * as AuthModelModule from '../../auth/model';
 
 const mockMutateAsync = vi.fn();
 
-vi.mock('./useAddSearchResultToLibrary.jsx', () => ({
+vi.mock('./useAddSearchResultToLibrary', () => ({
     useAddSearchResultToLibrary: () => ({
         mutateAsync: mockMutateAsync,
     }),
 }));
 
-vi.mock('../../discovery/api', () => ({
-    discoveryApi: {
-        search: vi.fn(),
-        logSearch: vi.fn(),
-        getByRecentSearches: vi.fn(),
-    },
-}));
+vi.mock('../../discovery', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../discovery')>();
+    return {
+        ...actual,
+        discoveryApi: {
+            search: vi.fn(),
+            logSearch: vi.fn(),
+            getByRecentSearches: vi.fn(),
+        },
+    };
+});
 
 describe('useBookSearch', () => {
     let queryClient;
@@ -40,7 +44,7 @@ describe('useBookSearch', () => {
         });
 
         vi.spyOn(AuthModelModule, 'useAuth').mockReturnValue({
-            token: 'token',
+            email: 'token',
             user: { email: 'reader@example.com' },
         });
 
@@ -122,7 +126,7 @@ describe('useBookSearch', () => {
 
     it('does not fetch or open history when the user is unauthenticated', async () => {
         vi.spyOn(AuthModelModule, 'useAuth').mockReturnValue({
-            token: null,
+            email: null,
             user: null,
         });
 

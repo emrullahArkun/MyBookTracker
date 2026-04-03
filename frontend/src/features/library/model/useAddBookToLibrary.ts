@@ -1,29 +1,40 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@chakra-ui/react';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../auth/model';
-import { booksApi, buildLibraryBookPayload } from '../../library/api';
+import { useAuth } from '../../auth';
+import { booksApi } from '../api';
+import { buildLibraryBookPayload } from '../api';
+import type { ApiError } from '../../../shared/types/http';
+import type { Book, LibraryBookSource } from '../../../shared/types/books';
 import { createAppToast } from '../../../shared/ui/AppToast';
 
-export const useAddSearchResultToLibrary = () => {
-    const { token, user } = useAuth();
+type UseAddBookToLibraryOptions = {
+    onSuccess?: (data: Book | null, book: LibraryBookSource) => void;
+};
+
+export const useAddBookToLibrary = (
+    options?: UseAddBookToLibraryOptions,
+) => {
+    const { email, user } = useAuth();
     const toast = useToast();
     const { t } = useTranslation();
     const queryClient = useQueryClient();
 
-    return useMutation({
+    return useMutation<Book | null, ApiError, LibraryBookSource>({
         mutationFn: async (book) => {
-            if (!token) {
+            if (!email) {
                 throw new Error(t('search.toast.loginRequired'));
             }
 
             return booksApi.create(buildLibraryBookPayload(book));
         },
-        onSuccess: () => {
+        onSuccess: (data, addedBook) => {
+            options?.onSuccess?.(data, addedBook);
+
             queryClient.invalidateQueries({ queryKey: ['myBooks'] });
             queryClient.invalidateQueries({ queryKey: ['home'] });
             queryClient.invalidateQueries({ queryKey: ['ownedIsbns', user?.email] });
-            queryClient.invalidateQueries({ queryKey: ['discovery'] });
+
             const toastOptions = createAppToast({
                 id: 'add-book-toast',
                 title: t('search.toast.successTitle'),
@@ -51,6 +62,6 @@ export const useAddSearchResultToLibrary = () => {
             } else {
                 toast(toastOptions);
             }
-        }
+        },
     });
 };

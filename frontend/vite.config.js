@@ -37,7 +37,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      exclude: ['src/mocks/**', 'src/locales/**'],
+      exclude: [
+        'src/mocks/**',
+        'src/locales/**',
+        '**/*.css',
+        '**/index.ts',
+        '**/index.js',
+        'src/**/*.d.ts',
+      ],
       thresholds: {
         lines: 90,
         functions: 90,

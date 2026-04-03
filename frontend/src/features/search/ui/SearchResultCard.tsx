@@ -1,18 +1,24 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, type MouseEvent, type KeyboardEvent } from 'react';
 import { FaPlus, FaSpinner } from 'react-icons/fa';
 
 import styles from './SearchResultCard.module.css';
 import { useAnimation } from '../../../app/providers/AnimationProvider';
 import BookCover from '../../../shared/ui/BookCover';
+import type { LibraryBookSource } from '../../../shared/types/books';
 
-const SearchResultCard = ({ book, onAdd }) => {
+type SearchResultCardProps = {
+    book: LibraryBookSource & { authors?: string[] | string | null; coverUrl?: string | null; title: string };
+    onAdd: (book: SearchResultCardProps['book']) => Promise<unknown>;
+};
+
+const SearchResultCard = ({ book, onAdd }: SearchResultCardProps) => {
     const [isAdding, setIsAdding] = useState(false);
 
     const { flyBook } = useAnimation();
-    const imageRef = useRef(null);
+    const imageRef = useRef<HTMLImageElement | null>(null);
     const author = Array.isArray(book.authors) ? book.authors[0] : book.authors;
 
-    const handleAddClick = async (e) => {
+    const handleAddClick = async (e: MouseEvent | KeyboardEvent) => {
         e.stopPropagation();
         if (isAdding) return;
 
@@ -26,7 +32,7 @@ const SearchResultCard = ({ book, onAdd }) => {
         setIsAdding(true);
         try {
             await onAdd(book);
-            if (animationPayload) {
+            if (animationPayload?.coverUrl) {
                 flyBook(animationPayload.rect, animationPayload.coverUrl);
             }
         } catch {

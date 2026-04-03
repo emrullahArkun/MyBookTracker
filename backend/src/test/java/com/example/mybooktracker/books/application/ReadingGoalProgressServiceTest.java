@@ -45,7 +45,7 @@ class ReadingGoalProgressServiceTest {
     @Test
     void calculateProgress_ShouldReturnNull_WhenGoalTypeIsNull() {
         Book book = book().id(1L).isbn("isbn123").title("Test Book").publishYear(2023).pageCount(300).currentPage(50)
-                .completed(false).goal(null, 100).build();
+                .completed(false).build();
 
         assertNull(progressService.calculateProgress(book));
         verifyNoInteractions(readingSessionQueryPort);

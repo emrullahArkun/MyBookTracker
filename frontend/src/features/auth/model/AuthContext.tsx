@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         login,
         logout,
         loading,
-        token: user?.email ?? null,
+        email: user?.email ?? null,
     }), [user, isAuthenticated, login, logout, loading]);
 
     return (

@@ -7,6 +7,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.example.mybooktracker.shared.exception.DomainValidationException;
+
 import java.time.Duration;
 import java.time.Instant;
 
@@ -121,7 +123,7 @@ public class ReadingSession {
 
     public void addExcludedTime(long millis) {
         if (millis <= 0) {
-            throw new IllegalArgumentException("Excluded time must be positive.");
+            throw new DomainValidationException("Excluded time must be positive.");
         }
         this.pausedMillis = getPausedMillisOrZero() + millis;
     }

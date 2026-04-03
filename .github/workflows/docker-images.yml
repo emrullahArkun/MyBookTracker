@@ -185,7 +185,10 @@ jobs:
             cd /opt/mybooktracker
             export DEPLOY_IMAGE_TAG=sha-${{ github.event.workflow_run.head_sha || github.sha }}
 
+            # Save current IMAGE_TAG for rollback
+            PREV_IMAGE_TAG=""
             if grep -q "^IMAGE_TAG=" .env; then
+              PREV_IMAGE_TAG=$(grep "^IMAGE_TAG=" .env | cut -d= -f2)
               sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${DEPLOY_IMAGE_TAG}/" .env
             else
               printf "\nIMAGE_TAG=%s\n" "${DEPLOY_IMAGE_TAG}" >> .env
@@ -194,11 +197,13 @@ jobs:
             docker compose --env-file .env -f docker-compose.prod.yml pull
             docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
 
+            HEALTHY=true
             for service in app frontend; do
               container_id=$(docker compose --env-file .env -f docker-compose.prod.yml ps -q "$service")
               if [ -z "$container_id" ]; then
                 echo "Missing container for $service"
-                exit 1
+                HEALTHY=false
+                break
               fi
 
               attempt=0
@@ -206,12 +211,24 @@ jobs:
                 attempt=$((attempt + 1))
                 if [ "$attempt" -ge 24 ]; then
                   echo "$service did not become healthy in time"
-                  docker inspect "$container_id"
-                  exit 1
+                  docker logs "$container_id" --tail 50
+                  HEALTHY=false
+                  break 2
                 fi
                 sleep 5
               done
             done
+
+            if [ "$HEALTHY" = "false" ] && [ -n "$PREV_IMAGE_TAG" ]; then
+              echo "Deployment failed — rolling back to ${PREV_IMAGE_TAG}"
+              sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${PREV_IMAGE_TAG}/" .env
+              docker compose --env-file .env -f docker-compose.prod.yml pull
+              docker compose --env-file .env -f docker-compose.prod.yml up -d --remove-orphans
+              exit 1
+            elif [ "$HEALTHY" = "false" ]; then
+              echo "Deployment failed and no previous version available for rollback"
+              exit 1
+            fi
 
             docker compose --env-file .env -f docker-compose.prod.yml ps
           '

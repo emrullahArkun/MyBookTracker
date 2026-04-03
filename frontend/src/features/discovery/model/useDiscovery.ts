@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../../auth/model';
+import { useAuth } from '../../auth';
 import { discoveryApi } from '../api';
 import type { DiscoveryResponse, RecommendedBook } from '../../../shared/types/discovery';
 
@@ -36,7 +36,7 @@ const normalizeDiscoveryData = (response: DiscoveryResponse | null): FilteredDis
 };
 
 export const useDiscovery = () => {
-    const { token, user } = useAuth();
+    const { email, user } = useAuth();
 
     const {
         data,
@@ -49,7 +49,7 @@ export const useDiscovery = () => {
             const response = await discoveryApi.getAll();
             return normalizeDiscoveryData(response);
         },
-        enabled: !!token,
+        enabled: !!email,
         staleTime: 5 * 60 * 1000,
     });
 

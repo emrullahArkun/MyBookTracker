@@ -18,7 +18,7 @@ export type AuthContextValue = {
     login: (userData: StoredAuthUser) => void;
     logout: () => Promise<void>;
     loading: boolean;
-    token: string | null;
+    email: string | null;
 };
 
 export type AuthResponse = {

@@ -14,8 +14,8 @@ interface QueuedBook {
     id: number;
     title: string;
     authorName: string;
-    currentPage?: number;
-    pageCount?: number;
+    currentPage?: number | null;
+    pageCount?: number | null;
 }
 
 interface HomeNextUpPanelProps {

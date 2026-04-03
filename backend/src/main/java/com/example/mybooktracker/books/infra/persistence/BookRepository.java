@@ -43,5 +43,5 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     long countByUserAndCompletedTrue(User user);
 
-    List<Book> findByUserAndReadingGoalTypeIsNotNull(User user);
+    List<Book> findByUserAndReadingGoal_TypeIsNotNull(User user);
 }

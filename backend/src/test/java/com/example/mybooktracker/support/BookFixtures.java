@@ -2,6 +2,7 @@ package com.example.mybooktracker.support;
 
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.books.domain.Book;
+import com.example.mybooktracker.books.domain.ReadingGoal;
 import com.example.mybooktracker.books.domain.ReadingGoalType;
 
 import java.time.LocalDate;
@@ -31,6 +32,7 @@ public final class BookFixtures {
         private ReadingGoalType readingGoalType;
         private Integer readingGoalPages;
         private List<String> categories;
+
 
         public Builder id(Long id) {
             this.id = id;
@@ -111,8 +113,7 @@ public final class BookFixtures {
                     currentPage,
                     startDate,
                     completed,
-                    readingGoalType,
-                    readingGoalPages,
+                    ReadingGoal.of(readingGoalType, readingGoalPages),
                     categories);
         }
     }

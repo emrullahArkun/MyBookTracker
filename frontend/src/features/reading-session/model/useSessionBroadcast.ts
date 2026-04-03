@@ -8,7 +8,7 @@ type UseSessionBroadcastResult = {
 };
 
 export const useSessionBroadcast = (
-    token: string | null,
+    email: string | null,
     onRefresh: () => void | Promise<void>
 ): UseSessionBroadcastResult => {
     const broadcastChannelRef = useRef<BroadcastChannel | null>(null);
@@ -42,7 +42,7 @@ export const useSessionBroadcast = (
             window.removeEventListener('storage', handleStorage);
             window.removeEventListener('focus', handleFocus);
         };
-    }, [token, onRefresh]);
+    }, [email, onRefresh]);
 
     const broadcastUpdate = useCallback(() => {
         if (broadcastChannelRef.current) {

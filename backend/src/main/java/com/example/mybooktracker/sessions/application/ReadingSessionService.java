@@ -6,6 +6,7 @@ import com.example.mybooktracker.books.domain.Book;
 import com.example.mybooktracker.sessions.domain.ReadingSession;
 import com.example.mybooktracker.sessions.domain.SessionStatus;
 import com.example.mybooktracker.sessions.infra.persistence.ReadingSessionRepository;
+import com.example.mybooktracker.shared.exception.DomainValidationException;
 import com.example.mybooktracker.shared.exception.IllegalSessionStateException;
 import com.example.mybooktracker.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,8 @@ public class ReadingSessionService {
 
     @Transactional
     public ReadingSession startSession(User user, Long bookId) {
+        Instant now = Instant.now(clock);
+
         Optional<ReadingSession> existingOpt = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE, SessionStatus.PAUSED));
 
@@ -35,7 +38,7 @@ public class ReadingSessionService {
             ReadingSession existing = existingOpt.get();
             if (existing.getBook().getId().equals(bookId)) {
                 if (existing.getStatus() == SessionStatus.PAUSED) {
-                    existing.resume(Instant.now(clock));
+                    existing.resume(now);
                 }
                 return existing;
             }
@@ -44,9 +47,9 @@ public class ReadingSessionService {
         Book book = bookQueryPort.findByIdAndUser(bookId, user)
                 .orElseThrow(() -> new ResourceNotFoundException("Book not found or access denied"));
 
-        existingOpt.ifPresent(existing -> existing.finish(Instant.now(clock), null));
+        existingOpt.ifPresent(existing -> existing.finish(now, null));
 
-        return sessionRepository.save(ReadingSession.startNew(user, book, Instant.now(clock)));
+        return sessionRepository.save(ReadingSession.startNew(user, book, now));
     }
 
     @Transactional
@@ -93,7 +96,7 @@ public class ReadingSessionService {
     @Transactional
     public ReadingSession excludeTime(User user, Long millis) {
         if (millis == null || millis <= 0) {
-            throw new IllegalArgumentException("Invalid millis");
+            throw new DomainValidationException("Invalid millis");
         }
         ReadingSession session = sessionRepository.findFirstByUserAndStatusInOrderByStartTimeDesc(user,
                 List.of(SessionStatus.ACTIVE))

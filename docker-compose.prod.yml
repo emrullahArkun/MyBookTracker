@@ -42,12 +42,12 @@ services:
     image: ghcr.io/emrullaharkun/mybooktracker-frontend:${IMAGE_TAG:-latest}
     pull_policy: always
     ports:
-      - "80:80"
+      - "80:8080"
     depends_on:
       app:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1"]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080"]
       interval: 10s
       timeout: 5s
       retries: 10

@@ -28,7 +28,7 @@ describe('useDiscovery', () => {
         vi.spyOn(console, 'error').mockImplementation(() => { });
 
         vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
-            token: 'test-token',
+            email: 'test-token',
             user: { email: 'test@example.com' }
         });
 
@@ -123,7 +123,7 @@ describe('useDiscovery', () => {
     });
 
     it('should not fetch if token is missing', async () => {
-        vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({ token: null, user: null });
+        vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({ email: null, user: null });
 
         const { result } = renderHook(() => useDiscovery(), { wrapper });
 

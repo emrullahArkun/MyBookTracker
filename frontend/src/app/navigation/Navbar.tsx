@@ -45,7 +45,7 @@ function Navbar({ sessionMode = false }: { sessionMode?: boolean }) {
         { to: ROUTES.GOALS, label: t('navbar.goals') },
     ];
 
-    const extraItems = [];
+    const extraItems: typeof navItems = [];
     if (activeSession && !sessionMode) {
         extraItems.push({ to: `/books/${activeSession.bookId}/session`, label: t('navbar.session') });
     }

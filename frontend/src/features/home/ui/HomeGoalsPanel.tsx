@@ -15,9 +15,9 @@ import GoalCard from '../../../shared/ui/GoalCard';
 interface ActiveGoalBook {
     id: number;
     title: string;
-    readingGoalProgress?: number;
-    readingGoalPages?: number;
-    readingGoalType?: string;
+    readingGoalProgress?: number | null;
+    readingGoalPages?: number | null;
+    readingGoalType?: string | null;
     author?: string;
 }
 

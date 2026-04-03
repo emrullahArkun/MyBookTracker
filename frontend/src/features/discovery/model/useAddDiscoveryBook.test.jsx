@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddDiscoveryBook } from './useAddDiscoveryBook';
 
 let mockAuthState = {
-    token: 'test-token',
+    email: 'test-token',
     user: { email: 'reader@example.com' },
 };
 
@@ -63,7 +63,7 @@ describe('useAddDiscoveryBook', () => {
         vi.clearAllMocks();
         queryClient = createQueryClient();
         mockAuthState = {
-            token: 'test-token',
+            email: 'test-token',
             user: { email: 'reader@example.com' },
         };
         mockCreate.mockResolvedValue({ id: 99 });
@@ -149,8 +149,8 @@ describe('useAddDiscoveryBook', () => {
         expect(screen.getByText('search.toast.addFailed')).toBeInTheDocument();
     });
 
-    it('throws a login-required error when there is no auth token', async () => {
-        mockAuthState = { token: null, user: null };
+    it('throws a login-required error when there is no auth email', async () => {
+        mockAuthState = { email: null, user: null };
         const { result } = renderHook(() => useAddDiscoveryBook(), { wrapper });
 
         await expect(result.current.mutateAsync({ isbn: 'locked', title: 'Locked' }))

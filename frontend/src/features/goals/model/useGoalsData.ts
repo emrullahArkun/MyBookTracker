@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../../auth/model';
+import { useAuth } from '../../auth';
 import { goalsApi } from '../api/goalsApi';
 import type { Book } from '../../../shared/types/books';
 import type { Streak } from '../../../shared/types/stats';
@@ -24,18 +24,18 @@ const sortBooks = (books: Book[]): Book[] => [...books].sort((a, b) => {
 });
 
 export const useGoalsData = () => {
-    const { token, user } = useAuth();
+    const { email, user } = useAuth();
 
     const booksQuery = useQuery<Book[], Error>({
         queryKey: ['goals', user?.email, 'books'],
         queryFn: async () => (await goalsApi.getBooks()) || [],
-        enabled: !!token,
+        enabled: !!email,
     });
 
     const streakQuery = useQuery<Streak, Error>({
         queryKey: ['goals', user?.email, 'streak'],
         queryFn: async () => (await goalsApi.getStreak()) || EMPTY_STREAK,
-        enabled: !!token,
+        enabled: !!email,
     });
 
     const { activeBooks, completedBooks } = useMemo(() => {

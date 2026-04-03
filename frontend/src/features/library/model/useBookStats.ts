@@ -1,25 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { booksApi } from '../api';
-import { sessionsApi } from '../../reading-session/api';
-import { useAuth } from '../../auth/model';
+import { sessionsApi } from '../../reading-session';
+import { useAuth } from '../../auth';
 
 /**
  * Hook to fetch book details and reading sessions for a specific book.
  * Uses React Query for caching, automatic re-fetching, and consistent data fetching patterns.
  */
-export const useBookStats = (bookId) => {
-    const { token } = useAuth();
+import type { Book } from '../../../shared/types/books';
+import type { ReadingSession } from '../../../shared/types/sessions';
+
+export const useBookStats = (bookId: string | undefined) => {
+    const { email } = useAuth();
 
     // Query for book details
     const {
-        data: book,
+        data: book = null,
         isLoading: bookLoading,
         error: bookError,
         refetch: refetchBook
-    } = useQuery({
-        queryKey: ['book', token, bookId],
-        queryFn: () => booksApi.getById(bookId),
-        enabled: !!token && !!bookId
+    } = useQuery<Book | null>({
+        queryKey: ['book', email, bookId],
+        queryFn: () => booksApi.getById(Number(bookId)),
+        enabled: !!email && !!bookId
     });
 
     // Query for sessions
@@ -28,10 +31,10 @@ export const useBookStats = (bookId) => {
         isLoading: sessionsLoading,
         error: sessionsError,
         refetch: refetchSessions
-    } = useQuery({
-        queryKey: ['bookSessions', token, bookId],
-        queryFn: () => sessionsApi.getByBookId(bookId),
-        enabled: !!token && !!bookId
+    } = useQuery<ReadingSession[]>({
+        queryKey: ['bookSessions', email, bookId],
+        queryFn: async () => (await sessionsApi.getByBookId(Number(bookId))) ?? [],
+        enabled: !!email && !!bookId
     });
 
     // Combined loading/error states for backward compatibility

@@ -10,13 +10,9 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:alpine
 
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY nginx.ssl.conf /etc/nginx/nginx.ssl.conf
-RUN mkdir -p /etc/nginx/ssl
 
-EXPOSE 80 443
-
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080

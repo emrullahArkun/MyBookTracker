@@ -72,7 +72,7 @@ describe('AuthContext', () => {
             expect(captured.user).toEqual({ email: 'server@test.com' });
             expect(captured.isAuthenticated).toBe(true);
             expect(captured.loading).toBe(false);
-            expect(captured.token).toBe('server@test.com');
+            expect(captured.email).toBe('server@test.com');
         });
     });
 

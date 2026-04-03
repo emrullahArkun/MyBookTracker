@@ -63,7 +63,7 @@ public class JwtTokenService {
 
             return signedJWT.serialize();
         } catch (Exception e) {
-            throw new RuntimeException("Error creating JWT token", e);
+            throw new TokenCreationException("Error creating JWT token", e);
         }
     }
 }

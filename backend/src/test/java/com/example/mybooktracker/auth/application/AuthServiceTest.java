@@ -3,6 +3,7 @@ package com.example.mybooktracker.auth.application;
 import com.example.mybooktracker.auth.domain.Role;
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.auth.infra.persistence.UserRepository;
+import com.example.mybooktracker.shared.exception.DomainValidationException;
 import com.example.mybooktracker.shared.exception.DuplicateResourceException;
 import com.example.mybooktracker.shared.exception.InvalidCredentialsException;
 import com.example.mybooktracker.shared.exception.ResourceNotFoundException;
@@ -64,7 +65,7 @@ class AuthServiceTest {
     void registerUser_ShouldThrow_WhenPasswordWeak() {
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        DomainValidationException exception = assertThrows(DomainValidationException.class,
                 () -> authService.registerUser("test@example.com", "password123"));
 
         assertEquals(PasswordPolicy.USER_FACING_MESSAGE, exception.getMessage());

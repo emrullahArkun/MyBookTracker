@@ -7,10 +7,7 @@ import SearchResultSkeleton from '../ui/SearchResultSkeleton';
 import TypewriterTitle from '../../../shared/ui/TypewriterTitle';
 import { useTranslation } from 'react-i18next';
 
-/**
- * @param {{ onBookAdded?: () => void }} props
- */
-function SearchPage({ onBookAdded = undefined }) {
+function SearchPage({ onBookAdded }: { onBookAdded?: () => void }) {
     const { t } = useTranslation();
     const {
         query, setQuery,
@@ -29,7 +26,7 @@ function SearchPage({ onBookAdded = undefined }) {
         addBookToLibrary,
     } = useBookSearch();
 
-    const handleAddBook = useCallback(async (book) => {
+    const handleAddBook = useCallback(async (book: Parameters<typeof addBookToLibrary>[0]) => {
         const addedBook = await addBookToLibrary(book);
         if (addedBook && onBookAdded) {
             onBookAdded();
@@ -74,7 +71,7 @@ function SearchPage({ onBookAdded = undefined }) {
             </div>
 
             {results.length > 0 && hasMore && !isFetchingNextPage && (
-                <button onClick={loadMore} className={styles.loadMoreBtn}>{t('search.loadMore')}</button>
+                <button onClick={() => loadMore()} className={styles.loadMoreBtn}>{t('search.loadMore')}</button>
             )}
 
             {isFetchingNextPage && (

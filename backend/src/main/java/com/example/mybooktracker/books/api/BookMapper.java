@@ -27,8 +27,8 @@ public class BookMapper {
                 book.getCurrentPage(),
                 book.getStartDate(),
                 book.getCompleted(),
-                book.getReadingGoalType(),
-                book.getReadingGoalPages(),
+                book.getReadingGoal().getType(),
+                book.getReadingGoal().getPages(),
                 // Goal progress is derived later in the application layer once period context is available.
                 null,
                 categories

@@ -1,4 +1,4 @@
-name: Frontend Security Audit
+name: Security Audit
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     - cron: "0 6 * * 1"
 
 concurrency:
-  group: frontend-security-audit-${{ github.ref }}
+  group: security-audit-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -34,3 +34,16 @@ jobs:
 
       - name: Audit runtime dependencies
         run: npm audit --omit=dev --audit-level=high
+
+  backend-dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Scan backend dependencies
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: ./backend
+          severity: HIGH,CRITICAL
+          exit-code: 1

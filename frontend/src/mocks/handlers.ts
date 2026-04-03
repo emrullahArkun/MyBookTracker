@@ -2,8 +2,8 @@ import { http, HttpResponse } from 'msw';
 
 export const handlers = [
     http.get('/api/books/sections/:section', ({ params }) => {
-        const { section } = params;
-        const pages = {
+        const { section } = params as { section: string };
+        const pages: Record<string, unknown> = {
             current: {
                 content: [
                     {
@@ -113,7 +113,7 @@ export const handlers = [
     // Mock PATCH /api/books/:id/status
     http.patch('/api/books/:id/status', async ({ params, request }) => {
         const { id } = params;
-        const { completed } = await request.json();
+        const { completed } = await request.json() as { completed: boolean };
 
         return HttpResponse.json({
             id: Number(id),
@@ -130,7 +130,7 @@ export const handlers = [
     // Mock PATCH /api/books/:id/progress
     http.patch('/api/books/:id/progress', async ({ params, request }) => {
         const { id } = params;
-        const { currentPage } = await request.json();
+        const { currentPage } = await request.json() as { currentPage: number };
         return HttpResponse.json({
             id: Number(id),
             title: 'Test Book ' + id,

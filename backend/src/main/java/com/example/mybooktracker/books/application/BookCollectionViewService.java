@@ -82,7 +82,7 @@ public class BookCollectionViewService {
                     .thenComparing(Comparator.comparingInt(BookCollectionViewService::currentPage).reversed())
                     .thenComparing(titleComparator);
             case NEXT -> Comparator
-                    .comparingInt((Book book) -> book.getReadingGoalType() != null ? 0 : 1)
+                    .comparingInt((Book book) -> book.getReadingGoal().isSet() ? 0 : 1)
                     .thenComparing(titleComparator);
             case FINISHED -> Comparator
                     .comparingInt(BookCollectionViewService::currentPage)

@@ -1,6 +1,6 @@
 import { createContext, useContext, useReducer, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../auth/model';
+import { useAuth } from '../../auth';
 import { sessionsApi } from '../api';
 import { useControllerLock } from './useControllerLock';
 import {
@@ -10,7 +10,6 @@ import {
     READING_SESSION_PHASES,
     readingSessionReducer,
 } from './readingSessionMachine';
-import { useSessionTimer } from './useSessionTimer';
 import { useSessionBroadcast } from './useSessionBroadcast';
 import type { ReadingSessionContextValue } from '../../../shared/types/sessions';
 
@@ -21,7 +20,7 @@ type ReadingSessionProviderProps = {
 };
 
 export const ReadingSessionProvider = ({ children }: ReadingSessionProviderProps) => {
-    const { token } = useAuth();
+    const { email } = useAuth();
     const queryClient = useQueryClient();
     const [state, dispatch] = useReducer(readingSessionReducer, undefined, createInitialReadingSessionState);
 
@@ -31,7 +30,7 @@ export const ReadingSessionProvider = ({ children }: ReadingSessionProviderProps
     const isBusy = isBusyReadingSessionPhase(sessionPhase);
 
     const refreshSession = useCallback(async () => {
-        if (!token) {
+        if (!email) {
             return;
         }
 
@@ -41,19 +40,18 @@ export const ReadingSessionProvider = ({ children }: ReadingSessionProviderProps
         } catch {
             dispatch({ type: READING_SESSION_EVENTS.REFRESH_FAILED });
         }
-    }, [token]);
+    }, [email]);
 
-    const { broadcastUpdate } = useSessionBroadcast(token, refreshSession);
-    const { elapsedSeconds, formattedTime } = useSessionTimer(activeSession);
+    const { broadcastUpdate } = useSessionBroadcast(email, refreshSession);
 
     useEffect(() => {
-        if (!token) {
+        if (!email) {
             dispatch({ type: READING_SESSION_EVENTS.SESSION_CLEARED });
             return;
         }
 
         void refreshSession();
-    }, [token, refreshSession]);
+    }, [email, refreshSession]);
 
     const { isController, takeControl } = useControllerLock();
 
@@ -120,8 +118,6 @@ export const ReadingSessionProvider = ({ children }: ReadingSessionProviderProps
         loading,
         sessionPhase,
         isBusy,
-        elapsedSeconds,
-        formattedTime,
         isPaused,
         startSession,
         stopSession,
@@ -134,8 +130,6 @@ export const ReadingSessionProvider = ({ children }: ReadingSessionProviderProps
         loading,
         sessionPhase,
         isBusy,
-        elapsedSeconds,
-        formattedTime,
         isPaused,
         startSession,
         stopSession,

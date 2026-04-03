@@ -1,46 +1,18 @@
-import { useEffect, useState } from 'react';
-import type { UseToastOptions } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { readingSessionBooksApi } from '../api';
 import type { Book } from '../../../shared/types/books';
-import { createAppToast } from '../../../shared/ui/AppToast';
-
-type ToastFn = (options?: UseToastOptions) => void;
 
 type UseReadingSessionBookParams = {
     bookId: number | null;
-    token: string | null;
-    toast: ToastFn;
-    t: (key: string) => string;
+    email: string | null;
 };
 
-export const useReadingSessionBook = ({ bookId, token, toast, t }: UseReadingSessionBookParams) => {
-    const [book, setBook] = useState<Book | null>(null);
-    const [fetchingBook, setFetchingBook] = useState(true);
-
-    useEffect(() => {
-        if (!token || bookId === null) {
-            setBook(null);
-            setFetchingBook(false);
-            return;
-        }
-
-        const fetchBook = async () => {
-            try {
-                const data = await readingSessionBooksApi.getById(bookId);
-                setBook(data ?? null);
-            } catch {
-                toast(createAppToast({
-                    title: t('readingSession.alerts.fetchError'),
-                    status: 'error',
-                    duration: 5000,
-                }));
-            } finally {
-                setFetchingBook(false);
-            }
-        };
-
-        void fetchBook();
-    }, [bookId, token, t, toast]);
+export const useReadingSessionBook = ({ bookId, email }: UseReadingSessionBookParams) => {
+    const { data: book = null, isLoading: fetchingBook } = useQuery<Book | null>({
+        queryKey: ['reading-session-book', bookId],
+        queryFn: () => readingSessionBooksApi.getById(bookId!),
+        enabled: !!email && bookId !== null,
+    });
 
     return { book, fetchingBook };
 };
