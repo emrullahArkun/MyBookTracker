@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
+import { formatLocalDate } from '../../../shared/lib/date';
+import type { Book } from '../../../shared/types/books';
+import type { ReadingSession } from '../../../shared/types/sessions';
 
-/**
- * Hook to calculate reading stats and goal progress based on book and sessions data.
- */
-export const useBookStatsCalculations = (book, sessions) => {
+export const useBookStatsCalculations = (book: Book | null, sessions: ReadingSession[] | null) => {
     // General Stats Calculation
     const stats = useMemo(() => {
         if (!sessions || !book) return null;
@@ -16,7 +16,7 @@ export const useBookStatsCalculations = (book, sessions) => {
             return acc + Math.max(0, (end - start - paused)) / 1000;
         }, 0);
 
-        const formatDuration = (seconds) => {
+        const formatDuration = (seconds: number) => {
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
             return `${h}h ${m}m`;
@@ -27,7 +27,7 @@ export const useBookStatsCalculations = (book, sessions) => {
         const speedRaw = totalHoursRaw > 0 ? pagesReadTotal / totalHoursRaw : 0;
 
         const pagesLeft = (book.pageCount || 0) - pagesReadTotal;
-        let timeLeft = null;
+        let timeLeft: string | null = null;
         if (speedRaw > 0 && pagesLeft > 0) {
             const hoursLeftRaw = pagesLeft / speedRaw;
             const secondsLeft = hoursLeftRaw * 3600;
@@ -35,21 +35,21 @@ export const useBookStatsCalculations = (book, sessions) => {
         }
 
         // Sessions Grouping
-        const sessionsByDay = sessions.reduce((acc, session) => {
+        const sessionsByDay = sessions.reduce<Record<string, ReadingSession>>((acc, session) => {
             if (!session.endTime || session.endPage === null) return acc;
             const dateObj = new Date(session.endTime);
-            const dateKey = dateObj.toLocaleDateString();
-            if (!acc[dateKey] || new Date(acc[dateKey].endTime) < dateObj) {
+            const dateKey = formatLocalDate(dateObj);
+            if (!acc[dateKey] || new Date(acc[dateKey].endTime!) < dateObj) {
                 acc[dateKey] = session;
             }
             return acc;
         }, {});
 
         const graphData = Object.values(sessionsByDay)
-            .sort((a, b) => new Date(a.endTime) - new Date(b.endTime))
+            .sort((a, b) => new Date(a.endTime!).getTime() - new Date(b.endTime!).getTime())
             .map(s => ({
-                date: new Date(s.endTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-                fullDate: new Date(s.endTime).toLocaleDateString(),
+                date: new Date(s.endTime!).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+                fullDate: formatLocalDate(new Date(s.endTime!)),
                 page: s.endPage
             }));
 

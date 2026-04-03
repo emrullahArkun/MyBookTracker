@@ -533,6 +533,9 @@
             }
         }
     },
+    "bookCover": {
+        "unknownTitle": "Unbekannter Titel"
+    },
     "bookStats": {
         "badge": "Buchjournal",
         "profile": "Buchprofil",

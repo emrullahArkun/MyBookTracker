@@ -474,6 +474,9 @@
             }
         }
     },
+    "bookCover": {
+        "unknownTitle": "Unknown Title"
+    },
     "bookStats": {
         "badge": "Book ledger",
         "profile": "Book profile",

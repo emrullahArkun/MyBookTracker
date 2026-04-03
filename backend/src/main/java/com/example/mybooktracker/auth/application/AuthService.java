@@ -3,6 +3,7 @@ package com.example.mybooktracker.auth.application;
 import com.example.mybooktracker.auth.domain.Role;
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.auth.infra.persistence.UserRepository;
+import com.example.mybooktracker.shared.exception.DomainValidationException;
 import com.example.mybooktracker.shared.exception.DuplicateResourceException;
 import com.example.mybooktracker.shared.exception.InvalidCredentialsException;
 import com.example.mybooktracker.shared.exception.ResourceNotFoundException;
@@ -39,7 +40,7 @@ public class AuthService {
             throw new DuplicateResourceException("Email already taken");
         }
         if (!PasswordPolicy.isValid(password)) {
-            throw new IllegalArgumentException(PasswordPolicy.USER_FACING_MESSAGE);
+            throw new DomainValidationException(PasswordPolicy.USER_FACING_MESSAGE);
         }
 
         User user = new User();

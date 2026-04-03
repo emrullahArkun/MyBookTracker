@@ -88,7 +88,7 @@ class BookServiceTest {
 
     @Test
     void findBooksWithGoals_ShouldReturnMatchingBooks() {
-        when(bookRepository.findByUserAndReadingGoalTypeIsNotNull(user))
+        when(bookRepository.findByUserAndReadingGoal_TypeIsNotNull(user))
                 .thenReturn(List.of(book().build()));
 
         List<Book> result = bookService.findBooksWithGoals(user);
@@ -226,7 +226,7 @@ class BookServiceTest {
         when(bookRepository.findByIdAndUser(1L, user)).thenReturn(Optional.of(book));
 
         Book result = bookService.updateReadingGoal(1L, ReadingGoalType.WEEKLY, 100, user);
-        assertEquals(ReadingGoalType.WEEKLY, result.getReadingGoalType());
-        assertEquals(100, result.getReadingGoalPages());
+        assertEquals(ReadingGoalType.WEEKLY, result.getReadingGoal().getType());
+        assertEquals(100, result.getReadingGoal().getPages());
     }
 }

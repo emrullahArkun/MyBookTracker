@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAuth } from '../../auth/model';
+import { useAuth } from '../../auth';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { discoveryApi } from '../../discovery/api';
-import { useAddSearchResultToLibrary } from './useAddSearchResultToLibrary.jsx';
+import { discoveryApi } from '../../discovery';
+import { useAddSearchResultToLibrary } from './useAddSearchResultToLibrary';
 import type { DiscoverySearchResult, DiscoverySearchSection } from '../../../shared/types/discovery';
 
 const PAGE_SIZE = 36;
@@ -14,7 +14,7 @@ export const useBookSearch = () => {
     const [query, setQuery] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-    const { token, user } = useAuth();
+    const { email, user } = useAuth();
     const queryClient = useQueryClient();
 
     const lastLoggedQuery = useRef('');
@@ -23,7 +23,7 @@ export const useBookSearch = () => {
     const { data: recentSearchData } = useQuery<DiscoverySearchSection, Error>({
         queryKey: ['recent-searches', user?.email],
         queryFn: async () => (await discoveryApi.getByRecentSearches()) || EMPTY_SEARCH_SECTION,
-        enabled: !!token,
+        enabled: !!email,
         staleTime: 60_000,
     });
 
@@ -34,7 +34,7 @@ export const useBookSearch = () => {
         if (
             trimmed.length >= MIN_QUERY_LENGTH
             && trimmed.toLowerCase() !== lastLoggedQuery.current.toLowerCase()
-            && token
+            && email
         ) {
             const requestId = ++lastLogRequestId.current;
             discoveryApi.logSearch(trimmed)
@@ -48,7 +48,7 @@ export const useBookSearch = () => {
                     // Silently ignore logging errors.
                 });
         }
-    }, [queryClient, searchTerm, token, user?.email]);
+    }, [queryClient, searchTerm, email, user?.email]);
 
     const {
         data,

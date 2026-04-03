@@ -3,6 +3,7 @@ package com.example.mybooktracker.sessions.application;
 import com.example.mybooktracker.books.domain.Book;
 import com.example.mybooktracker.auth.domain.User;
 import com.example.mybooktracker.books.application.BookQueryPort;
+import com.example.mybooktracker.shared.exception.DomainValidationException;
 import com.example.mybooktracker.shared.exception.IllegalSessionStateException;
 import com.example.mybooktracker.shared.exception.ResourceNotFoundException;
 import com.example.mybooktracker.sessions.domain.ReadingSession;
@@ -350,19 +351,19 @@ class ReadingSessionServiceTest {
 
     @Test
     void excludeTime_ShouldThrow_WhenMillisNull() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> sessionService.excludeTime(user, null));
     }
 
     @Test
     void excludeTime_ShouldThrow_WhenMillisZero() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> sessionService.excludeTime(user, 0L));
     }
 
     @Test
     void excludeTime_ShouldThrow_WhenMillisNegative() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> sessionService.excludeTime(user, -1L));
     }
 

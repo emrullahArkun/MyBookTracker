@@ -45,8 +45,8 @@ const ReadingHeatmap = ({ dailyActivity = [] }: ReadingHeatmapProps) => {
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const dayOfWeek = today.getDay();
-        // Start from (WEEKS) weeks ago, aligned to Sunday
+        const dayOfWeek = (today.getDay() + 6) % 7; // 0=Monday, 6=Sunday
+        // Start from (WEEKS) weeks ago, aligned to Monday
         const start = new Date(today);
         start.setDate(today.getDate() - (WEEKS * 7) - dayOfWeek);
 

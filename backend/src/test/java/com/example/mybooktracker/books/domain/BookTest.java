@@ -1,6 +1,7 @@
 package com.example.mybooktracker.books.domain;
 
 import com.example.mybooktracker.auth.domain.User;
+import com.example.mybooktracker.shared.exception.DomainValidationException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -139,14 +140,14 @@ class BookTest {
     @Test
     void changePageCount_ShouldThrow_WhenNegative() {
         Book book = new Book();
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> book.changePageCount(-1));
     }
 
     @Test
     void changePageCount_ShouldThrow_WhenZero() {
         Book book = new Book();
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> book.changePageCount(0));
     }
 
@@ -159,7 +160,7 @@ class BookTest {
 
     @Test
     void create_ShouldThrow_WhenPageCountIsNotPositive() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> Book.create("isbn", "title", "author", 2024, "cover", 0, List.of()));
     }
 
@@ -167,7 +168,7 @@ class BookTest {
     void updateMetadata_ShouldValidatePageCount() {
         Book book = new Book();
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> book.updateMetadata("isbn", "title", "author", 2024, "cover", -1));
     }
 
@@ -212,7 +213,7 @@ class BookTest {
     @Test
     void updateProgress_ShouldThrow_WhenPageNegative() {
         Book book = new Book();
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> book.updateProgress(-1));
     }
 
@@ -259,7 +260,7 @@ class BookTest {
     void updateProgress_ShouldThrow_WhenPageExceedsTotal() {
         Book book = new Book();
         book.changePageCount(200);
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(DomainValidationException.class,
                 () -> book.updateProgress(201));
     }
 
@@ -286,7 +287,7 @@ class BookTest {
         assertEquals("isbn", book.getIsbn());
         assertEquals("author", book.getAuthor());
         assertEquals(user, book.getUser());
-        assertEquals(ReadingGoalType.WEEKLY, book.getReadingGoalType());
+        assertEquals(ReadingGoalType.WEEKLY, book.getReadingGoal().getType());
         assertEquals(List.of("Fiction"), book.getCategories());
     }
 }

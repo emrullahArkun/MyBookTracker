@@ -7,6 +7,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import com.example.mybooktracker.shared.exception.DomainValidationException;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +48,8 @@ public class Book {
     private LocalDate startDate;
     private Boolean completed;
 
-    @Enumerated(EnumType.STRING)
-    private ReadingGoalType readingGoalType;
-    private Integer readingGoalPages;
+    @Embedded
+    private ReadingGoal readingGoal = ReadingGoal.none();
 
     @ElementCollection
     @CollectionTable(name = "book_categories", joinColumns = @JoinColumn(name = "book_id"))
@@ -85,8 +86,7 @@ public class Book {
             Integer currentPage,
             LocalDate startDate,
             Boolean completed,
-            ReadingGoalType readingGoalType,
-            Integer readingGoalPages,
+            ReadingGoal readingGoal,
             List<String> categories) {
         Book book = create(isbn, title, author, publishYear, coverUrl, pageCount, categories);
         book.id = id;
@@ -94,8 +94,7 @@ public class Book {
         book.currentPage = currentPage;
         book.startDate = startDate;
         book.completed = completed;
-        book.readingGoalType = readingGoalType;
-        book.readingGoalPages = readingGoalPages;
+        book.readingGoal = readingGoal != null ? readingGoal : ReadingGoal.none();
         return book;
     }
 
@@ -123,7 +122,7 @@ public class Book {
 
     public void changePageCount(Integer pageCount) {
         if (pageCount != null && pageCount <= 0) {
-            throw new IllegalArgumentException("Page count must be positive");
+            throw new DomainValidationException("Page count must be positive");
         }
         this.pageCount = pageCount;
     }
@@ -154,15 +153,7 @@ public class Book {
     }
 
     public void updateReadingGoal(ReadingGoalType type, Integer pages) {
-        if (type == null && pages != null) {
-            throw new IllegalArgumentException("Reading goal pages require a reading goal type");
-        }
-        if (pages != null && pages <= 0) {
-            throw new IllegalArgumentException("Reading goal pages must be positive");
-        }
-
-        this.readingGoalType = type;
-        this.readingGoalPages = pages;
+        this.readingGoal = ReadingGoal.of(type, pages);
     }
 
     public void initializeTracking(LocalDate today) {
@@ -179,13 +170,13 @@ public class Book {
 
     public void updateProgress(Integer newPage) {
         if (newPage == null) {
-            throw new IllegalArgumentException("Current page is required");
+            throw new DomainValidationException("Current page is required");
         }
         if (newPage < 0) {
-            throw new IllegalArgumentException("Current page cannot be negative");
+            throw new DomainValidationException("Current page cannot be negative");
         }
         if (this.pageCount != null && newPage > this.pageCount) {
-            throw new IllegalArgumentException("Current page cannot exceed total page count");
+            throw new DomainValidationException("Current page cannot exceed total page count");
         }
 
         this.currentPage = newPage;
@@ -207,5 +198,13 @@ public class Book {
     @PrePersist
     public void prePersist() {
         initializeTracking(null);
+    }
+
+    // JPA sets @Embedded to null when all columns are null — restore to safe default
+    @PostLoad
+    void postLoad() {
+        if (this.readingGoal == null) {
+            this.readingGoal = ReadingGoal.none();
+        }
     }
 }

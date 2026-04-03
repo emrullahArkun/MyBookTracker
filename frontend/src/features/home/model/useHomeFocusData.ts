@@ -76,20 +76,20 @@ const getLastActivity = (dailyActivity: DailyActivity[], currentBook: Book | nul
 };
 
 export const useHomeFocusData = () => {
-    const { token, user } = useAuth();
+    const { email, user } = useAuth();
     const { activeSession } = useReadingSessionContext();
     const goalsData = useGoalsData();
 
     const focusQuery = useQuery({
         queryKey: ['home', user?.email, 'focus'],
         queryFn: () => booksApi.getFocus(),
-        enabled: !!token,
+        enabled: !!email,
     });
 
     const statsQuery = useQuery({
         queryKey: ['home', user?.email, 'stats'],
         queryFn: () => statsApi.getOverview(),
-        enabled: !!token,
+        enabled: !!email,
         staleTime: 5 * 60 * 1000,
     });
 

@@ -1,19 +1,30 @@
-import { createContext, useContext, useState, useRef, useCallback } from 'react';
+import { createContext, useContext, useState, useRef, useCallback, type ReactNode, type RefCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 
-const AnimationContext = createContext(null);
+type FlyingBook = {
+    id: number;
+    startRect: DOMRect;
+    targetRect: DOMRect;
+    imageSrc: string;
+};
 
-export const AnimationProvider = ({ children }) => {
-    // Stores the target element's DOM node (e.g., the "My Books" link)
-    const targetRef = useRef(null);
-    const [flyingBooks, setFlyingBooks] = useState([]);
+type AnimationContextValue = {
+    registerTarget: RefCallback<HTMLElement>;
+    flyBook: (startRect: DOMRect, imageSrc: string) => void;
+};
 
-    const registerTarget = useCallback((element) => {
+const AnimationContext = createContext<AnimationContextValue | null>(null);
+
+export const AnimationProvider = ({ children }: { children: ReactNode }) => {
+    const targetRef = useRef<HTMLElement | null>(null);
+    const [flyingBooks, setFlyingBooks] = useState<FlyingBook[]>([]);
+
+    const registerTarget: RefCallback<HTMLElement> = useCallback((element) => {
         targetRef.current = element;
     }, []);
 
-    const flyBook = useCallback((startRect, imageSrc) => {
+    const flyBook = useCallback((startRect: DOMRect, imageSrc: string) => {
         if (!targetRef.current) return;
 
         const targetRect = targetRef.current.getBoundingClientRect();
@@ -25,7 +36,7 @@ export const AnimationProvider = ({ children }) => {
         ]);
     }, []);
 
-    const removeBook = useCallback((id) => {
+    const removeBook = useCallback((id: number) => {
         setFlyingBooks((prev) => prev.filter((book) => book.id !== id));
     }, []);
 
@@ -48,8 +59,7 @@ export const useAnimation = () => {
     return context;
 };
 
-// Internal component to render the flying images
-const FlyingBooksLayer = ({ books, onComplete }) => {
+const FlyingBooksLayer = ({ books, onComplete }: { books: FlyingBook[]; onComplete: (id: number) => void }) => {
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999 }}>
             <AnimatePresence>

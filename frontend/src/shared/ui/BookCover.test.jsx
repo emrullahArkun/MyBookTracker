@@ -305,7 +305,7 @@ describe('BookCover', () => {
         render(<BookCover book={{}} />);
 
         expect(screen.queryByRole('img')).toBeNull();
-        expect(screen.getByText('Unbekannter Titel')).toBeDefined();
+        expect(screen.getByText('bookCover.unknownTitle')).toBeDefined();
     });
 
     it('marks cached images as loaded immediately when the ref receives a completed image', () => {

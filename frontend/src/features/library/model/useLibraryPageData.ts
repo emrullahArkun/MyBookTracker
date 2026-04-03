@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../auth/model';
+import { useAuth } from '../../auth';
 import { booksApi } from '../api';
 import type { ApiError } from '../../../shared/types/http';
 import type { Book, LibrarySectionKey, PaginatedResponse } from '../../../shared/types/books';
@@ -20,17 +20,17 @@ const getSectionQueryKey = (section: LibrarySectionKey, page: number) => (
     ['myBooksSection', section, page] as const
 );
 
-const useSectionQuery = (token: string | null, section: LibrarySectionKey, page: number) => (
+const useSectionQuery = (email: string | null, section: LibrarySectionKey, page: number) => (
     useQuery<PaginatedResponse<Book>, Error>({
         queryKey: getSectionQueryKey(section, page),
         queryFn: async () => {
-            if (!token) {
+            if (!email) {
                 return EMPTY_PAGE;
             }
 
             return (await booksApi.getSection(section, page, SECTION_PAGE_SIZE)) || EMPTY_PAGE;
         },
-        enabled: !!token,
+        enabled: !!email,
         placeholderData: (previousData) => previousData ?? EMPTY_PAGE,
     })
 );
@@ -38,15 +38,15 @@ const useSectionQuery = (token: string | null, section: LibrarySectionKey, page:
 export const useLibraryPageData = (sectionPages: SectionPages) => {
     const [selectedBooks, setSelectedBooks] = useState<Set<number>>(new Set());
     const [deleteError, setDeleteError] = useState<ApiError | null>(null);
-    const { token } = useAuth();
+    const { email } = useAuth();
     const queryClient = useQueryClient();
     const clearDeleteError = useCallback(() => {
         setDeleteError(null);
     }, []);
 
-    const currentQuery = useSectionQuery(token, 'current', sectionPages.current);
-    const nextQuery = useSectionQuery(token, 'next', sectionPages.next);
-    const finishedQuery = useSectionQuery(token, 'finished', sectionPages.finished);
+    const currentQuery = useSectionQuery(email, 'current', sectionPages.current);
+    const nextQuery = useSectionQuery(email, 'next', sectionPages.next);
+    const finishedQuery = useSectionQuery(email, 'finished', sectionPages.finished);
     const sectionQueries = [currentQuery, nextQuery, finishedQuery];
 
     const invalidateLibraryViews = () => {

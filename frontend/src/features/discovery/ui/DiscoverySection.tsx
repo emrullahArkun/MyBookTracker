@@ -2,7 +2,7 @@ import { useState, useRef, type KeyboardEvent, type MouseEvent } from 'react';
 import { FaPen, FaBook, FaSearch, FaPlus, FaSpinner, FaBookOpen } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useAnimation } from '../../../app/providers/AnimationProvider';
-import { useAddDiscoveryBook } from '../model/useAddDiscoveryBook.jsx';
+import { useAddDiscoveryBook } from '../model/useAddDiscoveryBook';
 import BookCover from '../../../shared/ui/BookCover';
 import styles from './DiscoverySection.module.css';
 import type { RecommendedBook } from '../../../shared/types/discovery';

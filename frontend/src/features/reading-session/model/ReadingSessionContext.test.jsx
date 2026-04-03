@@ -1,6 +1,7 @@
 import { render, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ReadingSessionProvider, useReadingSessionContext } from './ReadingSessionContext';
+import { SessionTimerProvider, useSessionTimerContext } from './SessionTimerContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock dependencies
@@ -33,6 +34,13 @@ const TestConsumer = ({ onRender }) => {
     return null;
 };
 
+const TimerTestConsumer = ({ onRender }) => {
+    const session = useReadingSessionContext();
+    const timer = useSessionTimerContext();
+    onRender({ ...session, ...timer });
+    return null;
+};
+
 // Mock BroadcastChannel
 class MockBroadcastChannel {
     constructor() { this.onmessage = null; }
@@ -50,7 +58,7 @@ describe('ReadingSessionContext', () => {
 
         global.BroadcastChannel = MockBroadcastChannel;
 
-        useAuth.mockReturnValue({ token: 'test-token' });
+        useAuth.mockReturnValue({ email: 'test-token' });
         mockTakeControl = vi.fn();
         useControllerLock.mockReturnValue({
             isController: true,
@@ -80,8 +88,8 @@ describe('ReadingSessionContext', () => {
         expect(captured.loading).toBe(false);
     });
 
-    it('should set activeSession to null when no token', async () => {
-        useAuth.mockReturnValue({ token: null });
+    it('should set activeSession to null when no email', async () => {
+        useAuth.mockReturnValue({ email: null });
 
         let captured;
         await act(async () => {
@@ -369,7 +377,9 @@ describe('ReadingSessionContext', () => {
             render(
                 <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
                     <ReadingSessionProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    <SessionTimerProvider>
+                    <TimerTestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    </SessionTimerProvider>
                 </ReadingSessionProvider>
                 </QueryClientProvider>
             );
@@ -392,7 +402,9 @@ describe('ReadingSessionContext', () => {
             render(
                 <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
                     <ReadingSessionProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    <SessionTimerProvider>
+                    <TimerTestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    </SessionTimerProvider>
                 </ReadingSessionProvider>
                 </QueryClientProvider>
             );
@@ -418,7 +430,9 @@ describe('ReadingSessionContext', () => {
             render(
                 <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
                     <ReadingSessionProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    <SessionTimerProvider>
+                    <TimerTestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    </SessionTimerProvider>
                 </ReadingSessionProvider>
                 </QueryClientProvider>
             );
@@ -437,7 +451,9 @@ describe('ReadingSessionContext', () => {
             render(
                 <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
                     <ReadingSessionProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    <SessionTimerProvider>
+                    <TimerTestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    </SessionTimerProvider>
                 </ReadingSessionProvider>
                 </QueryClientProvider>
             );
@@ -574,7 +590,9 @@ describe('ReadingSessionContext', () => {
             render(
                 <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
                     <ReadingSessionProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    <SessionTimerProvider>
+                    <TimerTestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    </SessionTimerProvider>
                 </ReadingSessionProvider>
                 </QueryClientProvider>
             );
@@ -604,7 +622,9 @@ describe('ReadingSessionContext', () => {
             render(
                 <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
                     <ReadingSessionProvider>
-                    <TestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    <SessionTimerProvider>
+                    <TimerTestConsumer onRender={(ctx) => { captured = ctx; }} />
+                    </SessionTimerProvider>
                 </ReadingSessionProvider>
                 </QueryClientProvider>
             );

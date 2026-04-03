@@ -44,7 +44,7 @@ const BookStatsPage = () => {
 
     const { bgColor, cardBg, textColor, subTextColor, mutedTextColor, brandColor, borderColor, panelShadow } = useThemeTokens();
 
-    const hasSessions = sessions.length > 0;
+    const hasSessions = (sessions?.length ?? 0) > 0;
 
     if (loading) return (
         <Flex justify="center" align="center" h="100vh" bg={bgColor}>

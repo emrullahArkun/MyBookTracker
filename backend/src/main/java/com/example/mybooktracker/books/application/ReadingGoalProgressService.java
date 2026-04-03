@@ -22,11 +22,11 @@ public class ReadingGoalProgressService {
     private final ReadingGoalPeriodCalculator readingGoalPeriodCalculator;
 
     public Integer calculateProgress(Book book) {
-        if (book.getReadingGoalType() == null || book.getReadingGoalPages() == null) {
+        if (!book.getReadingGoal().isSet() || book.getReadingGoal().getPages() == null) {
             return null;
         }
 
-        Instant startInstant = readingGoalPeriodCalculator.getStartOfPeriod(book.getReadingGoalType(), clock);
+        Instant startInstant = readingGoalPeriodCalculator.getStartOfPeriod(book.getReadingGoal().getType(), clock);
         return readingSessionQueryPort.sumCompletedPagesByBookSince(book, startInstant);
     }
 
@@ -34,11 +34,11 @@ public class ReadingGoalProgressService {
         Map<Long, Integer> result = new HashMap<>();
 
         List<Book> weeklyBooks = books.stream()
-                .filter(b -> b.getReadingGoalType() == ReadingGoalType.WEEKLY && b.getReadingGoalPages() != null)
+                .filter(b -> b.getReadingGoal().getType() == ReadingGoalType.WEEKLY && b.getReadingGoal().getPages() != null)
                 .toList();
 
         List<Book> monthlyBooks = books.stream()
-                .filter(b -> b.getReadingGoalType() == ReadingGoalType.MONTHLY && b.getReadingGoalPages() != null)
+                .filter(b -> b.getReadingGoal().getType() == ReadingGoalType.MONTHLY && b.getReadingGoal().getPages() != null)
                 .toList();
 
         if (!weeklyBooks.isEmpty()) {

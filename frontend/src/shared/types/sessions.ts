@@ -46,8 +46,6 @@ export type ReadingSessionContextValue = {
     loading: boolean;
     sessionPhase: ReadingSessionPhase;
     isBusy: boolean;
-    elapsedSeconds: number;
-    formattedTime: string;
     isPaused: boolean;
     startSession: (bookId: number) => Promise<boolean>;
     stopSession: (endTime: Date | null, endPage?: number) => Promise<boolean>;

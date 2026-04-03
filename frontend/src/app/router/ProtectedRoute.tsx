@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../features/auth';
-import { ReadingSessionProvider } from '../../features/reading-session';
+import { ReadingSessionProvider, SessionTimerProvider } from '../../features/reading-session';
 import { ROUTES } from './routes';
 import AuthGateLoader from './AuthGateLoader';
 
@@ -22,7 +22,9 @@ const ProtectedRoute = ({ requireAdmin = false }: { requireAdmin?: boolean }) =>
 
     return (
         <ReadingSessionProvider>
-            <Outlet />
+            <SessionTimerProvider>
+                <Outlet />
+            </SessionTimerProvider>
         </ReadingSessionProvider>
     );
 };

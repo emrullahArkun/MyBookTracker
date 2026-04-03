@@ -66,8 +66,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex,
+    @ExceptionHandler(DomainValidationException.class)
+    public ResponseEntity<ErrorResponse> handleDomainValidationException(DomainValidationException ex,
             WebRequest request) {
         return buildErrorResponse(ex, HttpStatus.BAD_REQUEST, request);
     }

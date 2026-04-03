@@ -55,7 +55,7 @@ public class BookService {
     }
 
     public List<Book> findBooksWithGoals(User user) {
-        return bookRepository.findByUserAndReadingGoalTypeIsNotNull(user);
+        return bookRepository.findByUserAndReadingGoal_TypeIsNotNull(user);
     }
 
     @Transactional

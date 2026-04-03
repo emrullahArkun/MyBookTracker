@@ -6,7 +6,21 @@ import { useNavigate } from 'react-router-dom';
 
 const MotionBox = motion(Box);
 
-const GoalCard = ({ book, index, linkTo }) => {
+type GoalBook = {
+    title: string;
+    author?: string;
+    readingGoalProgress?: number | null;
+    readingGoalPages?: number | null;
+    readingGoalType?: string | null;
+};
+
+type GoalCardProps = {
+    book: GoalBook;
+    index: number;
+    linkTo?: string;
+};
+
+const GoalCard = ({ book, index, linkTo }: GoalCardProps) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
